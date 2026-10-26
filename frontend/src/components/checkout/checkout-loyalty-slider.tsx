@@ -103,7 +103,7 @@ export function CheckoutLoyaltySlider({
 
     checkTimeoutRef.current = setTimeout(async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
         const params = new URLSearchParams();
         if (cleanPhone.length >= 10) params.append('phone', cleanPhone);
         if (cleanEmail && cleanEmail.includes('@')) params.append('email', cleanEmail);

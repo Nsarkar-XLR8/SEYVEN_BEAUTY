@@ -109,7 +109,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSettings = React.useCallback(async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
       const res = await fetch(`${apiUrl}/settings`, { cache: 'no-store' });
       const json = await res.json();
       if (json.success && json.data) {

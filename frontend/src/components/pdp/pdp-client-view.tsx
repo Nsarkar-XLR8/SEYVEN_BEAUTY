@@ -28,7 +28,7 @@ export function PdpClientView({ slug }: PdpClientViewProps) {
   useEffect(() => {
     // Security: sanitize slug input to only alphanumeric and dash
     const cleanSlug = slug.replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
 
     setIsLoading(true);
 

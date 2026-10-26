@@ -13,7 +13,7 @@ export default function HomePage() {
   const [products, setProducts] = React.useState<ProductDetail[]>([]);
 
   React.useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
 
     // Fetch from resilient Next.js catalog API + backend (100% dynamic, published formulations only)
     fetch('/api/catalog/products')

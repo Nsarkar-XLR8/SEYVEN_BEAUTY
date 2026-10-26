@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -21,7 +21,7 @@ export async function apiFetch<T = any>(
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   // If the path starts with health/ or docs or sitemap, use root domain without api/v1
   const fullUrl = cleanPath.startsWith('/health') || cleanPath.startsWith('/sitemap')
-    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000') + cleanPath
+    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://seyven-beauty-backend.onrender.com') + cleanPath
     : `${API_BASE_URL}${cleanPath}`;
 
   const headers: Record<string, string> = {

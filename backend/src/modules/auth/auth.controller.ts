@@ -93,26 +93,7 @@ export class AuthController {
   getProfile(@CurrentUser() user: { userId: string }) {
     return this.authService.getProfile(user.userId);
   }
-
-  @Get('users')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Super Admin: List all registered users for role governance' })
-  @ApiResponse({ status: 200, description: 'List of registered users' })
-  listUsers(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.authService.listUsers(Number(page) || 1, Number(limit) || 50);
-  }
-
-  @Patch('users/:userId/role')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Super Admin: Promote or change user role' })
-  @ApiResponse({ status: 200, description: 'User role updated successfully' })
-  updateUserRole(@Param('userId') userId: string, @Body('role') role: UserRole) {
-    return this.authService.updateUserRole(userId, role);
-  }
 }
+
 
 

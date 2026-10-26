@@ -17,9 +17,6 @@ import {
   Calendar,
   Clock,
   Crown,
-  UserCog,
-  Users,
-  Search,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 
@@ -42,12 +39,6 @@ export default function PlatformSettingsPage() {
   const [campaignDiscountPercent, setCampaignDiscountPercent] = useState<number>(7);
   const [campaignStartDate, setCampaignStartDate] = useState<string>('');
   const [campaignEndDate, setCampaignEndDate] = useState<string>('');
-
-  // User & Staff Governance State
-  const [usersList, setUsersList] = useState<any[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-  const [userSearch, setUserSearch] = useState('');
-  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
   // Loading & Feedback
   const [isLoading, setIsLoading] = useState(true);
@@ -94,59 +85,8 @@ export default function PlatformSettingsPage() {
     }
   };
 
-  const fetchUsers = async () => {
-    setIsLoadingUsers(true);
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_admin_jwt_v3') : null;
-      const res = await fetch(`${apiUrl}/auth/users`, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : 'Bearer admin_jwt_demo',
-        },
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.users && Array.isArray(json.users)) {
-          setUsersList(json.users);
-        }
-      }
-    } catch (err: any) {
-      console.warn('Could not fetch users list:', err);
-    } finally {
-      setIsLoadingUsers(false);
-    }
-  };
-
-  const handleUpdateUserRole = async (userId: string, newRole: string) => {
-    setUpdatingUserId(userId);
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_admin_jwt_v3') : null;
-      const res = await fetch(`${apiUrl}/auth/users/${userId}/role`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : 'Bearer admin_jwt_demo',
-        },
-        body: JSON.stringify({ role: newRole }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        showToast(`✓ Role updated to ${newRole}!`);
-        setUsersList((prev) =>
-          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-        );
-      } else {
-        showToast(`Failed: ${data?.message || 'Could not update role'}`);
-      }
-    } catch (err: any) {
-      showToast(`Error: ${err?.message || 'Network error'}`);
-    } finally {
-      setUpdatingUserId(null);
-    }
-  };
-
   useEffect(() => {
     fetchSettings();
-    fetchUsers();
   }, []);
 
   const setCampaignPresetDays = (days: number) => {
@@ -683,162 +623,6 @@ export default function PlatformSettingsPage() {
                   : 'Campaign currently paused. No seasonal discount is honored on customer carts.'}
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* CARD 5: EXECUTIVE STAFF & ROLE GOVERNANCE (DATABASE USER PROMOTION) */}
-        {/* ========================================================================= */}
-        <div className="bg-white border border-[#E6DFD5] p-5 sm:p-7 shadow-xs space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F5F2EB]">
-            <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-full bg-[#1C1917] text-[#C7A97B] flex items-center justify-center shrink-0">
-                <UserCog className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="text-sm uppercase tracking-[0.15em] font-serif font-medium text-[#1C1917]">
-                  Executive Staff & Role Governance
-                </h2>
-                <p className="text-[11px] text-[#78716C] font-light">
-                  Promote registered accounts into authorized staff operators with live Supabase database sync.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={fetchUsers}
-              disabled={isLoadingUsers}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#F9F6F0] hover:bg-[#EFECE6] border border-[#E6DFD5] text-[11px] font-mono font-medium text-[#1C1917] transition-colors self-start sm:self-auto cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingUsers ? 'animate-spin' : ''}`} />
-              <span>Refresh Users</span>
-            </button>
-          </div>
-
-          {/* Quick Workflow Guide */}
-          <div className="p-3.5 bg-[#F9F6F0] border border-[#E6DFD5] text-xs space-y-1.5">
-            <div className="font-medium text-[#1C1917] flex items-center space-x-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#C7A97B]" />
-              <span>How to onboard and grant access to a new team member:</span>
-            </div>
-            <ol className="list-decimal list-inside text-[11px] text-[#78716C] space-y-1 font-light leading-relaxed pl-1">
-              <li>Have your team member register an account at <strong className="text-[#1C1917] font-normal">theseyven.com</strong> with their name, email, and password.</li>
-              <li>Locate their account in the list below (use the search box if needed).</li>
-              <li>Select their assigned staff role (e.g. <strong className="text-[#1C1917] font-normal">SUPER_ADMIN</strong>, <strong className="text-[#1C1917] font-normal">CATALOG_MANAGER</strong>, or <strong className="text-[#1C1917] font-normal">FULFILLMENT_OPERATOR</strong>) and click <strong className="text-[#1C1917] font-normal">Update Role</strong>.</li>
-              <li>They can now immediately log in at <strong className="text-[#1C1917] font-normal">admin.theseyven.com</strong> to begin operations!</li>
-            </ol>
-          </div>
-
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#78716C]" />
-            <input
-              type="text"
-              placeholder="Filter registered users by name, email, or phone number..."
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-[#F9F6F0] border border-[#E6DFD5] text-xs font-mono text-[#1C1917] placeholder:text-[#78716C]/40 focus:border-[#C7A97B] focus:outline-none transition-colors"
-            />
-          </div>
-
-          {/* Users Table */}
-          <div className="border border-[#E6DFD5] overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono border-collapse">
-              <thead>
-                <tr className="bg-[#F9F6F0] border-b border-[#E6DFD5] text-[10px] uppercase text-[#78716C]">
-                  <th className="p-3">User & Credentials</th>
-                  <th className="p-3">Mobile Contact</th>
-                  <th className="p-3">Current Privilege</th>
-                  <th className="p-3">Assign New Role</th>
-                  <th className="p-3 text-right">Database Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E6DFD5]">
-                {isLoadingUsers && usersList.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-6 text-center text-[#78716C] text-xs">
-                      <RefreshCw className="w-4 h-4 animate-spin inline-block mr-2" />
-                      Loading users directly from PostgreSQL database...
-                    </td>
-                  </tr>
-                ) : usersList.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-6 text-center text-[#78716C] text-xs">
-                      No registered users found. Have someone create an account on theseyven.com.
-                    </td>
-                  </tr>
-                ) : (
-                  usersList
-                    .filter((u) => {
-                      const q = userSearch.toLowerCase();
-                      return (
-                        (u.fullName || '').toLowerCase().includes(q) ||
-                        (u.email || '').toLowerCase().includes(q) ||
-                        (u.phone || '').includes(q) ||
-                        (u.role || '').toLowerCase().includes(q)
-                      );
-                    })
-                    .map((user) => (
-                      <tr key={user.id} className="hover:bg-[#FAF8F5] transition-colors">
-                        <td className="p-3">
-                          <div className="font-semibold text-[#1C1917]">{user.fullName || 'No Name Provided'}</div>
-                          <div className="text-[11px] text-[#78716C]">{user.email || 'No email attached'}</div>
-                        </td>
-                        <td className="p-3 font-mono text-xs text-[#1C1917]">
-                          {user.phone}
-                        </td>
-                        <td className="p-3">
-                          <span
-                            className={`px-2 py-0.5 text-[10px] font-mono tracking-wider font-semibold rounded-none ${
-                              user.role === 'SUPER_ADMIN'
-                                ? 'bg-[#1C1917] text-[#C7A97B]'
-                                : user.role === 'CATALOG_MANAGER'
-                                ? 'bg-purple-100 text-purple-900'
-                                : user.role === 'FULFILLMENT_OPERATOR'
-                                ? 'bg-blue-100 text-blue-900'
-                                : user.role === 'SUPPORT_AGENT'
-                                ? 'bg-emerald-100 text-emerald-900'
-                                : 'bg-stone-100 text-stone-700'
-                            }`}
-                          >
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <select
-                            id={`role-select-${user.id}`}
-                            defaultValue={user.role}
-                            className="px-2 py-1 bg-white border border-[#E6DFD5] text-xs font-mono text-[#1C1917] focus:border-[#C7A97B] focus:outline-none"
-                          >
-                            <option value="SUPER_ADMIN">SUPER_ADMIN (Full Platform Authority)</option>
-                            <option value="CATALOG_MANAGER">CATALOG_MANAGER (Formulations & Pricing)</option>
-                            <option value="FULFILLMENT_OPERATOR">FULFILLMENT_OPERATOR (Orders & Dispatch)</option>
-                            <option value="SUPPORT_AGENT">SUPPORT_AGENT (Customer Concierge)</option>
-                            <option value="FINANCE_OFFICER">FINANCE_OFFICER (Accounts & Disbursals)</option>
-                            <option value="CUSTOMER">CUSTOMER (Standard Client Shopper)</option>
-                          </select>
-                        </td>
-                        <td className="p-3 text-right">
-                          <button
-                            type="button"
-                            disabled={updatingUserId === user.id}
-                            onClick={() => {
-                              const sel = document.getElementById(`role-select-${user.id}`) as HTMLSelectElement;
-                              if (sel && sel.value) {
-                                handleUpdateUserRole(user.id, sel.value);
-                              }
-                            }}
-                            className="px-3 py-1 bg-[#1C1917] hover:bg-[#8C6D3B] disabled:opacity-50 text-[#F9F6F0] text-[10px] uppercase font-mono tracking-wider transition-colors cursor-pointer"
-                          >
-                            {updatingUserId === user.id ? 'Saving...' : 'Update Role'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
           </div>
         </div>
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 import { STAFF_USERS } from '@/data/admin-data';
 
@@ -11,30 +11,36 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const { login } = useAdmin();
 
-  const [email, setEmail] = useState('farah@seyven.com');
-  const [password, setPassword] = useState('••••••••••••');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
-    setTimeout(() => {
-      const success = login(email, password);
-      if (success) {
-        router.push('/');
-      } else {
-        setError('Invalid staff credentials. Access restricted to authorized operators.');
-        setIsSubmitting(false);
-      }
-    }, 400);
+    const result = await login(email, password);
+    if (result.success) {
+      router.push('/');
+    } else {
+      setError(result.error || 'Invalid staff credentials. Access restricted to authorized operators.');
+      setIsSubmitting(false);
+    }
   };
 
-  const handleQuickDemo = (demoEmail: string) => {
-    login(demoEmail, 'demo');
-    router.push('/');
+  const handleQuickDemo = async (demoEmail: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    const result = await login(demoEmail, 'demo');
+    if (result.success) {
+      router.push('/');
+    } else {
+      setError(result.error || 'Demo login failed.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -80,16 +86,17 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase font-mono tracking-wider text-[#1C1917]/70 block">
-                Operator Email
+                Operator Email or Phone
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#1C1917]/40" />
                 <input
-                  type="email"
+                  type="text"
                   required
+                  placeholder="operator@theseyven.com or 017XXXXXXXX"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-[#F9F6F0] border border-[#E6DFD5] text-xs font-mono text-[#1C1917] focus:border-[#C7A97B] focus:outline-none transition-colors"
+                  className="w-full pl-9 pr-3 py-2 bg-[#F9F6F0] border border-[#E6DFD5] text-xs font-mono text-[#1C1917] placeholder:text-[#1C1917]/30 focus:border-[#C7A97B] focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -101,12 +108,20 @@ export default function AdminLoginPage() {
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#1C1917]/40" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
+                  placeholder="Enter your security passcode"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-[#F9F6F0] border border-[#E6DFD5] text-xs font-mono text-[#1C1917] focus:border-[#C7A97B] focus:outline-none transition-colors"
+                  className="w-full pl-9 pr-10 py-2 bg-[#F9F6F0] border border-[#E6DFD5] text-xs font-mono text-[#1C1917] placeholder:text-[#1C1917]/30 focus:border-[#C7A97B] focus:outline-none transition-colors"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1C1917]/40 hover:text-[#1C1917] transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

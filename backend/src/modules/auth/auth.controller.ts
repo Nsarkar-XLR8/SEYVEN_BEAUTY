@@ -1,10 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { ForgotPasswordDto, LoginDto, RefreshTokenDto, RegisterDto, ResetPasswordDto, SendOtpDto, VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard, AuthenticatedRequest } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Request } from 'express';
+
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -89,5 +93,26 @@ export class AuthController {
   getProfile(@CurrentUser() user: { userId: string }) {
     return this.authService.getProfile(user.userId);
   }
+
+  @Get('users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Super Admin: List all registered users for role governance' })
+  @ApiResponse({ status: 200, description: 'List of registered users' })
+  listUsers(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.authService.listUsers(Number(page) || 1, Number(limit) || 50);
+  }
+
+  @Patch('users/:userId/role')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Super Admin: Promote or change user role' })
+  @ApiResponse({ status: 200, description: 'User role updated successfully' })
+  updateUserRole(@Param('userId') userId: string, @Body('role') role: UserRole) {
+    return this.authService.updateUserRole(userId, role);
+  }
 }
+
 

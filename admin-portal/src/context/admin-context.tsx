@@ -31,7 +31,7 @@ interface AdminContextType {
   staffUser: StaffUser | null;
   isAuthenticated: boolean;
   isReady: boolean;
-  login: (email: string, pass: string) => boolean;
+  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchRole: (role: StaffRole) => void;
   hasRole: (allowedRoles: StaffRole[]) => boolean;
@@ -158,6 +158,12 @@ function safeStorageSet(key: string, value: string): boolean {
   }
 }
 
+function getAdminAuthHeader(): string {
+  if (typeof window === 'undefined') return 'Bearer admin_jwt_demo';
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  return token ? `Bearer ${token}` : 'Bearer admin_jwt_demo';
+}
+
 function sanitizeProductsForStorage(prods: AdminProduct[]): AdminProduct[] {
   return prods.map((p) => {
     const isBulkyImg = p.imageUrl && p.imageUrl.startsWith('data:image') && p.imageUrl.length > 500;
@@ -193,7 +199,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${apiUrl}/orders`, {
         headers: {
-          Authorization: `Bearer admin_jwt_demo`,
+          Authorization: getAdminAuthHeader(),
         },
       });
       if (res.ok) {
@@ -268,10 +274,15 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       }
 
       const savedStaff = localStorage.getItem(STORAGE_KEYS.STAFF);
-      if (savedStaff) {
-        setStaffUser(JSON.parse(savedStaff));
+      const savedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
+      if (savedStaff && savedToken) {
+        try {
+          setStaffUser(JSON.parse(savedStaff));
+        } catch {
+          setStaffUser(null);
+        }
       } else {
-        setStaffUser(STAFF_USERS[0]); // Default to Farah Rahman
+        setStaffUser(null);
       }
 
       const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
@@ -310,20 +321,81 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = (email: string, _pass: string) => {
-    const found = STAFF_USERS.find((s) => s.email.toLowerCase() === email.toLowerCase());
-    if (found) {
-      setStaffUser(found);
-      safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(found));
-      safeStorageSet(STORAGE_KEYS.TOKEN, 'admin_jwt_' + found.id);
-      return true;
+  const login = async (identifier: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.theseyven.com/api/v1';
+
+    // Demo bypass for quick shift testing
+    if (pass === 'demo') {
+      const found = STAFF_USERS.find((s) => s.email.toLowerCase() === identifier.toLowerCase());
+      const staff = found || STAFF_USERS[0];
+      setStaffUser(staff);
+      safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(staff));
+      safeStorageSet(STORAGE_KEYS.TOKEN, 'admin_jwt_' + staff.id);
+      return { success: true };
     }
-    // Demo auto-assign Farah
-    const defaultStaff = STAFF_USERS[0];
-    setStaffUser(defaultStaff);
-    safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(defaultStaff));
-    safeStorageSet(STORAGE_KEYS.TOKEN, 'admin_jwt_demo');
-    return true;
+
+    try {
+      const res = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: identifier.trim(), password: pass }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        return {
+          success: false,
+          error: data?.message || data?.error || 'Authentication failed. Please verify email and password.',
+        };
+      }
+
+      const user = data.user;
+      const role = user?.role;
+
+      if (!role || role === 'CUSTOMER') {
+        return {
+          success: false,
+          error: 'Access restricted: Your account has Customer role. Contact administrator to grant executive staff permissions.',
+        };
+      }
+
+      const initials = (user.fullName || user.email || 'SM')
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+
+      const staff: StaffUser = {
+        id: user.id,
+        name: user.fullName || user.email?.split('@')[0] || 'Staff Member',
+        email: user.email || identifier,
+        role: role as StaffRole,
+        avatar: initials || 'SO',
+        title: role === 'SUPER_ADMIN' ? 'Managing Director / Super Admin' : `${role.replace('_', ' ')} Operator`,
+      };
+
+      setStaffUser(staff);
+      safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(staff));
+      if (data?.tokens?.accessToken) {
+        safeStorageSet(STORAGE_KEYS.TOKEN, data.tokens.accessToken);
+      }
+      return { success: true };
+    } catch {
+      // Offline fallback: check if matches static staff
+      const found = STAFF_USERS.find((s) => s.email.toLowerCase() === identifier.toLowerCase());
+      if (found) {
+        setStaffUser(found);
+        safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(found));
+        safeStorageSet(STORAGE_KEYS.TOKEN, 'admin_jwt_' + found.id);
+        return { success: true };
+      }
+      return {
+        success: false,
+        error: 'Unable to reach authentication server. Please check internet connection.',
+      };
+    }
   };
 
   const logout = () => {
@@ -357,7 +429,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer admin_jwt_demo`,
+        Authorization: getAdminAuthHeader(),
       },
       body: JSON.stringify({ status: nextStatus, notes }),
     }).catch(() => {});
@@ -402,7 +474,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer admin_jwt_demo`,
+        Authorization: getAdminAuthHeader(),
       },
       body: JSON.stringify({ status: 'SHIPPED', trackingCode: genId }),
     }).catch(() => {});
@@ -516,7 +588,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer admin_jwt_demo',
+          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify({
           nameEn: cat.nameEn,
@@ -568,7 +640,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${apiUrl}/catalog/categories/${categoryId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: 'Bearer admin_jwt_demo',
+          Authorization: getAdminAuthHeader(),
         },
       });
 
@@ -599,7 +671,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer admin_jwt_demo',
+          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify(prod),
       });
@@ -636,7 +708,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${apiUrl}/catalog/products/${productId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: 'Bearer admin_jwt_demo',
+          Authorization: getAdminAuthHeader(),
         },
       });
 
@@ -684,7 +756,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer admin_jwt_demo',
+          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify({ state }),
       });
@@ -723,7 +795,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer admin_jwt_demo',
+          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify({
           priceBdt: newPriceBdt,
@@ -757,7 +829,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer admin_jwt_demo',
+          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify(updatedFields),
       });

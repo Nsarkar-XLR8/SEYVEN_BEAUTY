@@ -447,4 +447,65 @@ export class AuthService {
       tokens,
     };
   }
+
+  /**
+   * Super Admin only: List all registered users for staff and role management.
+   */
+  async listUsers(page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+    const [total, users] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.findMany({
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          phone: true,
+          email: true,
+          fullName: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+    return { success: true, total, page, limit, users };
+  }
+
+  /**
+   * Super Admin only: Update a user's role (e.g. promote CUSTOMER to SUPER_ADMIN).
+   */
+  async updateUserRole(userId: string, newRole: UserRole) {
+    if (!Object.values(UserRole).includes(newRole)) {
+      throw new BadRequestException(
+        `Invalid role: "${newRole}". Valid roles are: ${Object.values(UserRole).join(', ')}`,
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found.`);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: newRole },
+      select: {
+        id: true,
+        phone: true,
+        email: true,
+        fullName: true,
+        role: true,
+        updatedAt: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: `User ${updated.fullName || updated.email || updated.phone} role updated to ${updated.role}.`,
+      user: updated,
+    };
+  }
 }
+

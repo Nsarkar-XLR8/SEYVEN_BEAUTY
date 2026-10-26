@@ -1,0 +1,67 @@
+# ========================================================
+# SEYVEN Monorepo Root .gitignore
+# Covers: backend, frontend, admin-portal
+# ========================================================
+
+# Dependencies (all projects)
+node_modules/
+**/node_modules/
+
+# Production Build Outputs
+dist/
+**/dist/
+build/
+**/build/
+.next/
+**/.next/
+out/
+**/out/
+tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo
+
+# Environment & Secret Credentials (CRITICAL: Never commit secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.local
+**/.env.*.local
+**/.env.production
+**/.env.development
+
+# Preserve example environment template files
+!**/.env.example
+
+# Local Data Storage & Ephemeral DB volumes
+postgres_data/
+**/postgres_data/
+redis_data/
+**/redis_data/
+minio_data/
+**/minio_data/
+backend/data/local-orders.json
+
+# Logs, Diagnostic Dumps & Debugging
+*.log
+**/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test & Coverage Reports
+coverage/
+**/coverage/
+.nyc_output/
+
+# IDE, OS & System Metadata
+.DS_Store
+Thumbs.db
+.vscode/
+**/.vscode/
+.idea/
+**/.idea/
+*.swp
+*.swo

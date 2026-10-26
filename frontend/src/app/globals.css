@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-silk: #F9F6F0;
+  --color-brand-espresso: #1C1917;
+  --color-brand-champagne: #C7A97B;
+  --color-brand-stone: #E6DFD5;
+
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-bangla: "Noto Serif Bengali", "Hind Siliguri", serif;
+
+  --letter-spacing-luxury: 0.2em;
+  --letter-spacing-editorial: 0.28em;
+  --letter-spacing-widest: 0.35em;
+}
+
+/* SEYVEN Luxury Design System Tokens */
+:root {
+  --background: #F9F6F0;
+  --foreground: #1C1917;
+}
+
+html {
+  background-color: #F9F6F0;
+  color: #1C1917;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+body {
+  background-color: #F9F6F0;
+  color: #1C1917;
+  overflow-x: clip;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-overflow-scrolling: touch;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+/* Haute Luxury Numeric Typography: Ensure all numbers across serif and sans are upright and never broken */
+h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea,
+.font-serif,
+.font-sans,
+.font-mono {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+/* Custom Editorial Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F9F6F0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E6DFD5;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C7A97B;
+}
+
+/* Custom Utility Classes for Luxury Spacing */
+.tracking-luxury {
+  letter-spacing: 0.2em;
+}
+
+.tracking-editorial {
+  letter-spacing: 0.28em;
+}
+
+.tracking-widest-brand {
+  letter-spacing: 0.35em;
+}
+
+/* Editorial Glassmorphism */
+.glass-silk {
+  background-color: rgba(249, 246, 240, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ==========================================================================
+   SEYVEN Single-Page Clean Print & PDF Layout Stylesheet
+   Guarantees strict 1-page A4 output, suppresses screen chrome, ensures crisp typography.
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    color: #1C1917 !important;
+    font-size: 10pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide all screen elements */
+  header,
+  nav,
+  footer,
+  aside,
+  .no-print,
+  #screen-checkout-view,
+  [data-no-print="true"] {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Display strictly the dedicated 1-page Order Receipt */
+  #seyven-order-receipt-document {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 275mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: avoid !important;
+    break-inside: avoid !important;
+    overflow: hidden !important;
+  }
+}
+

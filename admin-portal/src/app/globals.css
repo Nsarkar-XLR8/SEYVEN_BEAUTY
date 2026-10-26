@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-silk: #F9F6F0;
+  --color-brand-espresso: #1C1917;
+  --color-brand-champagne: #C7A97B;
+  --color-brand-stone: #E6DFD5;
+
+  --font-serif: "Cinzel", "Playfair Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Space Mono", monospace;
+
+  --letter-spacing-luxury: 0.2em;
+  --letter-spacing-editorial: 0.28em;
+}
+
+:root {
+  --background: #F9F6F0;
+  --foreground: #1C1917;
+}
+
+html {
+  background-color: #F9F6F0;
+  color: #1C1917;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+body {
+  background-color: #F9F6F0;
+  color: #1C1917;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+/* Haute Luxury Numeric Typography */
+h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea,
+.font-serif,
+.font-sans,
+.font-mono {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #F9F6F0;
+}
+::-webkit-scrollbar-thumb {
+  background: #E6DFD5;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C7A97B;
+}
+
+/* 4x6 inch (100mm x 150mm) High-Density Thermal Shipping Label Stylesheet */
+@media print {
+  @page {
+    size: 100mm 150mm;
+    margin: 0mm;
+  }
+
+  html,
+  body {
+    width: 100mm !important;
+    height: 150mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Completely eliminate all shell layout UI elements */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Exclusively render the 100mm x 150mm shipping label container */
+  #thermal-print-stage,
+  #thermal-print-stage * {
+    visibility: visible !important;
+  }
+
+  #thermal-print-stage {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100mm !important;
+    height: 150mm !important;
+    max-width: 100mm !important;
+    max-height: 150mm !important;
+    margin: 0 !important;
+    padding: 3mm !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: hidden !important;
+    z-index: 99999999 !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

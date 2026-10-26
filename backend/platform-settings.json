@@ -1,0 +1,16 @@
+{
+  "isVatEnabled": false,
+  "vatRatePercent": 5,
+  "isVatInclusive": true,
+  "standardDeliveryDhakaBdt": 70,
+  "standardDeliveryOutsideBdt": 130,
+  "freeDeliveryThresholdBdt": 2000,
+  "supportPhone": "+880 9612 000000",
+  "supportWhatsApp": "+880 1700 000000",
+  "isCampaignActive": false,
+  "campaignTitle": "Festive Eid Sanctuary Privilege",
+  "campaignDiscountPercent": 7,
+  "campaignStartDate": "2026-10-19T06:45:36.189Z",
+  "campaignEndDate": "2026-11-03T06:45:36.190Z",
+  "updatedAt": "2026-10-24T13:51:21.693Z"
+}

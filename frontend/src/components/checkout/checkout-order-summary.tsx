@@ -1,0 +1,257 @@
+'use client';
+
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { ChevronDown, Sparkles, ShieldCheck } from 'lucide-react';
+import { useCart } from '@/context/cart-context';
+import { useLanguage } from '@/context/language-context';
+import { formatBdt } from '@/lib/formatters';
+
+interface CheckoutOrderSummaryProps {
+  deliveryFeeBdt: number;
+  loyaltyDiscountBdt: number;
+}
+
+function BdtPrice({
+  amount,
+  prefix = '',
+  size = 'sm',
+  isHighlight = false,
+  isDiscount = false,
+  className = '',
+}: {
+  amount: number;
+  prefix?: string;
+  size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl';
+  isHighlight?: boolean;
+  isDiscount?: boolean;
+  className?: string;
+}) {
+  const formattedNumber = Math.round(Math.abs(amount)).toLocaleString('en-IN');
+
+  if (size === 'xl') {
+    return (
+      <span className={`inline-flex items-baseline font-sans tabular-nums ${className}`}>
+        {prefix && <span className="mr-0.5 text-base font-normal">{prefix}</span>}
+        <span className="text-sm font-normal text-[#C7A97B] mr-1 select-none">৳</span>
+        <span className="text-xl sm:text-2xl font-semibold tracking-tight text-[#1C1917]">
+          {formattedNumber}
+        </span>
+      </span>
+    );
+  }
+
+  if (size === 'base') {
+    return (
+      <span className={`inline-flex items-baseline font-sans tabular-nums ${className}`}>
+        {prefix && <span className="mr-0.5 text-xs font-normal">{prefix}</span>}
+        <span className="text-xs font-normal text-[#C7A97B] mr-1 select-none">৳</span>
+        <span className="text-sm font-semibold tracking-tight text-[#1C1917]">
+          {formattedNumber}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex items-baseline font-sans tabular-nums ${
+        isDiscount
+          ? 'text-emerald-700 font-medium'
+          : isHighlight
+          ? 'text-[#1C1917] font-semibold'
+          : 'text-[#1C1917] font-medium'
+      } ${className}`}
+    >
+      {prefix && <span className="mr-0.5">{prefix}</span>}
+      <span
+        className={`select-none mr-0.5 ${
+          isDiscount
+            ? 'text-emerald-600/80 text-[11px]'
+            : 'text-[#1C1917]/50 text-[11px]'
+        }`}
+      >
+        ৳
+      </span>
+      <span className={size === 'xs' ? 'text-[11px]' : 'text-xs'}>
+        {formattedNumber}
+      </span>
+    </span>
+  );
+}
+
+export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: CheckoutOrderSummaryProps) {
+  const { lang, t } = useLanguage();
+  const {
+    items,
+    subtotalBdt,
+    discountBdt,
+    privilegeCode,
+    activePrivilegeLabel,
+    removePrivilege,
+    settings,
+    vatBdt,
+  } = useCart();
+  const [isItemsExpanded, setIsItemsExpanded] = useState(false);
+
+  const netTotal = Math.max(0, subtotalBdt - discountBdt - loyaltyDiscountBdt + deliveryFeeBdt);
+
+  return (
+    <div className="bg-[#F9F6F0] border border-[#E6DFD5] p-4 sm:p-6 space-y-5">
+      {/* Mobile Collapsible Header */}
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setIsItemsExpanded(!isItemsExpanded)}
+          className="flex items-center space-x-2 text-left group cursor-pointer"
+        >
+          <span className="text-xs font-serif uppercase tracking-[0.2em] font-medium text-[#1C1917] group-hover:text-[#C7A97B] transition-colors">
+            {t('SANCTUARY BAG SUMMARY', 'ব্যাগ-এর বিবরণ')} ({items.length})
+          </span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-[#1C1917]/60 transition-transform duration-200 ${
+              isItemsExpanded ? 'rotate-180 text-[#C7A97B]' : ''
+            }`}
+          />
+        </button>
+
+        <BdtPrice amount={netTotal} size="base" />
+      </div>
+
+      {/* Item List (Always visible on desktop, collapsible on mobile) */}
+      <div className={`${isItemsExpanded ? 'block' : 'hidden lg:block'} space-y-3 pt-1 border-t border-[#E6DFD5]/70`}>
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center space-x-3 text-xs py-1.5">
+            <div className="relative w-12 h-14 bg-[#E6DFD5]/30 border border-[#E6DFD5] shrink-0 overflow-hidden">
+              {item.image ? (
+                <Image src={item.image} alt={item.titleEn} fill sizes="48px" className="object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[8px] font-serif text-[#1C1917]/40">
+                  SEYVEN
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0 space-y-0.5">
+              <p className="font-serif uppercase tracking-wider text-[#1C1917] font-medium truncate">
+                {lang === 'bn' ? item.titleBn : item.titleEn}
+              </p>
+              <p className="text-[10px] text-[#1C1917]/60 tracking-wider">
+                {item.volume} • QTY: {item.quantity}
+              </p>
+            </div>
+
+            <div className="shrink-0">
+              <BdtPrice amount={item.priceBdt * item.quantity} />
+            </div>
+          </div>
+        ))}
+
+        {/* Complimentary Gift With Purchase badge for orders 2500+ */}
+        {subtotalBdt >= 2500 && (
+          <div className="p-2.5 bg-[#C7A97B]/10 border border-[#C7A97B]/40 flex items-center space-x-2 text-[10px] text-[#1C1917]">
+            <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
+            <span className="font-medium tracking-wide">
+              {t('[ COMPLIMENTARY LUXURY MINIATURE INCLUDED ]', '[ কমপ্লিমেন্টারি মিনি সাইজ গিফট অন্তর্ভুক্ত ]')}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Active Sanctuary Client Privilege Pass (Auto-honored from private link) */}
+      {privilegeCode && (
+        <div className="pt-2 border-t border-[#E6DFD5]/80">
+          <div className="p-2.5 bg-[#1C1917] text-[#FAF8F5] border border-[#C7A97B]/60 flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
+              <span className="font-serif tracking-wider text-[11px] uppercase">
+                {t('SANCTUARY PRIVILEGE HONORED:', 'প্রিভিলেজ সক্রিয়:')}{' '}
+                <strong className="font-mono text-[#C7A97B] font-semibold">{privilegeCode}</strong>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={removePrivilege}
+              className="text-[10px] text-[#FAF8F5]/60 hover:text-white underline cursor-pointer tracking-wider transition-colors"
+            >
+              {t('REMOVE', 'মুছুন')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Financial Breakdown Table */}
+      <div className="space-y-2.5 pt-1 text-xs">
+        {/* Subtotal */}
+        <div className="flex justify-between items-center text-[#1C1917]/80">
+          <span className="font-light">{t('Subtotal (Formulations)', 'প্রোডাক্টের মোট মূল্য')}</span>
+          <BdtPrice amount={subtotalBdt} />
+        </div>
+
+        {/* Client Privilege Discount */}
+        {discountBdt > 0 && (
+          <div className="flex justify-between items-center text-[#8C6D3B]">
+            <span className="flex items-center gap-1.5 font-light">
+              <Sparkles className="w-3.5 h-3.5 text-[#C7A97B]" />
+              <span className="font-serif">
+                {activePrivilegeLabel || t('Sanctuary Client Privilege', 'স্যাকচুয়ারি ক্লায়েন্ট প্রিভিলেজ')}
+              </span>
+            </span>
+            <BdtPrice amount={discountBdt} prefix="-" isDiscount />
+          </div>
+        )}
+
+        {/* Loyalty Discount */}
+        {loyaltyDiscountBdt > 0 && (
+          <div className="flex justify-between items-center text-emerald-800">
+            <span className="flex items-center gap-1.5 font-light">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
+              {t('VIP Loyalty Points Redeemed', 'লয়্যালটি পয়েন্টস ছাড়')}
+            </span>
+            <BdtPrice amount={loyaltyDiscountBdt} prefix="-" isDiscount />
+          </div>
+        )}
+
+        {/* Delivery Fee */}
+        <div className="flex justify-between items-center text-[#1C1917]/80">
+          <span className="font-light">{t('Delivery Protocol Fee', 'ডেলিভারি চার্জ')}</span>
+          {deliveryFeeBdt === 0 ? (
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-xs">
+              {t('COMPLIMENTARY', 'ফ্রি ডেলিভারি')}
+            </span>
+          ) : (
+            <BdtPrice amount={deliveryFeeBdt} />
+          )}
+        </div>
+
+        {/* Government VAT notice (Strictly hidden when turned OFF by Admin) */}
+        {settings?.isVatEnabled && vatBdt > 0 && (
+          <div className="flex justify-between items-center text-[#1C1917]/60 text-[11px] pt-0.5">
+            <span className="font-light">
+              {t(
+                `Government VAT (${settings.vatRatePercent}% Inclusive)`,
+                `সরকারি ভ্যাট (${settings.vatRatePercent}% অন্তর্ভুক্ত)`
+              )}
+            </span>
+            <BdtPrice amount={vatBdt} size="xs" className="text-[#1C1917]/60" />
+          </div>
+        )}
+
+        {/* Net Payable Luxury Box */}
+        <div className="mt-3.5 pt-3.5 pb-3 px-3.5 bg-[#E6DFD5]/25 border border-[#E6DFD5] flex justify-between items-baseline">
+          <div className="space-y-0.5">
+            <span className="text-xs uppercase tracking-[0.2em] font-medium text-[#1C1917] block">
+              {t('NET PAYABLE TOTAL', 'সর্বমোট প্রদেয়')}
+            </span>
+            <span className="text-[9px] uppercase tracking-wider text-[#C7A97B] font-medium block">
+              {settings?.isVatEnabled && vatBdt > 0
+                ? 'OFFICIAL NBR TAX INVOICE INCLUDED'
+                : t('DIRECT FORMULATION IMPORT', 'সরাসরি আমদানিকৃত পণ্য')}
+            </span>
+          </div>
+          <BdtPrice amount={netTotal} size="xl" isHighlight />
+        </div>
+      </div>
+    </div>
+  );
+}

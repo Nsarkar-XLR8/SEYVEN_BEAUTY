@@ -111,7 +111,7 @@ export class NewsletterController {
       <p style="margin-top: 12px; font-size: 12px; color: #8E8B85;">
         You can always rejoin our sanctuary anytime from the footer of our boutique.
       </p>
-      <a href="http://localhost:3000">Return to SEYVEN Boutique</a>
+      <a href="${process.env.FRONTEND_URL || 'https://theseyven.com'}">Return to SEYVEN Boutique</a>
     </div>
   </div>
 </body>

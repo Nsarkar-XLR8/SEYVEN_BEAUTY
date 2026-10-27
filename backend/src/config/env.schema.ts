@@ -5,6 +5,8 @@ export const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   API_PREFIX: z.string().default('api/v1'),
   CORS_ORIGIN: z.string().default('*'),
+  FRONTEND_URL: z.string().default('https://theseyven.com'),
+  BACKEND_URL: z.string().default('https://api.theseyven.com/api/v1'),
 
   DATABASE_URL: z.string().url().default('postgresql://seyven_user:seyven_secret_pass@localhost:5432/seyven_db?schema=public'),
 

@@ -37,8 +37,8 @@ export class NewsletterEmailService {
 
     this.senderEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || process.env.RESEND_FROM_EMAIL || 'SEYVEN Sanctuary <onboarding@resend.dev>';
     this.replyToEmail = this.configService.get<string>('RESEND_REPLY_TO') || process.env.RESEND_REPLY_TO || process.env.RESEND_EMAIL || 'officialseyven@gmail.com';
-    this.appUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    this.apiUrl = process.env.BACKEND_URL || 'http://localhost:5000/api/v1';
+    this.appUrl = this.configService.get<string>('FRONTEND_URL') || process.env.FRONTEND_URL || 'https://theseyven.com';
+    this.apiUrl = this.configService.get<string>('BACKEND_URL') || process.env.BACKEND_URL || 'https://api.theseyven.com/api/v1';
   }
 
   /**
@@ -48,7 +48,7 @@ export class NewsletterEmailService {
   generateNewsletterHtml(options: SendNewsletterEmailOptions): string {
     const { recipientName, subject, previewText, contentHtml, discountCode, discountBanner, unsubscribeToken } = options;
     const unsubscribeUrl = `${this.apiUrl}/newsletter/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
-    const catalogUrl = `${this.appUrl}/catalog`;
+    const catalogUrl = `${this.appUrl}/catalog${discountCode ? `?privilege=${encodeURIComponent(discountCode)}` : ''}`;
 
     const platformSettings = this.settingsService.getSettings();
     const supportPhone = platformSettings.supportPhone;

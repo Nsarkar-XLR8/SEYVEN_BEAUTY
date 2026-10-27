@@ -21,31 +21,57 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const host = this.configService.get<string>('REDIS_HOST', 'localhost');
-      const port = this.configService.get<number>('REDIS_PORT', 6379);
-      const password = this.configService.get<string>('REDIS_PASSWORD', '');
+      const redisUrl = this.configService.get<string>('REDIS_URL');
 
-      this.client = new Redis({
-        host,
-        port,
-        password: password || undefined,
-        retryStrategy: (times) => {
-          if (times > 3) {
-            this.logger.warn(`Redis connection retry limit reached (${times}). Falling back.`);
-            return null;
-          }
-          return Math.min(times * 100, 2000);
-        },
-        lazyConnect: true,
-      });
+      if (redisUrl && redisUrl.trim().length > 0) {
+        const isTls = redisUrl.startsWith('rediss://') || redisUrl.includes('upstash.io');
+        this.client = new Redis(redisUrl, {
+          tls: isTls ? { rejectUnauthorized: false } : undefined,
+          retryStrategy: (times) => {
+            if (times > 3) {
+              this.logger.warn(`Redis connection retry limit reached (${times}). Falling back.`);
+              return null;
+            }
+            return Math.min(times * 100, 2000);
+          },
+          lazyConnect: true,
+        });
+      } else {
+        const host = this.configService.get<string>('REDIS_HOST', 'localhost');
+        const port = this.configService.get<number>('REDIS_PORT', 6379);
+        const password = this.configService.get<string>('REDIS_PASSWORD', '');
+        const isTls =
+          this.configService.get<string>('REDIS_TLS') === 'true' ||
+          host.includes('upstash.io');
+
+        this.client = new Redis({
+          host,
+          port,
+          password: password || undefined,
+          tls: isTls ? { rejectUnauthorized: false } : undefined,
+          retryStrategy: (times) => {
+            if (times > 3) {
+              this.logger.warn(`Redis connection retry limit reached (${times}). Falling back.`);
+              return null;
+            }
+            return Math.min(times * 100, 2000);
+          },
+          lazyConnect: true,
+        });
+      }
 
       this.client.on('error', (err) => {
         this.logger.warn(`Redis client error: ${err.message}. Operating with fallback.`);
       });
 
-      this.client.connect().catch((err) => {
-        this.logger.warn(`Redis initial connect failed: ${err.message}. Will use in-memory store.`);
-      });
+      this.client
+        .connect()
+        .then(() => {
+          this.logger.log(' Connected to Redis database successfully');
+        })
+        .catch((err) => {
+          this.logger.warn(`Redis initial connect failed: ${err.message}. Will use in-memory store.`);
+        });
     } catch (err) {
       this.logger.warn(`Failed to initialize Redis client: ${(err as Error).message}`);
     }

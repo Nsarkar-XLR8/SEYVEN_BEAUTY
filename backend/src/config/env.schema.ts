@@ -18,6 +18,8 @@ export const envSchema = z.object({
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
   REDIS_PASSWORD: z.string().optional().default(''),
+  REDIS_URL: z.string().optional().default(''),
+  REDIS_TLS: z.string().optional().default('false'),
 
   // Cloudinary Media CDN & Asset Storage
   CLOUDINARY_CLOUD_NAME: z.string().optional().default('uoh4c2xb'),

@@ -197,20 +197,20 @@ export default function HomePage() {
                 href={concierge.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-7 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2.5 rounded-none"
+                className="group w-full sm:w-auto px-7 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2.5 rounded-none cursor-pointer"
               >
-                <MessageCircle className="w-4 h-4 text-[#C7A97B]" />
+                <MessageCircle className="w-4 h-4 text-[#C7A97B] transition-transform duration-300 group-hover:scale-110" />
                 <span>{t(`SKINCARE CONSULTATION (${concierge.shortLabel})`, `${concierge.shortLabel} কনসালটেন্সি`)}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
               </a>
 
               <a
                 href={settings?.supportFacebook || 'https://www.facebook.com/seyvenofficial'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-6 py-3.5 bg-transparent hover:bg-[#1C1917]/5 border border-[#1C1917]/30 hover:border-[#1C1917] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none"
+                className="group w-full sm:w-auto px-6 py-3.5 bg-transparent hover:bg-[#1C1917] text-[#1C1917] hover:text-[#FAF8F5] border border-[#1C1917]/30 hover:border-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none cursor-pointer"
               >
-                <FacebookIcon className="w-3.5 h-3.5 text-[#1C1917]/70" />
+                <FacebookIcon className="w-3.5 h-3.5 text-[#1C1917]/70 group-hover:text-[#FAF8F5] transition-colors duration-300" />
                 <span>{t('FACEBOOK PAGE', 'ফেসবুক পেইজ')}</span>
               </a>
 
@@ -218,9 +218,9 @@ export default function HomePage() {
                 href={settings?.supportInstagram || 'https://www.instagram.com/seyven_beauty/'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-6 py-3.5 bg-transparent hover:bg-[#1C1917]/5 border border-[#1C1917]/30 hover:border-[#1C1917] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none"
+                className="group w-full sm:w-auto px-6 py-3.5 bg-transparent hover:bg-[#1C1917] text-[#1C1917] hover:text-[#FAF8F5] border border-[#1C1917]/30 hover:border-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none cursor-pointer"
               >
-                <InstagramIcon className="w-3.5 h-3.5 text-[#1C1917]/70" />
+                <InstagramIcon className="w-3.5 h-3.5 text-[#1C1917]/70 group-hover:text-[#FAF8F5] transition-colors duration-300" />
                 <span>{t('INSTAGRAM @SEYVEN_BEAUTY', 'ইনস্টাগ্রাম')}</span>
               </a>
             </div>

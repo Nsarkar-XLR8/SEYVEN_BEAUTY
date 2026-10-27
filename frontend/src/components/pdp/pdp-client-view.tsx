@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/language-context';
 import { getProductBySlug, getAllProducts, createDynamicProductDetail, ProductDetail } from '@/data/products';
 import { PdpGallery } from '@/components/pdp/pdp-gallery';
 import { PdpMetaBlock } from '@/components/pdp/pdp-meta-block';
+import { PdpDeliveryEstimator } from '@/components/pdp/pdp-delivery-estimator';
 import { PdpWaitlistModal } from '@/components/pdp/pdp-waitlist-modal';
 import { PdpJsonLd } from '@/components/pdp/pdp-jsonld';
 import { ProductCard } from '@/components/storefront/product-card';
@@ -137,6 +138,9 @@ export function PdpClientView({ slug }: PdpClientViewProps) {
               product={product}
               onOpenWaitlist={() => setIsWaitlistOpen(true)}
             />
+
+            {/* Nationwide Delivery Protocol & Tariff Estimator */}
+            <PdpDeliveryEstimator productPriceBdt={product.priceBdt} />
           </div>
 
         </div>

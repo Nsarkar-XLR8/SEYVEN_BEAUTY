@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { Truck, ShieldCheck, Sparkles } from 'lucide-react';
+import { Truck } from 'lucide-react';
 import { formatBdt } from '@/lib/formatters';
 import { useCart } from '@/context/cart-context';
 import { BRAND } from '@/lib/constants';
@@ -15,11 +14,9 @@ export function PdpDeliveryEstimator({ productPriceBdt }: PdpDeliveryEstimatorPr
 
   const insideDhakaFee = settings?.standardDeliveryDhakaBdt ?? BRAND.thresholds.standardDeliveryDhakaBdt;
   const outsideDhakaFee = settings?.standardDeliveryOutsideBdt ?? BRAND.thresholds.standardDeliveryOutsideBdt;
-  const freeThreshold = settings?.freeDeliveryThresholdBdt ?? BRAND.thresholds.freeDeliveryBdt;
-  const isQualifiedForFree = productPriceBdt >= freeThreshold;
 
   return (
-    <div className="p-4 sm:p-5 bg-[#F9F6F0] border border-[#E6DFD5] space-y-4">
+    <div className="p-4 sm:p-5 bg-[#F9F6F0] border border-[#E6DFD5] space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2 text-xs uppercase tracking-[0.2em] font-medium text-[#1C1917]">
@@ -39,11 +36,7 @@ export function PdpDeliveryEstimator({ productPriceBdt }: PdpDeliveryEstimatorPr
             Inside Dhaka
           </span>
           <p className="text-xs font-serif font-bold text-[#1C1917]">
-            {isQualifiedForFree ? (
-              <span className="text-emerald-700">FREE</span>
-            ) : (
-              formatBdt(insideDhakaFee)
-            )}
+            {formatBdt(insideDhakaFee)}
           </p>
           <span className="text-[10px] text-[#1C1917]/60 block">
             1–2 Days (Next Day Available)
@@ -56,36 +49,11 @@ export function PdpDeliveryEstimator({ productPriceBdt }: PdpDeliveryEstimatorPr
             Outside Dhaka (All Over BD)
           </span>
           <p className="text-xs font-serif font-bold text-[#1C1917]">
-            {isQualifiedForFree ? (
-              <span className="text-emerald-700">FREE</span>
-            ) : (
-              formatBdt(outsideDhakaFee)
-            )}
+            {formatBdt(outsideDhakaFee)}
           </p>
           <span className="text-[10px] text-[#1C1917]/60 block">
             2–3 Days (Doorstep Transit)
           </span>
-        </div>
-      </div>
-
-      {/* Free Delivery / Privilege Indicator */}
-      <div className="pt-2 border-t border-[#E6DFD5]/70 flex items-center justify-between text-[11px] text-[#1C1917]/80">
-        <div className="flex items-center space-x-1.5">
-          {isQualifiedForFree ? (
-            <>
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-              <span className="font-medium text-emerald-800">
-                This item qualifies for Complimentary Free Delivery!
-              </span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
-              <span>
-                Free Delivery nationwide on orders over <strong>{formatBdt(freeThreshold)}</strong>
-              </span>
-            </>
-          )}
         </div>
       </div>
     </div>

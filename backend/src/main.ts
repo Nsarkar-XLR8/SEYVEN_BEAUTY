@@ -144,10 +144,14 @@ async function bootstrap() {
   );
 
   await app.listen(port);
-  logger.log(`🚀 SEYVEN Backend Engine is running on http://localhost:${port}/${apiPrefix}`);
-  logger.log(`📖 Scalar API Reference is available at http://localhost:${port}/docs (or /reference)`);
-  logger.log(`📄 Raw OpenAPI schema at http://localhost:${port}/openapi.json`);
-  logger.log(`🩺 Health check endpoints live at http://localhost:${port}/health/live & /health/ready`);
+  const host =
+    process.env.API_BASE_URL ||
+    (process.env.NODE_ENV === 'production' ? 'https://api.theseyven.com' : `http://localhost:${port}`);
+
+  logger.log(`🚀 SEYVEN Backend Engine is live on ${host}/${apiPrefix}`);
+  logger.log(`📖 Scalar API Reference is available at ${host}/docs (or /reference)`);
+  logger.log(`📄 Raw OpenAPI schema at ${host}/openapi.json`);
+  logger.log(`🩺 Health check endpoints live at ${host}/health/live & /health/ready`);
 }
 
 bootstrap();

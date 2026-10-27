@@ -75,8 +75,11 @@ export function OrderReceiptDocument({ orderData }: OrderReceiptDocumentProps) {
           <p className="text-[9px] uppercase tracking-[0.25em] text-[#C7A97B] font-medium">
             THE SANCTUARY OF BEAUTY
           </p>
-          <p className="text-[9px] text-[#1C1917]/70 font-light tracking-wide">
-            Dhaka, Bangladesh
+          <p className="text-[8.5px] text-[#1C1917]/70 font-light tracking-wide">
+            100% Authentic Curated International Skincare
+          </p>
+          <p className="text-[8px] text-[#1C1917]/50 font-light tracking-wide">
+            Narayanganj - 1400, Bangladesh
           </p>
         </div>
 

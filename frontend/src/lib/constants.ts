@@ -12,7 +12,7 @@ export const BRAND = {
   supportMessenger: 'https://m.me/seyvenofficial',
   supportInstagram: 'https://www.instagram.com/seyven_beauty/',
   supportFacebook: 'https://www.facebook.com/seyvenofficial',
-  supportEmail: 'care@seyven.com.bd',
+  supportEmail: 'officialseyven@gmail.com',
   officeHours: '9:00 AM – 9:00 PM BST (Saturday to Thursday)',
   registeredAddress: 'K.B. Saha Road, Amlapara, Chashara Commercial Area, Narayanganj - 1400, Bangladesh',
   corporate: {

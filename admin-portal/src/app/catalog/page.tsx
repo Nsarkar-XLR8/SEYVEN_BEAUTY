@@ -33,6 +33,7 @@ import {
   Filter,
   RefreshCw,
 } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api-config';
 import { useAdmin } from '@/context/admin-context';
 import { formatBdt } from '@/lib/formatters';
 import { AdminProduct } from '@/types/admin';
@@ -183,7 +184,7 @@ export default function AdminCatalogDeskPage() {
     if (!files || files.length === 0) return;
     setIsUploadingImage(true);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
 
     for (const file of Array.from(files)) {
       try {

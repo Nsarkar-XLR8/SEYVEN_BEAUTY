@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid product payload' }, { status: 400 });
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_API_URL || '';
 
     // Direct proxy to NestJS backend -> Supabase PostgreSQL + Redis
     const res = await fetch(`${backendUrl}/catalog/products`, {

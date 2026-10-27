@@ -23,20 +23,13 @@ export class PathaoApiClient {
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
   ) {
-    this.baseUrl = this.configService.get<string>(
-      'PATHAO_BASE_URL',
-      'https://courier-api-sandbox.pathao.com',
-    );
-    this.clientId = this.configService.get<string>('PATHAO_CLIENT_ID', 'mock_pathao_client_id_2026');
-    this.clientSecret = this.configService.get<string>(
-      'PATHAO_CLIENT_SECRET',
-      'mock_pathao_client_secret_2026',
-    );
-    this.username = this.configService.get<string>(
-      'PATHAO_USERNAME',
-      'sandbox_merchant@seyven.com',
-    );
-    this.password = this.configService.get<string>('PATHAO_PASSWORD', 'mock_pathao_pass_2026');
+    this.baseUrl =
+      this.configService.get<string>('PATHAO_BASE_URL') ||
+      'https://api-hermes.pathao.com';
+    this.clientId = this.configService.get<string>('PATHAO_CLIENT_ID') || '';
+    this.clientSecret = this.configService.get<string>('PATHAO_CLIENT_SECRET') || '';
+    this.username = this.configService.get<string>('PATHAO_USERNAME') || '';
+    this.password = this.configService.get<string>('PATHAO_PASSWORD') || '';
   }
 
   /**
@@ -44,6 +37,7 @@ export class PathaoApiClient {
    */
   async getAccessToken(): Promise<string> {
     const isMock =
+      !this.clientId ||
       this.clientId.startsWith('mock_') ||
       this.configService.get<string>('NODE_ENV') === 'test';
 
@@ -112,6 +106,7 @@ export class PathaoApiClient {
     payload: PathaoCreateOrderPayload,
   ): Promise<PathaoCreateOrderResponse> {
     const isMock =
+      !this.clientId ||
       this.clientId.startsWith('mock_') ||
       this.configService.get<string>('NODE_ENV') === 'test';
 
@@ -164,6 +159,7 @@ export class PathaoApiClient {
    */
   async getTrackingStatus(consignmentId: string): Promise<PathaoTrackingResponse> {
     const isMock =
+      !this.clientId ||
       this.clientId.startsWith('mock_') ||
       this.configService.get<string>('NODE_ENV') === 'test';
 
@@ -200,6 +196,35 @@ export class PathaoApiClient {
       }
 
       return (await response.json()) as PathaoTrackingResponse;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Fetch registered merchant stores from Pathao
+   */
+  async getStores(): Promise<any> {
+    const token = await this.getAccessToken();
+    const endpoint = `${this.baseUrl}/aladdin/api/v1/stores`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Pathao stores (HTTP ${response.status})`);
+      }
+
+      return await response.json();
     } finally {
       clearTimeout(timeout);
     }

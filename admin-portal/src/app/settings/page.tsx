@@ -19,6 +19,7 @@ import {
   Crown,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
+import { API_BASE_URL } from '@/lib/api-config';
 
 export default function PlatformSettingsPage() {
   const { staffUser } = useAdmin();
@@ -49,7 +50,7 @@ export default function PlatformSettingsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+  const apiUrl = API_BASE_URL;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

@@ -26,6 +26,7 @@ import {
   INITIAL_TIERS,
   INITIAL_CLIENT_SPEND_RECORDS,
 } from '../data/admin-data';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface AdminContextType {
   staffUser: StaffUser | null;
@@ -40,7 +41,11 @@ interface AdminContextType {
   orders: AdminOrder[];
   updateOrderStatus: (orderId: string, nextStatus: OrderStatus, notes?: string) => void;
   updateCODVerification: (orderId: string, status: CODVerificationStatus, notes?: string) => void;
-  assignCourier: (orderId: string, courier: 'Pathao' | 'Steadfast', consignmentId?: string) => void;
+  assignCourier: (
+    orderId: string,
+    courier: 'Pathao' | 'Steadfast',
+    consignmentId?: string,
+  ) => Promise<{ success: boolean; consignmentId?: string; message?: string }>;
   addManualOrder: (data: {
     customerName: string;
     customerPhone: string;
@@ -195,7 +200,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [isSyncingOrders, setIsSyncingOrders] = useState(false);
 
   const refreshOrders = async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
     setIsSyncingOrders(true);
     try {
       const res = await fetch(`${apiUrl}/orders`, {
@@ -224,7 +229,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   });
 
   const refreshCatalog = async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
     try {
       // 1. Fetch real products directly from backend (including DRAFTs for admin desk)
       const pRes = await fetch(`${apiUrl}/catalog/products?includeDrafts=true`, { cache: 'no-store' });
@@ -327,7 +332,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     if (!refreshToken) return null;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
     try {
       const res = await fetch(`${apiUrl}/auth/refresh`, {
         method: 'POST',
@@ -351,7 +356,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (identifier: string, pass: string): Promise<{ success: boolean; error?: string }> => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
     const isDev = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production';
 
     // Demo bypass only allowed in local development
@@ -465,7 +470,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
   // Orders
   const updateOrderStatus = (orderId: string, nextStatus: OrderStatus, notes?: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
     fetch(`${apiUrl}/admin/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: {
@@ -508,16 +513,71 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const assignCourier = (orderId: string, courier: 'Pathao' | 'Steadfast', consignmentId?: string) => {
-    const genId = consignmentId || `${courier === 'Pathao' ? 'PT' : 'SF'}-${Math.floor(100000 + Math.random() * 900000)}`;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+  const assignCourier = async (
+    orderId: string,
+    courier: 'Pathao' | 'Steadfast',
+    consignmentId?: string,
+  ): Promise<{ success: boolean; consignmentId?: string; message?: string }> => {
+    const apiUrl = API_BASE_URL;
+
+    let finalConsignmentId = consignmentId;
+    let trackingUrl = `https://${courier.toLowerCase()}.com/track/${finalConsignmentId || ''}`;
+
+    if (courier === 'Pathao' && !consignmentId) {
+      try {
+        const res = await fetch(`${apiUrl}/courier/pathao/book`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: getAdminAuthHeader(),
+          },
+          body: JSON.stringify({ orderId }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data?.data?.consignment_id) {
+          finalConsignmentId = data.data.consignment_id;
+          trackingUrl = `https://merchant.pathao.com/tracking?consignment_id=${finalConsignmentId}`;
+        } else {
+          const errMsg = data?.message || 'Failed to book with Pathao';
+          return { success: false, message: Array.isArray(errMsg) ? errMsg.join(', ') : String(errMsg) };
+        }
+      } catch (err: any) {
+        console.error('Error calling Pathao booking API:', err);
+        return { success: false, message: err?.message || 'Network error reaching Pathao API' };
+      }
+    } else if (courier === 'Steadfast' && !consignmentId) {
+      try {
+        const res = await fetch(`${apiUrl}/courier/steadfast/book`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: getAdminAuthHeader(),
+          },
+          body: JSON.stringify({ orderId }),
+        });
+        const data = await res.json();
+        if (res.ok && data?.consignment_id) {
+          finalConsignmentId = data.consignment_id;
+          trackingUrl = `https://steadfast.com.bd/tracking/${finalConsignmentId}`;
+        }
+      } catch (err) {
+        console.error('Error calling Steadfast booking API:', err);
+      }
+    }
+
+    if (!finalConsignmentId) {
+      finalConsignmentId = `${courier === 'Pathao' ? 'PT' : 'SF'}-${Math.floor(100000 + Math.random() * 900000)}`;
+      trackingUrl = `https://${courier.toLowerCase()}.com/track/${finalConsignmentId}`;
+    }
+
     fetch(`${apiUrl}/admin/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         Authorization: getAdminAuthHeader(),
       },
-      body: JSON.stringify({ status: 'SHIPPED', trackingCode: genId }),
+      body: JSON.stringify({ status: 'SHIPPED', trackingCode: finalConsignmentId }),
     }).catch(() => {});
 
     setOrders((prev) => {
@@ -526,9 +586,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           ? {
               ...o,
               courier,
-              consignmentId: genId,
+              consignmentId: finalConsignmentId,
               status: 'SHIPPED' as OrderStatus,
-              courierTrackingUrl: `https://${courier.toLowerCase()}.com/track/${genId}`,
+              courierTrackingUrl: trackingUrl,
               updatedAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' BST',
             }
           : o
@@ -536,6 +596,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       safeStorageSet(STORAGE_KEYS.ORDERS, JSON.stringify(updated));
       return updated;
     });
+
+    return {
+      success: true,
+      consignmentId: finalConsignmentId,
+      message: `Consignment booked with ${courier} (#${finalConsignmentId})`,
+    };
   };
 
   const addManualOrder = async (data: {
@@ -590,7 +656,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
     fetch(`${apiUrl}/orders/direct`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -623,7 +689,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
   // Categories & Products
   const addCategory = async (cat: Omit<AdminCategory, 'id' | 'productCount'>) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
     try {
       const res = await fetch(`${apiUrl}/catalog/categories`, {
         method: 'POST',
@@ -677,7 +743,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
   const deleteCategory = async (categoryId: string): Promise<boolean> => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+      const apiUrl = API_BASE_URL;
       const res = await fetch(`${apiUrl}/catalog/categories/${categoryId}`, {
         method: 'DELETE',
         headers: {
@@ -706,7 +772,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addProduct = async (prod: Omit<AdminProduct, 'id' | 'createdAt'>) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const apiUrl = API_BASE_URL;
     try {
       const res = await fetch(`${apiUrl}/catalog/products`, {
         method: 'POST',
@@ -745,7 +811,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
   const deleteProduct = async (productId: string): Promise<boolean> => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+      const apiUrl = API_BASE_URL;
       const res = await fetch(`${apiUrl}/catalog/products/${productId}`, {
         method: 'DELETE',
         headers: {
@@ -792,7 +858,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
     // 2. Direct backend API call to persist in Supabase PostgreSQL & Redis
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+      const apiUrl = API_BASE_URL;
       const res = await fetch(`${apiUrl}/catalog/products/${productId}/state`, {
         method: 'PATCH',
         headers: {
@@ -831,7 +897,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     });
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+      const apiUrl = API_BASE_URL;
       const res = await fetch(`${apiUrl}/catalog/products/${productId}/pricing`, {
         method: 'PATCH',
         headers: {
@@ -865,7 +931,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     });
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+      const apiUrl = API_BASE_URL;
       const res = await fetch(`${apiUrl}/catalog/products/${productIdOrSlug}`, {
         method: 'PATCH',
         headers: {

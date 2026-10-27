@@ -24,19 +24,31 @@ export default function AdminDispatchDeskPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedCourier, setSelectedCourier] = useState<'Pathao' | 'Steadfast'>('Pathao');
   const [bookingOrder, setBookingOrder] = useState<AdminOrder | null>(null);
+  const [isBookingId, setIsBookingId] = useState<string | null>(null);
 
   const readyForDispatch = orders.filter((o) => o.status === 'PACKED');
   const inTransitOrders = orders.filter((o) => o.status === 'SHIPPED');
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 4500);
   };
 
-  const handleBookConsignment = (order: AdminOrder) => {
-    assignCourier(order.id, selectedCourier);
-    setBookingOrder(null);
-    showToast(`Consignment booked with ${selectedCourier}. Status updated to SHIPPED.`);
+  const handleBookConsignment = async (order: AdminOrder) => {
+    setIsBookingId(order.id);
+    try {
+      const res = await assignCourier(order.id, selectedCourier);
+      if (res && !res.success) {
+        showToast(`⚠️ ${res.message || 'Booking failed'}`);
+      } else {
+        showToast(`✅ ${selectedCourier} Consignment Booked: #${res?.consignmentId || ''}`);
+      }
+    } catch (err: any) {
+      showToast(`⚠️ Booking Error: ${err?.message || 'Failed'}`);
+    } finally {
+      setIsBookingId(null);
+      setBookingOrder(null);
+    }
   };
 
   const handleMarkDelivered = (order: AdminOrder) => {
@@ -129,11 +141,16 @@ export default function AdminDispatchDeskPage() {
                   <div className="pt-2 flex justify-end">
                     <button
                       type="button"
+                      disabled={isBookingId === order.id}
                       onClick={() => handleBookConsignment(order)}
-                      className="px-4 py-2 bg-[#1C1917] hover:bg-[#2A2623] text-[#F9F6F0] text-xs font-mono font-bold uppercase rounded flex items-center space-x-1.5 transition-colors"
+                      className={`px-4 py-2 text-xs font-mono font-bold uppercase rounded flex items-center space-x-1.5 transition-colors ${
+                        isBookingId === order.id
+                          ? 'bg-[#1C1917]/50 text-[#F9F6F0]/60 cursor-not-allowed'
+                          : 'bg-[#1C1917] hover:bg-[#2A2623] text-[#F9F6F0]'
+                      }`}
                     >
-                      <Send className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>Book with {selectedCourier}</span>
+                      <Send className={`w-3.5 h-3.5 text-[#C7A97B] ${isBookingId === order.id ? 'animate-pulse' : ''}`} />
+                      <span>{isBookingId === order.id ? 'Connecting Pathao...' : `Book with ${selectedCourier}`}</span>
                     </button>
                   </div>
                 </div>

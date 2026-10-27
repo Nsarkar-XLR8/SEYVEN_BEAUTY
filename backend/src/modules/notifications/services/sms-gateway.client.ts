@@ -31,7 +31,7 @@ export class SmsGatewayClient {
     const apiUrl =
       this.configService.get<string>('SMS_GATEWAY_API_URL') ||
       'https://api.sms-gateway.bd/v1/send';
-    const apiKey = this.configService.get<string>('SMS_GATEWAY_API_KEY') || 'mock_sms_api_key_2026';
+    const apiKey = this.configService.get<string>('SMS_GATEWAY_API_KEY') || '';
 
     const { charCount, parts, isUnicode } = this.calculateSmsParts(payload.message);
 

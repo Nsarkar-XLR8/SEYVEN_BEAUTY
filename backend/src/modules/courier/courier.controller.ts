@@ -7,8 +7,10 @@ import {
   Param,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -131,16 +133,36 @@ export class CourierController {
 
   @Post('webhooks/courier/pathao')
   @UseGuards(PathaoWebhookGuard)
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Inbound Pathao Courier webhook listener (Delivery Status Sync)',
     description:
-      'Receives and verifies real-time parcel delivery status updates from Pathao. Validates HMAC signature, checks 7-day sliding window idempotency, and monotonically advances order status (SHIPPED, DELIVERED, RETURNED).',
+      'Receives and verifies real-time parcel delivery status updates from Pathao. Handles integration challenge (HTTP 202) and monotonically advances order status (SHIPPED, DELIVERED, RETURNED).',
   })
   @ApiResponse({ status: 200, description: 'Webhook ingested and state synchronized successfully' })
-  @ApiResponse({ status: 401, description: 'Invalid or missing Pathao webhook signature' })
-  async handlePathaoWebhook(@Body() dto: PathaoWebhookDto) {
-    return this.pathaoService.handleInboundWebhook(dto);
+  @ApiResponse({ status: 202, description: 'Webhook integration verified' })
+  async handlePathaoWebhook(
+    @Body() dto: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (dto?.event === 'webhook_integration') {
+      const secret = process.env.PATHAO_WEBHOOK_SECRET;
+      if (secret) {
+        res.setHeader('X-Pathao-Merchant-Webhook-Integration-Secret', secret);
+      }
+      res.status(HttpStatus.ACCEPTED);
+      return { success: true, message: 'Webhook integration verified' };
+    }
+    return this.pathaoService.handleInboundWebhook(dto as PathaoWebhookDto);
+  }
+
+  @Get('courier/pathao/stores')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FULFILLMENT_OPERATOR, UserRole.SUPPORT_AGENT)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get registered merchant stores from Pathao' })
+  @ApiResponse({ status: 200, description: 'Pathao stores fetched successfully' })
+  async getPathaoStores() {
+    return this.pathaoService.getMerchantStores();
   }
 
   @Get('courier/pathao/tracking/:consignmentId')

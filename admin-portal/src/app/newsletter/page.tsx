@@ -21,6 +21,7 @@ import {
   ShieldAlert,
   ArrowRight,
 } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface Subscriber {
   id: string;
@@ -96,7 +97,7 @@ export default function AdminNewsletterPage() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+  const apiUrl = API_BASE_URL;
 
   // Load Data
   const fetchData = async () => {

@@ -18,14 +18,8 @@ export class SteadfastApiClient {
       'STEADFAST_BASE_URL',
       'https://portal.steadfast.com.bd/api/v1',
     );
-    this.apiKey = this.configService.get<string>(
-      'STEADFAST_API_KEY',
-      'mock_steadfast_api_key_2026',
-    );
-    this.secretKey = this.configService.get<string>(
-      'STEADFAST_SECRET_KEY',
-      'mock_steadfast_secret_key_2026',
-    );
+    this.apiKey = this.configService.get<string>('STEADFAST_API_KEY') || '';
+    this.secretKey = this.configService.get<string>('STEADFAST_SECRET_KEY') || '';
   }
 
   /**
@@ -35,6 +29,7 @@ export class SteadfastApiClient {
     payload: SteadfastCreateOrderPayload,
   ): Promise<SteadfastCreateOrderResponse> {
     const isMock =
+      !this.apiKey ||
       this.apiKey.startsWith('mock_') ||
       this.apiKey === 'test' ||
       this.configService.get<string>('NODE_ENV') === 'test';
@@ -101,6 +96,7 @@ export class SteadfastApiClient {
     consignmentId: string | number,
   ): Promise<SteadfastTrackingResponse> {
     const isMock =
+      !this.apiKey ||
       this.apiKey.startsWith('mock_') ||
       this.apiKey === 'test' ||
       this.configService.get<string>('NODE_ENV') === 'test';

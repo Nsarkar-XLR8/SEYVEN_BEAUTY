@@ -24,19 +24,19 @@ export class BkashService {
   }
 
   private get appKey(): string {
-    return this.configService.get<string>('BKASH_APP_KEY') || 'mock_bkash_app_key';
+    return this.configService.get<string>('BKASH_APP_KEY') || '';
   }
 
   private get appSecret(): string {
-    return this.configService.get<string>('BKASH_APP_SECRET') || 'mock_bkash_app_secret';
+    return this.configService.get<string>('BKASH_APP_SECRET') || '';
   }
 
   private get username(): string {
-    return this.configService.get<string>('BKASH_USERNAME') || 'sandbox_user';
+    return this.configService.get<string>('BKASH_USERNAME') || '';
   }
 
   private get password(): string {
-    return this.configService.get<string>('BKASH_PASSWORD') || 'sandbox_pass';
+    return this.configService.get<string>('BKASH_PASSWORD') || '';
   }
 
   private get callbackUrl(): string {

@@ -17,7 +17,11 @@ export class PathaoWebhookGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
 
-    // 1. Check for Pathao challenge verification token if registering webhook
+    // 1. Check for Pathao challenge or webhook integration verification handshake
+    if (request.body?.event === 'webhook_integration') {
+      return true;
+    }
+
     const challengeToken =
       request.headers['x-pathao-challenge'] ||
       request.query?.challenge ||
@@ -36,8 +40,12 @@ export class PathaoWebhookGuard implements CanActivate {
 
     const webhookSecret =
       this.configService.get<string>('PATHAO_WEBHOOK_SECRET') ||
-      this.configService.get<string>('PATHAO_CLIENT_SECRET') ||
-      'mock_pathao_webhook_secret_2026';
+      this.configService.get<string>('PATHAO_CLIENT_SECRET');
+
+    if (!webhookSecret) {
+      this.logger.error('[Pathao Webhook] PATHAO_WEBHOOK_SECRET is not configured');
+      throw new UnauthorizedException('Pathao webhook secret unconfigured');
+    }
 
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
 

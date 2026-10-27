@@ -18,11 +18,11 @@ export class SSLCommerzService {
   ) {}
 
   private get storeId(): string {
-    return this.configService.get<string>('SSLCOMMERZ_STORE_ID') || 'seyven_sandbox_store';
+    return this.configService.get<string>('SSLCOMMERZ_STORE_ID') || '';
   }
 
   private get storePass(): string {
-    return this.configService.get<string>('SSLCOMMERZ_STORE_PASSWD') || 'seyven_sandbox_pass';
+    return this.configService.get<string>('SSLCOMMERZ_STORE_PASSWD') || '';
   }
 
   private get baseUrl(): string {

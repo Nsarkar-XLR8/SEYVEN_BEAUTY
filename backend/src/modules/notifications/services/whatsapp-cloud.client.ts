@@ -24,8 +24,8 @@ export class WhatsAppCloudClient {
 
     const internationalPhone = BangladeshiPhoneUtil.toInternationalFormat(rawTo);
     const apiUrl = this.configService.get<string>('WHATSAPP_API_URL') || 'https://graph.facebook.com/v20.0';
-    const phoneNumberId = this.configService.get<string>('WHATSAPP_PHONE_NUMBER_ID') || 'mock_wa_phone_number_id_2026';
-    const accessToken = this.configService.get<string>('WHATSAPP_ACCESS_TOKEN') || 'mock_wa_access_token_2026';
+    const phoneNumberId = this.configService.get<string>('WHATSAPP_PHONE_NUMBER_ID') || '';
+    const accessToken = this.configService.get<string>('WHATSAPP_ACCESS_TOKEN') || '';
     const languageCode = payload.languageCode || 'bn';
 
     const endpoint = `${apiUrl}/${phoneNumberId}/messages`;
@@ -50,7 +50,7 @@ export class WhatsAppCloudClient {
 
     // Mock Provider handling (for Development, Sandbox & Unit testing)
     const isTest = this.configService.get<string>('NODE_ENV') === 'test';
-    if (isTest || accessToken.startsWith('mock_')) {
+    if (isTest || !accessToken || accessToken.startsWith('mock_')) {
       const mockWamid = `wamid.HBgM${uuidv4().replace(/-/g, '').substring(0, 24)}==`;
       return {
         success: true,

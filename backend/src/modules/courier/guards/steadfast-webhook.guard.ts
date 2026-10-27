@@ -37,8 +37,12 @@ export class SteadfastWebhookGuard implements CanActivate {
 
     const webhookSecret =
       this.configService.get<string>('STEADFAST_WEBHOOK_SECRET') ||
-      this.configService.get<string>('STEADFAST_SECRET_KEY') ||
-      'mock_steadfast_webhook_secret_2026';
+      this.configService.get<string>('STEADFAST_SECRET_KEY');
+
+    if (!webhookSecret) {
+      this.logger.error('[Steadfast Webhook] STEADFAST_WEBHOOK_SECRET is not configured');
+      throw new UnauthorizedException('Steadfast webhook secret unconfigured');
+    }
 
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
 

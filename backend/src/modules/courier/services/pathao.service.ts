@@ -34,7 +34,7 @@ export class PathaoService {
     private readonly pathaoBookingWorker: PathaoBookingWorker,
     private readonly outboxPublisher: OutboxPublisher,
   ) {
-    this.defaultStoreId = this.configService.get<number>('PATHAO_STORE_ID', 12345);
+    this.defaultStoreId = Number(this.configService.get<number>('PATHAO_STORE_ID')) || 0;
   }
 
   /**
@@ -45,13 +45,18 @@ export class PathaoService {
     dto: BookPathaoConsignmentDto,
     staffUserId?: string,
   ): Promise<PathaoCreateOrderResponse> {
-    const order = await this.prisma.order.findUnique({
-      where: { id: dto.orderId },
+    const order = await this.prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: dto.orderId },
+          { orderNumber: dto.orderId },
+        ],
+      },
       include: { items: true },
     });
 
     if (!order) {
-      throw new NotFoundException(`Order with ID '${dto.orderId}' not found`);
+      throw new NotFoundException(`Order with ID or Order Number '${dto.orderId}' not found`);
     }
 
     // 1. Guard against double-booking or terminal states
@@ -76,36 +81,69 @@ export class PathaoService {
     }
 
     // 2. Prepare Pathao Consignment Payload
-    const shippingAddress = order.shippingAddress as Record<string, any>;
-    const recipientAddress =
-      shippingAddress.streetAddress || `${shippingAddress.thanaArea}, ${shippingAddress.district}`;
+    const shippingAddress = (order.shippingAddress as Record<string, any>) || {};
+    
+    // Normalize phone number to strict 11-digit BD standard (01XXXXXXXXX)
+    const rawPhone = order.guestPhone || shippingAddress.phoneNumber || shippingAddress.phone || '';
+    let cleanPhone = rawPhone.replace(/\D/g, '');
+    if (cleanPhone.length > 11) {
+      cleanPhone = cleanPhone.slice(-11);
+    }
+    if (!cleanPhone.startsWith('01') || cleanPhone.length !== 11) {
+      this.logger.warn(`Order ${order.orderNumber} phone '${rawPhone}' normalized to '${cleanPhone}'`);
+    }
+
+    // Ensure address meets Pathao's 10-220 character constraint
+    let recipientAddress = (
+      shippingAddress.streetAddress ||
+      `${shippingAddress.thanaArea || ''}, ${shippingAddress.district || ''}`
+    ).trim();
+    if (recipientAddress.length < 10) {
+      recipientAddress = `${recipientAddress}, ${shippingAddress.district || 'Dhaka, Bangladesh'}`;
+    }
+    recipientAddress = recipientAddress.slice(0, 220);
+
+    const recipientName = (
+      order.guestName ||
+      shippingAddress.recipientName ||
+      shippingAddress.fullName ||
+      'Valued Customer'
+    ).trim().slice(0, 100);
 
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0) || 1;
     const itemDescription =
       order.items.map((i) => `${i.title} (${i.sku}) x${i.quantity}`).join(', ') ||
       'SEYVEN Cosmetics Care Package';
 
-    // Strictly pass cod_amount = order.codDueBdt
-    const amountToCollect = Math.max(0, Math.round(Number(order.codDueBdt)));
+    // Strictly pass cod_amount = order.codDueBdt (0 if prepaid)
+    const amountToCollect = Math.max(0, Math.round(Number(order.codDueBdt || 0)));
 
     const payload: PathaoCreateOrderPayload = {
       store_id: dto.storeId || this.defaultStoreId,
       merchant_order_id: order.orderNumber,
-      recipient_name: order.guestName,
-      recipient_phone: order.guestPhone,
+      recipient_name: recipientName,
+      recipient_phone: cleanPhone,
       recipient_address: recipientAddress,
-      recipient_city: dto.recipientCityId || 1, // 1: Dhaka Metro
-      recipient_zone: dto.recipientZoneId || shippingAddress.courierZoneId || 1,
-      recipient_area: dto.recipientAreaId,
       delivery_type: 48, // Standard 48 Hours
       item_type: 2, // Parcel
-      special_instruction:
-        dto.specialInstruction || shippingAddress.notes || 'Fragile Cosmetic Packaging',
+      special_instruction: (
+        dto.specialInstruction || shippingAddress.notes || 'Fragile Cosmetic Packaging - Handle with Care'
+      ).slice(0, 255),
       item_quantity: totalQuantity,
-      item_weight: dto.itemWeightKg || 0.5,
+      item_weight: dto.itemWeightKg ? Math.max(0.5, Math.min(10, dto.itemWeightKg)) : 0.5,
       amount_to_collect: amountToCollect,
       item_description: itemDescription.slice(0, 255),
     };
+
+    if (dto.recipientCityId) {
+      payload.recipient_city = dto.recipientCityId;
+    }
+    if (dto.recipientZoneId || shippingAddress.courierZoneId) {
+      payload.recipient_zone = dto.recipientZoneId || shippingAddress.courierZoneId;
+    }
+    if (dto.recipientAreaId) {
+      payload.recipient_area = dto.recipientAreaId;
+    }
 
     // 3. Dispatch through Retry Worker with DLQ protection
     const bookingResponse = await this.pathaoBookingWorker.dispatchWithRetry(
@@ -303,6 +341,13 @@ export class PathaoService {
    */
   async getDlqEntries(limit: number = 50) {
     return this.pathaoBookingWorker.getDlqEntries(limit);
+  }
+
+  /**
+   * Retrieve registered merchant stores from Pathao
+   */
+  async getMerchantStores() {
+    return this.pathaoApiClient.getStores();
   }
 
   /**

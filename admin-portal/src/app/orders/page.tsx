@@ -20,6 +20,8 @@ import {
   Plus,
   RefreshCw,
   MessageCircle,
+  Send,
+  ExternalLink,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 import { AdminOrder, OrderStatus, CODVerificationStatus } from '@/types/admin';
@@ -33,6 +35,7 @@ export default function AdminOrdersDeskPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [isManualOrderOpen, setIsManualOrderOpen] = useState(false);
+  const [isBookingPathao, setIsBookingPathao] = useState(false);
 
   // COD Phone Verification Modal State
   const [verifyingOrder, setVerifyingOrder] = useState<AdminOrder | null>(null);
@@ -41,7 +44,34 @@ export default function AdminOrdersDeskPage() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 4500);
+  };
+
+  const handleBookWithPathao = async (order: AdminOrder) => {
+    setIsBookingPathao(true);
+    try {
+      const res = await assignCourier(order.id, 'Pathao');
+      if (res && !res.success) {
+        showToast(`⚠️ ${res.message || 'Pathao booking failed'}`);
+      } else {
+        showToast(`✅ Pathao Consignment Created: #${res?.consignmentId || ''}`);
+        setSelectedOrder((prev) =>
+          prev
+            ? {
+                ...prev,
+                courier: 'Pathao',
+                consignmentId: res?.consignmentId,
+                status: 'SHIPPED',
+                courierTrackingUrl: `https://merchant.pathao.com/tracking?consignment_id=${res?.consignmentId}`,
+              }
+            : null
+        );
+      }
+    } catch (err: any) {
+      showToast(`⚠️ Error: ${err?.message || 'Booking failed'}`);
+    } finally {
+      setIsBookingPathao(false);
+    }
   };
 
   const statusTabs: { label: string; value: string; count: number }[] = [
@@ -417,6 +447,27 @@ export default function AdminOrdersDeskPage() {
                 </div>
               </div>
 
+              {/* Courier Consignment Tracking Badge */}
+              {selectedOrder.consignmentId && (
+                <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded flex items-center justify-between text-xs font-mono">
+                  <div>
+                    <span className="text-[10px] text-emerald-800 uppercase block font-bold">
+                      {selectedOrder.courier || 'Pathao'} Consignment
+                    </span>
+                    <span className="font-bold text-emerald-950">#{selectedOrder.consignmentId}</span>
+                  </div>
+                  <a
+                    href={selectedOrder.courierTrackingUrl || `https://merchant.pathao.com/tracking?consignment_id=${selectedOrder.consignmentId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                  >
+                    <span>Track</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
+
               {/* Items List */}
               <div className="space-y-2">
                 <span className="text-[10px] uppercase font-mono text-[#1C1917]/60 font-semibold block">
@@ -485,13 +536,24 @@ export default function AdminOrdersDeskPage() {
                   </button>
                 )}
                 {selectedOrder.status === 'PACKED' && (
-                  <button
-                    type="button"
-                    onClick={() => handleAdvanceStatus(selectedOrder, 'SHIPPED')}
-                    className="w-full py-2.5 bg-[#C7A97B] text-[#141211] font-bold rounded"
-                  >
-                    Mark Shipped
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      disabled={isBookingPathao}
+                      onClick={() => handleBookWithPathao(selectedOrder)}
+                      className="w-full py-2.5 bg-[#1C1917] hover:bg-[#2A2623] text-[#F9F6F0] rounded font-semibold flex items-center justify-center space-x-1.5 transition-colors disabled:opacity-50"
+                    >
+                      <Send className={`w-3.5 h-3.5 text-[#C7A97B] ${isBookingPathao ? 'animate-pulse' : ''}`} />
+                      <span>{isBookingPathao ? 'Connecting Pathao...' : 'Book with Pathao'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAdvanceStatus(selectedOrder, 'SHIPPED')}
+                      className="w-full py-2.5 bg-[#C7A97B]/20 hover:bg-[#C7A97B]/30 border border-[#C7A97B] text-[#141211] font-semibold rounded text-xs"
+                    >
+                      Manual Mark Shipped
+                    </button>
+                  </>
                 )}
                 {selectedOrder.status === 'SHIPPED' && (
                   <button

@@ -11,9 +11,38 @@ function getStoredAccessToken(): string | null {
   return localStorage.getItem('seyven_access_token');
 }
 
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshCustomerAccessToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  const refreshToken = localStorage.getItem('seyven_refresh_token');
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (res.ok) {
+      const tokens = await res.json();
+      if (tokens?.accessToken) {
+        localStorage.setItem('seyven_access_token', tokens.accessToken);
+        if (tokens.refreshToken) {
+          localStorage.setItem('seyven_refresh_token', tokens.refreshToken);
+        }
+        return tokens.accessToken;
+      }
+    }
+  } catch {
+    // Refresh failed or network offline
+  }
+  return null;
+}
+
 export async function apiFetch<T = any>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit & { _isRetry?: boolean } = {}
 ): Promise<T> {
   const token = getStoredAccessToken();
   const correlationId = 'web-' + Math.random().toString(36).substring(2, 10);
@@ -38,6 +67,31 @@ export async function apiFetch<T = any>(
     ...options,
     headers,
   });
+
+  // Seamless 401 Token Refresh Interceptor
+  if (
+    response.status === 401 &&
+    !options._isRetry &&
+    !cleanPath.startsWith('/auth/login') &&
+    !cleanPath.startsWith('/auth/refresh')
+  ) {
+    if (!refreshPromise) {
+      refreshPromise = refreshCustomerAccessToken().finally(() => {
+        refreshPromise = null;
+      });
+    }
+    const refreshedToken = await refreshPromise;
+    if (refreshedToken) {
+      return apiFetch<T>(path, {
+        ...options,
+        _isRetry: true,
+        headers: {
+          ...headers,
+          Authorization: `Bearer ${refreshedToken}`,
+        },
+      });
+    }
+  }
 
   const contentType = response.headers.get('content-type') || '';
   if (!response.ok) {

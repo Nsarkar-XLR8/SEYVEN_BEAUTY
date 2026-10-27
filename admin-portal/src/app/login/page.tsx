@@ -135,26 +135,28 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Quick Staff Shift Selector (Simulated Operator) */}
-          <div className="pt-4 border-t border-[#E6DFD5] space-y-2">
-            <span className="text-[9px] uppercase tracking-wider font-mono text-[#1C1917]/50 block text-center">
-              Quick Shift Access (Authorized Roles)
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-              {STAFF_USERS.slice(0, 4).map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => handleQuickDemo(s.email)}
-                  className="p-2 border border-[#E6DFD5] hover:border-[#C7A97B] bg-[#F9F6F0] text-left transition-colors truncate"
-                  title={`Sign in as ${s.name} (${s.role})`}
-                >
-                  <div className="font-semibold text-[#1C1917] truncate">{s.name}</div>
-                  <div className="text-[8px] text-[#C7A97B] tracking-wider truncate">{s.role.replace('_', ' ')}</div>
-                </button>
-              ))}
+          {/* Quick Staff Shift Selector (Development Only) */}
+          {process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production' && (
+            <div className="pt-4 border-t border-[#E6DFD5] space-y-2">
+              <span className="text-[9px] uppercase tracking-wider font-mono text-[#1C1917]/50 block text-center">
+                Local Dev Shift Access (Authorized Roles)
+              </span>
+              <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                {STAFF_USERS.slice(0, 4).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => handleQuickDemo(s.email)}
+                    className="p-2 border border-[#E6DFD5] hover:border-[#C7A97B] bg-[#F9F6F0] text-left transition-colors truncate"
+                    title={`Sign in as ${s.name} (${s.role})`}
+                  >
+                    <div className="font-semibold text-[#1C1917] truncate">{s.name}</div>
+                    <div className="text-[8px] text-[#C7A97B] tracking-wider truncate">{s.role.replace('_', ' ')}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Security Notice */}

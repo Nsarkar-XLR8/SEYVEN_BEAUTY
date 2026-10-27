@@ -101,6 +101,7 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 const STORAGE_KEYS = {
   STAFF: 'seyven_admin_staff_profile_v3',
   TOKEN: 'seyven_admin_jwt_v3',
+  REFRESH_TOKEN: 'seyven_admin_refresh_token_v3',
   ORDERS: 'seyven_admin_orders_v3',
   CATEGORIES: 'seyven_admin_categories_v3',
   PRODUCTS: 'seyven_admin_products_v3',
@@ -321,11 +322,46 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (identifier: string, pass: string): Promise<{ success: boolean; error?: string }> => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.theseyven.com/api/v1';
+  const refreshAdminToken = async (): Promise<string | null> => {
+    if (typeof window === 'undefined') return null;
+    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    if (!refreshToken) return null;
 
-    // Demo bypass for quick shift testing
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    try {
+      const res = await fetch(`${apiUrl}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (res.ok) {
+        const tokens = await res.json();
+        if (tokens?.accessToken) {
+          safeStorageSet(STORAGE_KEYS.TOKEN, tokens.accessToken);
+          if (tokens.refreshToken) {
+            safeStorageSet(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+          }
+          return tokens.accessToken;
+        }
+      }
+    } catch {
+      // Network or invalid token
+    }
+    return null;
+  };
+
+  const login = async (identifier: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
+    const isDev = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production';
+
+    // Demo bypass only allowed in local development
     if (pass === 'demo') {
+      if (!isDev) {
+        return {
+          success: false,
+          error: 'Demo access is strictly disabled on live production. Please authenticate with your staff credentials.',
+        };
+      }
       const found = STAFF_USERS.find((s) => s.email.toLowerCase() === identifier.toLowerCase());
       const staff = found || STAFF_USERS[0];
       setStaffUser(staff);
@@ -381,15 +417,19 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       if (data?.tokens?.accessToken) {
         safeStorageSet(STORAGE_KEYS.TOKEN, data.tokens.accessToken);
       }
+      if (data?.tokens?.refreshToken) {
+        safeStorageSet(STORAGE_KEYS.REFRESH_TOKEN, data.tokens.refreshToken);
+      }
       return { success: true };
     } catch {
-      // Offline fallback: check if matches static staff
-      const found = STAFF_USERS.find((s) => s.email.toLowerCase() === identifier.toLowerCase());
-      if (found) {
-        setStaffUser(found);
-        safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(found));
-        safeStorageSet(STORAGE_KEYS.TOKEN, 'admin_jwt_' + found.id);
-        return { success: true };
+      if (isDev) {
+        const found = STAFF_USERS.find((s) => s.email.toLowerCase() === identifier.toLowerCase());
+        if (found) {
+          setStaffUser(found);
+          safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(found));
+          safeStorageSet(STORAGE_KEYS.TOKEN, 'admin_jwt_' + found.id);
+          return { success: true };
+        }
       }
       return {
         success: false,
@@ -401,6 +441,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem(STORAGE_KEYS.STAFF);
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     setStaffUser(null);
   };
 

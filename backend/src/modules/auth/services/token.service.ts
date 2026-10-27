@@ -41,20 +41,31 @@ export class TokenService {
       this.configService.get<string>('JWT_REFRESH_SECRET') ||
       'seyven_refresh_secret';
 
+    const accessExpiration =
+      this.configService.get<string>('SEYVEN_JWT_ACCESS_EXPIRATION') || '1h';
+    const refreshExpiration =
+      this.configService.get<string>('SEYVEN_JWT_REFRESH_EXPIRATION') || '7d';
+
     const accessToken = this.jwtService.sign(
       { sub: userId, phone, role, jti: accessJti },
-      { secret: accessSecret, expiresIn: '15m' },
+      { secret: accessSecret, expiresIn: accessExpiration },
     );
 
     const refreshToken = this.jwtService.sign(
       { sub: userId, phone, role, jti: refreshJti },
-      { secret: refreshSecret, expiresIn: '7d' },
+      { secret: refreshSecret, expiresIn: refreshExpiration },
     );
+
+    // Calculate expiresInSeconds based on accessExpiration
+    const isHours = accessExpiration.endsWith('h');
+    const isMinutes = accessExpiration.endsWith('m');
+    const numericVal = parseInt(accessExpiration, 10) || 1;
+    const expiresInSeconds = isHours ? numericVal * 3600 : isMinutes ? numericVal * 60 : 3600;
 
     return {
       accessToken,
       refreshToken,
-      expiresInSeconds: 15 * 60,
+      expiresInSeconds,
     };
   }
 

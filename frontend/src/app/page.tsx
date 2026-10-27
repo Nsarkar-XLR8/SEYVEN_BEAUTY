@@ -2,14 +2,26 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Sparkles, ArrowRight, ShieldCheck, HeartHandshake, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, HeartHandshake, CheckCircle2, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
 import { ProductCard } from '@/components/storefront/product-card';
 
 import { getAllProducts, createDynamicProductDetail, ProductDetail } from '@/data/products';
 
+function InstagramIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
 export default function HomePage() {
   const { lang, t } = useLanguage();
+  const { settings } = useCart();
   const [products, setProducts] = React.useState<ProductDetail[]>([]);
 
   React.useEffect(() => {
@@ -164,28 +176,33 @@ export default function HomePage() {
 
             <p className="text-xs sm:text-sm text-[#1C1917]/75 font-light leading-relaxed">
               {t(
-                'Connect directly with our dedicated skincare specialists via WhatsApp for bespoke formulation guidance tailored to your specific skin needs.',
-                'আপনার ত্বকের উপযোগী সঠিক ফর্মুলেশন বেছে নিতে সরাসরি আমাদের স্কিনকেয়ার স্পেশালিস্টদের সাথে হোয়াটসঅ্যাপে যুক্ত হন।'
+                'Connect directly with our dedicated skincare specialists on Messenger for bespoke formulation guidance tailored to your specific skin needs.',
+                'আপনার ত্বকের উপযোগী সঠিক ফর্মুলেশন বেছে নিতে সরাসরি আমাদের স্কিনকেয়ার স্পেশালিস্টদের সাথে মেসেঞ্জারে যুক্ত হন।'
               )}
             </p>
 
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5">
+            {/* Dynamic Concierge Action Hub */}
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <a
-                href="https://wa.me/8801700000000"
+                href={settings?.supportMessenger || 'https://m.me/seyvenofficial'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto px-8 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2.5 rounded-none"
               >
-                <span>{t('WHATSAPP CONCIERGE', 'হোয়াটসঅ্যাপ কনসিয়ার্জ')}</span>
+                <MessageCircle className="w-4 h-4 text-[#C7A97B]" />
+                <span>{t('CONNECT ON MESSENGER', 'মেসেঞ্জারে চ্যাট করুন')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
 
-              {/* <Link
-                href="/catalog"
-                className="w-full sm:w-auto px-7 py-3.5 bg-transparent hover:bg-[#1C1917]/5 border border-[#1C1917]/30 hover:border-[#1C1917] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none"
+              <a
+                href={settings?.supportInstagram || 'https://www.instagram.com/seyven_beauty/'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto px-6 py-3.5 bg-transparent hover:bg-[#1C1917]/5 border border-[#1C1917]/30 hover:border-[#1C1917] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none"
               >
-                <span>{t('EXPLORE THE EDIT', 'কালেকশন দেখুন')}</span>
-              </Link> */}
+                <InstagramIcon className="w-3.5 h-3.5 text-[#1C1917]/70" />
+                <span>{t('INSTAGRAM @SEYVEN_BEAUTY', 'ইনস্টাগ্রাম')}</span>
+              </a>
             </div>
           </div>
         </div>

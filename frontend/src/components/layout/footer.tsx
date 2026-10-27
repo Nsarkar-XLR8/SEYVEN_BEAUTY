@@ -5,14 +5,20 @@ import Link from 'next/link';
 import { ArrowRight, Check, Plus, Minus } from 'lucide-react';
 import { BRAND } from '@/lib/constants';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
 
 export function Footer() {
   const { lang, toggleLang, t } = useLanguage();
+  const { settings } = useCart();
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [subscribeMessage, setSubscribeMessage] = useState<string | null>(null);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+
+  const messengerLink = settings?.supportMessenger || 'https://m.me/seyvenofficial';
+  const instagramLink = settings?.supportInstagram || 'https://www.instagram.com/seyven_beauty/';
+  const facebookLink = settings?.supportFacebook || 'https://www.facebook.com/seyvenofficial';
 
   const toggleAccordion = (id: string) => {
     setOpenAccordion(openAccordion === id ? null : id);
@@ -50,7 +56,7 @@ export function Footer() {
       titleEn: 'MAY WE HELP YOU?',
       titleBn: 'গ্রাহক সেবা ও সহায়তা',
       links: [
-        { href: '/support/grievance', labelEn: 'Contact the SEYVEN Concierge', labelBn: 'কাস্টমার কেয়ার ও কনসিয়ার্জ' },
+        { href: messengerLink, labelEn: 'Contact the Messenger Concierge', labelBn: 'কাস্টমার কেয়ার ও কনসিয়ার্জ' },
         { href: '/track-order', labelEn: 'Track Your Parcel Live', labelBn: 'পার্সেল লাইভ ট্র্যাকিং' },
         { href: '/legal/return_refund', labelEn: 'Return & Exchange Sanctuary Policy', labelBn: 'রিটার্ন ও রিফান্ড নীতি' },
         { href: '/legal/shipping_delivery', labelEn: 'Shipping & Nationwide Delivery', labelBn: 'দেশব্যাপী ডেলিভারি সংক্রান্ত তথ্য' },
@@ -72,10 +78,10 @@ export function Footer() {
       titleEn: 'EXCLUSIVE SERVICES',
       titleBn: 'বিশেষ সুবিধা ও সেবা',
       links: [
-        { href: 'https://wa.me/8801700000000', labelEn: 'Bespoke Skincare Concierge', labelBn: 'ব্যক্তিগত স্কিনকেয়ার কনসালটেশন' },
+        { href: messengerLink, labelEn: 'Bespoke Messenger Concierge', labelBn: 'ব্যক্তিগত মেসেঞ্জার কনসিয়ার্জ' },
+        { href: instagramLink, labelEn: 'Instagram Editorial (@seyven_beauty)', labelBn: 'ইনস্টাগ্রাম বিউটি কেয়ার' },
         { href: '/customer/loyalty', labelEn: 'Sanctuary Privilege VIP Club', labelBn: 'ভিআইপি লয়্যালটি প্রোগ্রাম ও পয়েন্ট' },
         { href: '/customer/account', labelEn: 'Private Client Account & Vault', labelBn: 'গ্রাহক প্রোফাইল ও অর্ডার হিস্ট্রি' },
-        { href: '/customer/privacy-center', labelEn: 'Account Privacy & Data Center', labelBn: 'ব্যক্তিগত তথ্য নিয়ন্ত্রণ কেন্দ্র' },
       ],
     },
   ];
@@ -246,8 +252,23 @@ export function Footer() {
               <p className="text-[11px] pt-1 text-[#8E8B85]">
                 {BRAND.supportEmail}
               </p>
-              <div className="pt-2 text-[10px] uppercase tracking-[0.18em] text-[#C7A97B] font-medium">
-                WhatsApp: {BRAND.supportWhatsApp}
+              <div className="pt-2 flex flex-col gap-1.5 text-[10px] font-mono">
+                <a
+                  href={messengerLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#C7A97B] hover:underline flex items-center gap-1.5"
+                >
+                  <span>Messenger: m.me/seyvenofficial ↗</span>
+                </a>
+                <a
+                  href={instagramLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#8E8B85] hover:text-white hover:underline flex items-center gap-1.5"
+                >
+                  <span>Instagram: @seyven_beauty ↗</span>
+                </a>
               </div>
             </div>
           </div>

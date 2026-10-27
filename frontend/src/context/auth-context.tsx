@@ -122,32 +122,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return false;
     } catch (err: any) {
-      // Resilient fallback when PostgreSQL is offline or unreachable
-      if (
-        err.message?.includes('Database service is currently unreachable') ||
-        err.message?.includes('Failed to fetch') ||
-        err.message?.includes('500') ||
-        err.message?.includes('503') ||
-        err.message?.includes('ECONNREFUSED')
-      ) {
-        const fallbackUser: UserProfile = {
-          id: 'client_' + Math.random().toString(36).substring(2, 9),
-          phone: data.phone,
-          fullName: data.fullName,
-          email: data.email,
-          role: 'CLIENT',
-          loyalty: {
-            tier: 'SANCTUARY PRIVILEGE',
-            pointsBalance: 250,
-            lifetimePoints: 250,
-          },
-        };
-        localStorage.setItem('seyven_access_token', 'demo_client_token');
-        localStorage.setItem('seyven_demo_user', JSON.stringify(fallbackUser));
-        setUser(fallbackUser);
-        setIsAuthModalOpen(false);
-        return true;
-      }
       throw err;
     }
   };
@@ -171,33 +145,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return false;
     } catch (err: any) {
-      // Resilient fallback when PostgreSQL is offline or unreachable
-      if (
-        err.message?.includes('Database service is currently unreachable') ||
-        err.message?.includes('Failed to fetch') ||
-        err.message?.includes('500') ||
-        err.message?.includes('503') ||
-        err.message?.includes('ECONNREFUSED')
-      ) {
-        const isEmail = data.identifier.includes('@');
-        const fallbackUser: UserProfile = {
-          id: 'client_registered_id',
-          phone: isEmail ? '01712-345678' : data.identifier,
-          fullName: data.identifier.includes('@') ? data.identifier.split('@')[0] : 'Cherished Client',
-          email: isEmail ? data.identifier : 'client@seyven.com',
-          role: 'CLIENT',
-          loyalty: {
-            tier: 'REPEAT CLIENT PRIVILEGE',
-            privilegeDiscountPercent: 5,
-            isRepeatClient: true,
-          },
-        };
-        localStorage.setItem('seyven_access_token', 'demo_client_token');
-        localStorage.setItem('seyven_demo_user', JSON.stringify(fallbackUser));
-        setUser(fallbackUser);
-        setIsAuthModalOpen(false);
-        return true;
-      }
       throw err;
     }
   };

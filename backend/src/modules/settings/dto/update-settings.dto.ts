@@ -39,6 +39,22 @@ export class UpdateSettingsDto {
   supportWhatsApp?: string;
 
   @IsOptional()
+  @IsString()
+  supportMessenger?: string;
+
+  @IsOptional()
+  @IsString()
+  supportInstagram?: string;
+
+  @IsOptional()
+  @IsString()
+  supportFacebook?: string;
+
+  @IsOptional()
+  @IsString()
+  primaryConciergeChannel?: 'MESSENGER' | 'WHATSAPP';
+
+  @IsOptional()
   @IsBoolean()
   isCampaignActive?: boolean;
 

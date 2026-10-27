@@ -12,6 +12,10 @@ export interface PlatformSettings {
   freeDeliveryThresholdBdt: number;
   supportPhone: string;
   supportWhatsApp: string;
+  supportMessenger: string;
+  supportFacebook: string;
+  supportInstagram: string;
+  primaryConciergeChannel: 'MESSENGER' | 'WHATSAPP';
   isCampaignActive: boolean;
   campaignTitle: string;
   campaignDiscountPercent: number;
@@ -29,6 +33,10 @@ const DEFAULT_SETTINGS: PlatformSettings = {
   freeDeliveryThresholdBdt: 2000,
   supportPhone: '+880 9612 000000',
   supportWhatsApp: '+880 1700 000000',
+  supportMessenger: 'https://m.me/seyvenofficial',
+  supportFacebook: 'https://www.facebook.com/seyvenofficial',
+  supportInstagram: 'https://www.instagram.com/seyven_beauty/',
+  primaryConciergeChannel: 'MESSENGER',
   isCampaignActive: true,
   campaignTitle: 'Festive Eid Sanctuary Privilege',
   campaignDiscountPercent: 7,
@@ -75,9 +83,22 @@ export class SettingsService {
   }
 
   updateSettings(dto: UpdateSettingsDto): PlatformSettings {
+    let messengerUrl = dto.supportMessenger;
+    if (messengerUrl) {
+      messengerUrl = messengerUrl.trim();
+      if (messengerUrl.includes('facebook.com/')) {
+        const handle = messengerUrl.split('facebook.com/')[1]?.split('/')[0]?.split('?')[0];
+        if (handle) messengerUrl = `https://m.me/${handle}`;
+      } else if (!messengerUrl.startsWith('http')) {
+        const clean = messengerUrl.replace(/^@/, '').replace(/^\/+/, '');
+        messengerUrl = `https://m.me/${clean}`;
+      }
+    }
+
     this.settings = {
       ...this.settings,
       ...dto,
+      ...(messengerUrl ? { supportMessenger: messengerUrl } : {}),
       updatedAt: new Date().toISOString(),
     };
     this.saveToStorage();

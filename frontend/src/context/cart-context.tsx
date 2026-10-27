@@ -24,6 +24,12 @@ export interface PlatformSettingsState {
   standardDeliveryDhakaBdt: number;
   standardDeliveryOutsideBdt: number;
   freeDeliveryThresholdBdt: number;
+  supportPhone: string;
+  supportWhatsApp: string;
+  supportMessenger: string;
+  supportFacebook: string;
+  supportInstagram: string;
+  primaryConciergeChannel: 'MESSENGER' | 'WHATSAPP';
   isCampaignActive: boolean;
   campaignTitle: string;
   campaignDiscountPercent: number;
@@ -38,6 +44,12 @@ const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsState = {
   standardDeliveryDhakaBdt: BRAND.thresholds.standardDeliveryDhakaBdt,
   standardDeliveryOutsideBdt: BRAND.thresholds.standardDeliveryOutsideBdt,
   freeDeliveryThresholdBdt: BRAND.thresholds.freeDeliveryBdt,
+  supportPhone: '+880 9612 000000',
+  supportWhatsApp: '+880 1700 000000',
+  supportMessenger: 'https://m.me/seyvenofficial',
+  supportFacebook: 'https://www.facebook.com/seyvenofficial',
+  supportInstagram: 'https://www.instagram.com/seyven_beauty/',
+  primaryConciergeChannel: 'MESSENGER',
   isCampaignActive: false,
   campaignTitle: 'Festive Eid Sanctuary Privilege',
   campaignDiscountPercent: 7,
@@ -120,6 +132,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           standardDeliveryDhakaBdt: Number(json.data.standardDeliveryDhakaBdt) || 70,
           standardDeliveryOutsideBdt: Number(json.data.standardDeliveryOutsideBdt) || 130,
           freeDeliveryThresholdBdt: Number(json.data.freeDeliveryThresholdBdt) || 2000,
+          supportPhone: json.data.supportPhone || '+880 9612 000000',
+          supportWhatsApp: json.data.supportWhatsApp || '+880 1700 000000',
+          supportMessenger: json.data.supportMessenger || 'https://m.me/seyvenofficial',
+          supportFacebook: json.data.supportFacebook || 'https://www.facebook.com/seyvenofficial',
+          supportInstagram: json.data.supportInstagram || 'https://www.instagram.com/seyven_beauty/',
+          primaryConciergeChannel: json.data.primaryConciergeChannel || 'MESSENGER',
           isCampaignActive: json.data.isCampaignActive === true,
           campaignTitle: json.data.campaignTitle || '',
           campaignDiscountPercent: Number(json.data.campaignDiscountPercent) || 0,

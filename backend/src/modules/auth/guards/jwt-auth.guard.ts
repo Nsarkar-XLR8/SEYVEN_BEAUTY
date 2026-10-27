@@ -30,15 +30,19 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const token = authHeader.split(' ')[1];
+    // Security Hardening: Mock tokens are strictly prohibited on live production
     if (token.startsWith('admin_jwt_') || token.startsWith('demo_')) {
-      request.user = {
-        id: 'staff-farah',
-        userId: 'staff-farah',
-        phone: '01712-345678',
-        role: 'SUPER_ADMIN',
-        jti: 'admin-demo-jti',
-      };
-      return true;
+      if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_MOCK_AUTH === 'true') {
+        request.user = {
+          id: 'staff-farah',
+          userId: 'staff-farah',
+          phone: '01712-345678',
+          role: 'SUPER_ADMIN',
+          jti: 'admin-demo-jti',
+        };
+        return true;
+      }
+      throw new UnauthorizedException('Invalid token: mock authentication is forbidden in this environment.');
     }
     const payload = await this.tokenService.verifyAccessToken(token);
 

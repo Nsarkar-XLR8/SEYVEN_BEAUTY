@@ -32,6 +32,9 @@ export default function PlatformSettingsPage() {
   const [freeDeliveryThresholdBdt, setFreeDeliveryThresholdBdt] = useState<number>(2000);
   const [supportPhone, setSupportPhone] = useState('+880 9612 000000');
   const [supportWhatsApp, setSupportWhatsApp] = useState('+880 1700 000000');
+  const [supportMessenger, setSupportMessenger] = useState('https://m.me/seyvenofficial');
+  const [supportInstagram, setSupportInstagram] = useState('https://www.instagram.com/seyven_beauty/');
+  const [primaryConciergeChannel, setPrimaryConciergeChannel] = useState<'MESSENGER' | 'WHATSAPP'>('MESSENGER');
 
   // Seasonal Campaign State
   const [isCampaignActive, setIsCampaignActive] = useState(true);
@@ -71,6 +74,9 @@ export default function PlatformSettingsPage() {
           setFreeDeliveryThresholdBdt(Number(d.freeDeliveryThresholdBdt) || 2000);
           if (d.supportPhone) setSupportPhone(d.supportPhone);
           if (d.supportWhatsApp) setSupportWhatsApp(d.supportWhatsApp);
+          if (d.supportMessenger) setSupportMessenger(d.supportMessenger);
+          if (d.supportInstagram) setSupportInstagram(d.supportInstagram);
+          if (d.primaryConciergeChannel) setPrimaryConciergeChannel(d.primaryConciergeChannel);
           setIsCampaignActive(typeof d.isCampaignActive === 'boolean' ? d.isCampaignActive : true);
           if (d.campaignTitle) setCampaignTitle(d.campaignTitle);
           setCampaignDiscountPercent(typeof d.campaignDiscountPercent === 'number' ? d.campaignDiscountPercent : 7);
@@ -143,6 +149,9 @@ export default function PlatformSettingsPage() {
       freeDeliveryThresholdBdt: Number(freeDeliveryThresholdBdt),
       supportPhone: supportPhone.trim(),
       supportWhatsApp: supportWhatsApp.trim(),
+      supportMessenger: supportMessenger.trim(),
+      supportInstagram: supportInstagram.trim(),
+      primaryConciergeChannel,
       isCampaignActive,
       campaignTitle: campaignTitle.trim(),
       campaignDiscountPercent: Number(campaignDiscountPercent),
@@ -434,18 +443,140 @@ export default function PlatformSettingsPage() {
             </div>
             <div>
               <h2 className="text-sm uppercase tracking-[0.15em] font-serif font-medium text-[#1C1917]">
-                Sanctuary Concierge & Hotlines
+                Concierge & Social Advisory Channels
               </h2>
               <p className="text-[11px] text-[#78716C] font-light">
-                Client support phone numbers displayed on receipts and invoices.
+                Direct client communication channels powering the live Storefront Concierge, Footer, and Invoices.
               </p>
             </div>
           </div>
 
+          {/* Primary Channel Selector */}
+          <div className="p-4 bg-[#F9F6F0] border border-[#E6DFD5] space-y-2">
+            <label className="block text-[11px] uppercase tracking-wider font-medium text-[#1C1917]">
+              Primary Storefront Concierge Channel (One-Click Advisory)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+              <button
+                type="button"
+                onClick={() => setPrimaryConciergeChannel('MESSENGER')}
+                className={`p-3 text-left border flex items-center justify-between transition-colors ${
+                  primaryConciergeChannel === 'MESSENGER'
+                    ? 'border-[#1C1917] bg-[#1C1917] text-[#FAF8F5]'
+                    : 'border-[#E6DFD5] bg-white text-[#1C1917] hover:border-[#C7A97B]'
+                }`}
+              >
+                <div>
+                  <div className="font-semibold">Facebook Messenger (Recommended)</div>
+                  <div className="text-[10px] opacity-70">m.me/seyvenofficial · Meta Business Suite Multi-Agent</div>
+                </div>
+                {primaryConciergeChannel === 'MESSENGER' && <CheckCircle2 className="w-4 h-4 text-[#C7A97B]" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPrimaryConciergeChannel('WHATSAPP')}
+                className={`p-3 text-left border flex items-center justify-between transition-colors ${
+                  primaryConciergeChannel === 'WHATSAPP'
+                    ? 'border-[#1C1917] bg-[#1C1917] text-[#FAF8F5]'
+                    : 'border-[#E6DFD5] bg-white text-[#1C1917] hover:border-[#C7A97B]'
+                }`}
+              >
+                <div>
+                  <div className="font-semibold">WhatsApp Concierge</div>
+                  <div className="text-[10px] opacity-70">wa.me/phone · Private VIP Skincare Hotline</div>
+                </div>
+                {primaryConciergeChannel === 'WHATSAPP' && <CheckCircle2 className="w-4 h-4 text-[#C7A97B]" />}
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Messenger URL / Handle */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] uppercase tracking-wider font-medium text-[#1C1917]">
+                  Facebook Messenger Link or Page Handle
+                </label>
+                <a
+                  href={supportMessenger.startsWith('http') ? supportMessenger : `https://m.me/${supportMessenger.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-mono text-[#C7A97B] hover:underline"
+                >
+                  Test Chat ↗
+                </a>
+              </div>
+              <input
+                type="text"
+                value={supportMessenger}
+                onChange={(e) => setSupportMessenger(e.target.value)}
+                placeholder="https://m.me/seyvenofficial or seyvenofficial"
+                className="w-full text-xs font-mono p-3 bg-[#F9F6F0] border border-[#E6DFD5] rounded-none focus:outline-none focus:border-[#C7A97B]"
+              />
+              <span className="text-[10px] text-[#78716C] block">
+                Directs clients to <code className="text-[#1C1917] font-semibold">https://m.me/seyvenofficial</code> on Meta Business Suite.
+              </span>
+            </div>
+
+            {/* Instagram Link / Handle */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] uppercase tracking-wider font-medium text-[#1C1917]">
+                  Instagram Official Handle
+                </label>
+                <a
+                  href={supportInstagram.startsWith('http') ? supportInstagram : `https://www.instagram.com/${supportInstagram.replace(/^@/, '')}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-mono text-[#C7A97B] hover:underline"
+                >
+                  View Profile ↗
+                </a>
+              </div>
+              <input
+                type="text"
+                value={supportInstagram}
+                onChange={(e) => setSupportInstagram(e.target.value)}
+                placeholder="https://www.instagram.com/seyven_beauty/ or seyven_beauty"
+                className="w-full text-xs font-mono p-3 bg-[#F9F6F0] border border-[#E6DFD5] rounded-none focus:outline-none focus:border-[#C7A97B]"
+              />
+              <span className="text-[10px] text-[#78716C] block">
+                Official curation feed: <code className="text-[#1C1917] font-semibold">@seyven_beauty</code>.
+              </span>
+            </div>
+
+            {/* WhatsApp */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] uppercase tracking-wider font-medium text-[#1C1917]">
+                  WhatsApp Concierge Phone Number
+                </label>
+                <a
+                  href={`https://wa.me/${supportWhatsApp.replace(/\D/g, '').replace(/^0/, '880')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-mono text-[#C7A97B] hover:underline"
+                >
+                  Test WhatsApp ↗
+                </a>
+              </div>
+              <input
+                type="text"
+                value={supportWhatsApp}
+                onChange={(e) => setSupportWhatsApp(e.target.value)}
+                placeholder="+880 1700 000000 or 017XXXXXXXX"
+                className="w-full text-xs font-mono p-3 bg-[#F9F6F0] border border-[#E6DFD5] rounded-none focus:outline-none focus:border-[#C7A97B]"
+              />
+              <span className="text-[10px] text-[#78716C] block">
+                Auto-sanitized to Bangladeshi country code (880) for one-click chat.
+              </span>
+            </div>
+
+            {/* Support Hotline */}
             <div className="space-y-1.5">
               <label className="block text-[11px] uppercase tracking-wider font-medium text-[#1C1917]">
-                Customer Support Hotline
+                Official Voice Hotline
               </label>
               <input
                 type="text"
@@ -454,19 +585,9 @@ export default function PlatformSettingsPage() {
                 placeholder="+880 9612 000000"
                 className="w-full text-xs font-mono p-3 bg-[#F9F6F0] border border-[#E6DFD5] rounded-none focus:outline-none focus:border-[#C7A97B]"
               />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-[11px] uppercase tracking-wider font-medium text-[#1C1917]">
-                WhatsApp Concierge Line
-              </label>
-              <input
-                type="text"
-                value={supportWhatsApp}
-                onChange={(e) => setSupportWhatsApp(e.target.value)}
-                placeholder="+880 1700 000000"
-                className="w-full text-xs font-mono p-3 bg-[#F9F6F0] border border-[#E6DFD5] rounded-none focus:outline-none focus:border-[#C7A97B]"
-              />
+              <span className="text-[10px] text-[#78716C] block">
+                Voice support line printed on customer invoices and packaging.
+              </span>
             </div>
           </div>
         </div>

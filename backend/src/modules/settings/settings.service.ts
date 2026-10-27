@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PrismaService } from '../../common/database/prisma.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 
 export interface PlatformSettings {
@@ -46,13 +47,81 @@ const DEFAULT_SETTINGS: PlatformSettings = {
 };
 
 @Injectable()
-export class SettingsService {
+export class SettingsService implements OnModuleInit {
   private readonly logger = new Logger(SettingsService.name);
   private settings: PlatformSettings = { ...DEFAULT_SETTINGS };
   private readonly storageFilePath = path.resolve(process.cwd(), 'platform-settings.json');
 
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     this.loadFromStorage();
+  }
+
+  async onModuleInit() {
+    await this.syncWithDatabase();
+  }
+
+  private async syncWithDatabase() {
+    try {
+      const dbRow = await this.prisma.platformSetting.findUnique({
+        where: { id: 'default' },
+      });
+
+      if (dbRow) {
+        this.settings = this.mapDbRowToSettings(dbRow);
+        this.saveToStorage();
+        this.logger.log('✨ [SettingsService] Platform settings successfully synced from PostgreSQL database.');
+      } else {
+        // Seed default row into database
+        await this.prisma.platformSetting.create({
+          data: {
+            id: 'default',
+            isVatEnabled: this.settings.isVatEnabled,
+            vatRatePercent: this.settings.vatRatePercent,
+            isVatInclusive: this.settings.isVatInclusive,
+            standardDeliveryDhakaBdt: this.settings.standardDeliveryDhakaBdt,
+            standardDeliveryOutsideBdt: this.settings.standardDeliveryOutsideBdt,
+            freeDeliveryThresholdBdt: this.settings.freeDeliveryThresholdBdt,
+            supportPhone: this.settings.supportPhone,
+            supportWhatsApp: this.settings.supportWhatsApp,
+            supportMessenger: this.settings.supportMessenger,
+            supportFacebook: this.settings.supportFacebook,
+            supportInstagram: this.settings.supportInstagram,
+            primaryConciergeChannel: this.settings.primaryConciergeChannel,
+            isCampaignActive: this.settings.isCampaignActive,
+            campaignTitle: this.settings.campaignTitle,
+            campaignDiscountPercent: this.settings.campaignDiscountPercent,
+            campaignStartDate: this.settings.campaignStartDate ? new Date(this.settings.campaignStartDate) : null,
+            campaignEndDate: this.settings.campaignEndDate ? new Date(this.settings.campaignEndDate) : null,
+          },
+        });
+        this.logger.log('✨ [SettingsService] Default platform settings row initialized in PostgreSQL database.');
+      }
+    } catch (err: any) {
+      this.logger.warn(`⚠️ [SettingsService] Could not sync with database: ${err.message}. Using cached/file settings.`);
+    }
+  }
+
+  private mapDbRowToSettings(row: any): PlatformSettings {
+    return {
+      isVatEnabled: row.isVatEnabled,
+      vatRatePercent: Number(row.vatRatePercent),
+      isVatInclusive: row.isVatInclusive,
+      standardDeliveryDhakaBdt: Number(row.standardDeliveryDhakaBdt),
+      standardDeliveryOutsideBdt: Number(row.standardDeliveryOutsideBdt),
+      freeDeliveryThresholdBdt: Number(row.freeDeliveryThresholdBdt),
+      supportPhone: row.supportPhone,
+      supportWhatsApp: row.supportWhatsApp,
+      supportMessenger: row.supportMessenger,
+      supportFacebook: row.supportFacebook,
+      supportInstagram: row.supportInstagram,
+      primaryConciergeChannel: (row.primaryConciergeChannel as 'MESSENGER' | 'WHATSAPP') || 'MESSENGER',
+      isCampaignActive: row.isCampaignActive,
+      campaignTitle: row.campaignTitle,
+      campaignDiscountPercent: Number(row.campaignDiscountPercent),
+      campaignStartDate: row.campaignStartDate ? new Date(row.campaignStartDate).toISOString() : null,
+      campaignEndDate: row.campaignEndDate ? new Date(row.campaignEndDate).toISOString() : null,
+      updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : new Date().toISOString(),
+    };
   }
 
   private loadFromStorage() {
@@ -82,7 +151,7 @@ export class SettingsService {
     return { ...this.settings };
   }
 
-  updateSettings(dto: UpdateSettingsDto): PlatformSettings {
+  async updateSettings(dto: UpdateSettingsDto): Promise<PlatformSettings> {
     let messengerUrl = dto.supportMessenger;
     if (messengerUrl) {
       messengerUrl = messengerUrl.trim();
@@ -102,25 +171,93 @@ export class SettingsService {
       updatedAt: new Date().toISOString(),
     };
     this.saveToStorage();
-    this.logger.log(`Platform settings updated: VAT Enabled=${this.settings.isVatEnabled}, VAT%=${this.settings.vatRatePercent}`);
+
+    // Persist to PostgreSQL Database
+    try {
+      const dbRow = await this.prisma.platformSetting.upsert({
+        where: { id: 'default' },
+        create: {
+          id: 'default',
+          isVatEnabled: this.settings.isVatEnabled,
+          vatRatePercent: this.settings.vatRatePercent,
+          isVatInclusive: this.settings.isVatInclusive,
+          standardDeliveryDhakaBdt: this.settings.standardDeliveryDhakaBdt,
+          standardDeliveryOutsideBdt: this.settings.standardDeliveryOutsideBdt,
+          freeDeliveryThresholdBdt: this.settings.freeDeliveryThresholdBdt,
+          supportPhone: this.settings.supportPhone,
+          supportWhatsApp: this.settings.supportWhatsApp,
+          supportMessenger: this.settings.supportMessenger,
+          supportFacebook: this.settings.supportFacebook,
+          supportInstagram: this.settings.supportInstagram,
+          primaryConciergeChannel: this.settings.primaryConciergeChannel,
+          isCampaignActive: this.settings.isCampaignActive,
+          campaignTitle: this.settings.campaignTitle,
+          campaignDiscountPercent: this.settings.campaignDiscountPercent,
+          campaignStartDate: this.settings.campaignStartDate ? new Date(this.settings.campaignStartDate) : null,
+          campaignEndDate: this.settings.campaignEndDate ? new Date(this.settings.campaignEndDate) : null,
+        },
+        update: {
+          isVatEnabled: this.settings.isVatEnabled,
+          vatRatePercent: this.settings.vatRatePercent,
+          isVatInclusive: this.settings.isVatInclusive,
+          standardDeliveryDhakaBdt: this.settings.standardDeliveryDhakaBdt,
+          standardDeliveryOutsideBdt: this.settings.standardDeliveryOutsideBdt,
+          freeDeliveryThresholdBdt: this.settings.freeDeliveryThresholdBdt,
+          supportPhone: this.settings.supportPhone,
+          supportWhatsApp: this.settings.supportWhatsApp,
+          supportMessenger: this.settings.supportMessenger,
+          supportFacebook: this.settings.supportFacebook,
+          supportInstagram: this.settings.supportInstagram,
+          primaryConciergeChannel: this.settings.primaryConciergeChannel,
+          isCampaignActive: this.settings.isCampaignActive,
+          campaignTitle: this.settings.campaignTitle,
+          campaignDiscountPercent: this.settings.campaignDiscountPercent,
+          campaignStartDate: this.settings.campaignStartDate ? new Date(this.settings.campaignStartDate) : null,
+          campaignEndDate: this.settings.campaignEndDate ? new Date(this.settings.campaignEndDate) : null,
+        },
+      });
+      this.settings = this.mapDbRowToSettings(dbRow);
+      this.logger.log(`✅ [SettingsService] Settings saved and persisted to PostgreSQL database successfully.`);
+    } catch (err: any) {
+      this.logger.error(`❌ [SettingsService] Failed to persist settings to database: ${err.message}`);
+    }
+
     return { ...this.settings };
   }
 
-  toggleVat(enabled?: boolean): PlatformSettings {
+  async toggleVat(enabled?: boolean): Promise<PlatformSettings> {
     const nextState = typeof enabled === 'boolean' ? enabled : !this.settings.isVatEnabled;
     this.settings.isVatEnabled = nextState;
     this.settings.updatedAt = new Date().toISOString();
     this.saveToStorage();
-    this.logger.log(`Platform VAT toggled to: ${this.settings.isVatEnabled ? 'ON' : 'OFF'}`);
+
+    try {
+      await this.prisma.platformSetting.update({
+        where: { id: 'default' },
+        data: { isVatEnabled: nextState },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Could not update VAT toggle in DB: ${err.message}`);
+    }
+
     return { ...this.settings };
   }
 
-  toggleCampaign(enabled?: boolean): PlatformSettings {
+  async toggleCampaign(enabled?: boolean): Promise<PlatformSettings> {
     const nextState = typeof enabled === 'boolean' ? enabled : !this.settings.isCampaignActive;
     this.settings.isCampaignActive = nextState;
     this.settings.updatedAt = new Date().toISOString();
     this.saveToStorage();
-    this.logger.log(`Seasonal Campaign toggled to: ${this.settings.isCampaignActive ? 'ACTIVE' : 'INACTIVE'}`);
+
+    try {
+      await this.prisma.platformSetting.update({
+        where: { id: 'default' },
+        data: { isCampaignActive: nextState },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Could not update Campaign toggle in DB: ${err.message}`);
+    }
+
     return { ...this.settings };
   }
 }

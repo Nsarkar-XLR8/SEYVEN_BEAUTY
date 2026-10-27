@@ -80,9 +80,12 @@ export default function PlatformSettingsPage() {
         }
       }
 
-      const res = await fetch('/api/settings', { cache: 'no-store' }).catch(() =>
-        fetch(`${apiUrl}/settings`)
-      );
+      let res: Response | null = null;
+      try {
+        res = await fetch(`${apiUrl}/settings`, { cache: 'no-store' });
+      } catch {
+        res = await fetch('/api/settings', { cache: 'no-store' }).catch(() => null);
+      }
       if (res && res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
@@ -189,17 +192,20 @@ export default function PlatformSettingsPage() {
         localStorage.setItem('seyven_platform_settings', JSON.stringify(payload));
       } catch {}
 
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() =>
-        fetch(`${apiUrl}/settings`, {
+      let res: Response | null = null;
+      try {
+        res = await fetch(`${apiUrl}/settings`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-        })
-      );
+        });
+      } catch {
+        res = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(() => null);
+      }
 
       if (res && res.ok) {
         showToast('✓ Platform settings updated and live across Storefront & Checkout!');

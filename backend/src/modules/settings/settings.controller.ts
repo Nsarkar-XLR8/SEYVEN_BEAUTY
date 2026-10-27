@@ -19,8 +19,8 @@ export class SettingsController {
 
   @Put()
   @ApiOperation({ summary: 'Update platform settings (Admin)' })
-  updateSettings(@Body() dto: UpdateSettingsDto) {
-    const updated = this.settingsService.updateSettings(dto);
+  async updateSettings(@Body() dto: UpdateSettingsDto) {
+    const updated = await this.settingsService.updateSettings(dto);
     return {
       success: true,
       message: 'Platform settings updated successfully',
@@ -30,8 +30,8 @@ export class SettingsController {
 
   @Patch()
   @ApiOperation({ summary: 'Partially update platform settings' })
-  patchSettings(@Body() dto: UpdateSettingsDto) {
-    const updated = this.settingsService.updateSettings(dto);
+  async patchSettings(@Body() dto: UpdateSettingsDto) {
+    const updated = await this.settingsService.updateSettings(dto);
     return {
       success: true,
       message: 'Platform settings updated successfully',
@@ -41,8 +41,8 @@ export class SettingsController {
 
   @Post('vat/toggle')
   @ApiOperation({ summary: 'Turn VAT On or Off' })
-  toggleVat(@Body('enabled') enabled?: boolean) {
-    const updated = this.settingsService.toggleVat(enabled);
+  async toggleVat(@Body('enabled') enabled?: boolean) {
+    const updated = await this.settingsService.toggleVat(enabled);
     return {
       success: true,
       message: `VAT has been turned ${updated.isVatEnabled ? 'ON' : 'OFF'}`,
@@ -52,8 +52,8 @@ export class SettingsController {
 
   @Post('campaign/toggle')
   @ApiOperation({ summary: 'Turn Seasonal Campaign On or Off' })
-  toggleCampaign(@Body('enabled') enabled?: boolean) {
-    const updated = this.settingsService.toggleCampaign(enabled);
+  async toggleCampaign(@Body('enabled') enabled?: boolean) {
+    const updated = await this.settingsService.toggleCampaign(enabled);
     return {
       success: true,
       message: `Seasonal Campaign has been turned ${updated.isCampaignActive ? 'ACTIVE' : 'INACTIVE'}`,

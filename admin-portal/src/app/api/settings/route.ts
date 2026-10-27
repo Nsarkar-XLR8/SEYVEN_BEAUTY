@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_API_URL || '';
+const apiUrl =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.BACKEND_API_URL ||
+  'https://seyven-beauty-backend.onrender.com/api/v1';
 
 function getSettingsFilePath(): string | null {
   const possiblePaths = [

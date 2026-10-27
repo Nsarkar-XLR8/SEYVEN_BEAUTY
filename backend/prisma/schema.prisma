@@ -1055,3 +1055,28 @@ model NewsletterSubscriber {
 
   @@map("newsletter_subscribers")
 }
+
+model PlatformSetting {
+  id                         String    @id @default("default") @db.VarChar(50)
+  isVatEnabled               Boolean   @default(false) @map("is_vat_enabled")
+  vatRatePercent             Decimal   @default(5) @map("vat_rate_percent") @db.Decimal(5, 2)
+  isVatInclusive             Boolean   @default(true) @map("is_vat_inclusive")
+  standardDeliveryDhakaBdt   Decimal   @default(70) @map("standard_delivery_dhaka_bdt") @db.Decimal(10, 2)
+  standardDeliveryOutsideBdt Decimal   @default(130) @map("standard_delivery_outside_bdt") @db.Decimal(10, 2)
+  freeDeliveryThresholdBdt   Decimal   @default(3000) @map("free_delivery_threshold_bdt") @db.Decimal(10, 2)
+  supportPhone               String    @default("+880 9612 000000") @map("support_phone") @db.VarChar(50)
+  supportWhatsApp            String    @default("+880 1700 000000") @map("support_whatsapp") @db.VarChar(50)
+  supportMessenger           String    @default("https://m.me/seyvenofficial") @map("support_messenger") @db.VarChar(255)
+  supportFacebook            String    @default("https://www.facebook.com/seyvenofficial") @map("support_facebook") @db.VarChar(255)
+  supportInstagram           String    @default("https://www.instagram.com/seyven_beauty/") @map("support_instagram") @db.VarChar(255)
+  primaryConciergeChannel    String    @default("MESSENGER") @map("primary_concierge_channel") @db.VarChar(50)
+  isCampaignActive           Boolean   @default(true) @map("is_campaign_active")
+  campaignTitle              String    @default("Festive Eid Sanctuary Privilege") @map("campaign_title") @db.VarChar(150)
+  campaignDiscountPercent    Decimal   @default(7) @map("campaign_discount_percent") @db.Decimal(5, 2)
+  campaignStartDate          DateTime? @map("campaign_start_date") @db.Timestamptz(6)
+  campaignEndDate            DateTime? @map("campaign_end_date") @db.Timestamptz(6)
+  updatedAt                  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("platform_settings")
+}
+

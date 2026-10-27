@@ -248,24 +248,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsCampaignRunning(true);
   }, [settings]);
 
-  const campaignDiscountBdt = isCampaignRunning ? Math.round(subtotalBdt * (settings.campaignDiscountPercent / 100)) : 0;
-
-  // Privilege code is only usable when owner runs a festival campaign
-  const calculatePrivilegeDiscount = (code: string | null, subtotal: number) => {
-    if (!code || subtotal === 0 || !isCampaignRunning || !settings.campaignDiscountPercent) return 0;
-    const trimmed = code.trim().toUpperCase();
-    if (trimmed === 'EID7' || trimmed === 'FESTIVAL') {
-      return Math.round(subtotal * (settings.campaignDiscountPercent / 100));
+  // Clean up code if campaign is turned off
+  useEffect(() => {
+    if (!isCampaignRunning && privilegeCode) {
+      setPrivilegeCode(null);
+      try {
+        localStorage.removeItem('seyven_active_privilege');
+      } catch {}
     }
-    return 0;
-  };
+  }, [isCampaignRunning, privilegeCode]);
 
-  const explicitPrivilegeDiscount = calculatePrivilegeDiscount(privilegeCode, subtotalBdt);
-  
-  const discountBdt = Math.max(campaignDiscountBdt, explicitPrivilegeDiscount);
-  const activePrivilegeLabel = privilegeCode && discountBdt > 0
-    ? `${settings.campaignTitle || 'Festival Sanctuary Privilege'} (${settings.campaignDiscountPercent}%)`
-    : (isCampaignRunning && campaignDiscountBdt > 0 ? `${settings.campaignTitle} (${settings.campaignDiscountPercent}%)` : null);
+  // Discount applies ONLY when campaign is active AND code is applied
+  const discountBdt = (isCampaignRunning && privilegeCode)
+    ? Math.round(subtotalBdt * (settings.campaignDiscountPercent / 100))
+    : 0;
+
+  const activePrivilegeLabel = discountBdt > 0
+    ? `${settings.campaignTitle || 'Privilege Pass'} (${settings.campaignDiscountPercent}%)`
+    : null;
 
   // VAT: if turned OFF by admin, vatBdt = 0; if turned ON, compute based on vatRatePercent
   const vatBdt = (settings.isVatEnabled && settings.vatRatePercent > 0)

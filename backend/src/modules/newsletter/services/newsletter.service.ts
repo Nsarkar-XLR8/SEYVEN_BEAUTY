@@ -28,36 +28,32 @@ export class NewsletterService {
     private readonly prisma: PrismaService,
     private readonly queueService: NewsletterQueueService,
   ) {
-    this.seedInitialSubscribers();
+    this.loadSubscribersFromDb();
   }
 
   /**
-   * Pre-seeds initial VIP / advisory subscribers for immediate testing & demo
+   * Loads genuine subscribers from PostgreSQL database (newsletter_subscribers table).
+   * Static mock/demo subscribers removed.
    */
-  private seedInitialSubscribers() {
-    const demoSubscribers: Array<{ email: string; fullName: string; source: string }> = [
-      { email: 'vip.amina@seyven.com.bd', fullName: 'Amina Chowdhury', source: 'SANCTUARY_VIP' },
-      { email: 'taznin.rahman@gmail.com', fullName: 'Dr. Taznin Rahman', source: 'FOOTER' },
-      { email: 'nusrat.jahan@dermal-bd.com', fullName: 'Nusrat Jahan', source: 'POPUP' },
-      { email: 'farhana.yasmin@outlook.com', fullName: 'Farhana Yasmin', source: 'CHECKOUT' },
-      { email: 'concierge.demo@seyven.com.bd', fullName: 'SEYVEN Client Care', source: 'CONCIERGE' },
-    ];
-
-    for (const sub of demoSubscribers) {
-      const id = uuidv4();
-      this.memorySubscribers.set(sub.email.toLowerCase(), {
-        id,
-        email: sub.email.toLowerCase(),
-        fullName: sub.fullName,
-        status: 'SUBSCRIBED',
-        unsubscribeToken: crypto.randomBytes(24).toString('hex'),
-        source: sub.source,
-        createdAt: new Date(),
-        unsubscribedAt: null,
-      });
+  private async loadSubscribersFromDb() {
+    try {
+      const dbSubscribers = await this.prisma.newsletterSubscriber.findMany();
+      for (const sub of dbSubscribers) {
+        this.memorySubscribers.set(sub.email.toLowerCase(), {
+          id: sub.id,
+          email: sub.email.toLowerCase(),
+          fullName: sub.fullName,
+          status: sub.status as any,
+          unsubscribeToken: sub.unsubscribeToken || crypto.randomBytes(24).toString('hex'),
+          source: sub.source,
+          createdAt: sub.createdAt,
+          unsubscribedAt: sub.unsubscribedAt,
+        });
+      }
+      this.logger.log(`🌱 [NewsletterService] Loaded ${this.memorySubscribers.size} active subscribers from database.`);
+    } catch (err: any) {
+      this.logger.warn(`Could not load subscribers from database: ${err.message}`);
     }
-
-    this.logger.log(`🌱 [NewsletterService] Initialized with ${this.memorySubscribers.size} subscribers.`);
   }
 
   /**

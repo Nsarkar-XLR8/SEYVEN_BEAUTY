@@ -58,7 +58,10 @@ export default function CheckoutPage() {
   const freeThreshold = Number(settings?.freeDeliveryThresholdBdt) || 3000;
   const isFreeDeliveryEligible = Math.max(0, subtotalBdt - discountBdt) >= freeThreshold;
   const deliveryFeeBdt = isFreeDeliveryEligible ? 0 : (isInsideDhaka ? standardFeeDhaka : standardFeeOutside);
-  const netPayableBdt = Math.max(0, subtotalBdt - discountBdt - loyaltyDiscountBdt + deliveryFeeBdt);
+
+  // Business rule: Campaign discount (7%) and repeat client loyalty (5%) do not stack
+  const effectiveLoyaltyDiscount = discountBdt > 0 ? 0 : loyaltyDiscountBdt;
+  const netPayableBdt = Math.max(0, subtotalBdt - discountBdt - effectiveLoyaltyDiscount + deliveryFeeBdt);
 
   const isMessengerConcierge = settings?.primaryConciergeChannel === 'MESSENGER';
   const conciergeMessage = `Hi SEYVEN Concierge! I want to confirm my order:\n\n• Items: ${items.map((i) => `${i.titleEn} (x${i.quantity})`).join(', ')}\n• Total: ${formatBdt(netPayableBdt)}\n• Area: ${activeDistrictName}\n\nPlease take my address.`;
@@ -125,7 +128,7 @@ export default function CheckoutPage() {
         totalBdt: netPayableBdt,
         subtotalBdt,
         deliveryFeeBdt,
-        discountBdt: discountBdt + loyaltyDiscountBdt,
+        discountBdt: discountBdt + effectiveLoyaltyDiscount,
         items: items.map((it) => ({
           id: it.id,
           titleEn: it.titleEn,
@@ -442,20 +445,22 @@ export default function CheckoutPage() {
               </div>
             </section>
 
-            {/* 3. Esteemed Client Privilege */}
-            <section className="pt-2">
-              <CheckoutLoyaltySlider
-                maxSubtotalBdt={subtotalBdt}
-                phone={phone}
-                email={email}
-                onClientRecognized={(recognizedName) => {
-                  if (!fullName.trim() && recognizedName) {
-                    setFullName(recognizedName);
-                  }
-                }}
-                onRedeemChange={(val) => setLoyaltyDiscountBdt(val)}
-              />
-            </section>
+            {/* 3. Esteemed Client Privilege (Hidden if festival campaign code is applied) */}
+            {discountBdt === 0 && (
+              <section className="pt-2">
+                <CheckoutLoyaltySlider
+                  maxSubtotalBdt={subtotalBdt}
+                  phone={phone}
+                  email={email}
+                  onClientRecognized={(recognizedName) => {
+                    if (!fullName.trim() && recognizedName) {
+                      setFullName(recognizedName);
+                    }
+                  }}
+                  onRedeemChange={(val) => setLoyaltyDiscountBdt(val)}
+                />
+              </section>
+            )}
 
             {/* 4. Payment Selection */}
             <section className="pt-4 border-t border-[#E6DFD5]">
@@ -522,7 +527,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-5 lg:sticky lg:top-28">
             <CheckoutOrderSummary
               deliveryFeeBdt={deliveryFeeBdt}
-              loyaltyDiscountBdt={loyaltyDiscountBdt}
+              loyaltyDiscountBdt={effectiveLoyaltyDiscount}
             />
 
             {/* Reassurance Badge Block */}

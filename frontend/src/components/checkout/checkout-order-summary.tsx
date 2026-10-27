@@ -88,11 +88,29 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
     discountBdt,
     privilegeCode,
     activePrivilegeLabel,
+    applyPrivilege,
     removePrivilege,
+    isCampaignRunning,
     settings,
     vatBdt,
   } = useCart();
   const [isItemsExpanded, setIsItemsExpanded] = useState(false);
+  const [inputCode, setInputCode] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+
+  const handleApply = async () => {
+    if (!inputCode.trim()) return;
+    setIsApplying(true);
+    setApplyError(null);
+    const res = await applyPrivilege(inputCode);
+    setIsApplying(false);
+    if (!res.success) {
+      setApplyError(res.message);
+    } else {
+      setInputCode('');
+    }
+  };
 
   const netTotal = Math.max(0, subtotalBdt - discountBdt - loyaltyDiscountBdt + deliveryFeeBdt);
 
@@ -158,25 +176,53 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
         )}
       </div>
 
-      {/* Active Sanctuary Client Privilege Pass (Auto-honored from private link) */}
-      {privilegeCode && (
-        <div className="pt-2 border-t border-[#E6DFD5]/80">
-          <div className="p-2.5 bg-[#1C1917] text-[#FAF8F5] border border-[#C7A97B]/60 flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
-              <span className="font-serif tracking-wider text-[11px] uppercase">
-                {t('SANCTUARY PRIVILEGE HONORED:', 'প্রিভিলেজ সক্রিয়:')}{' '}
-                <strong className="font-mono text-[#C7A97B] font-semibold">{privilegeCode}</strong>
-              </span>
+      {/* Campaign Privilege Section: Only displayed when festival campaign is running */}
+      {isCampaignRunning && (
+        <div className="pt-2 border-t border-[#E6DFD5]/80 space-y-2">
+          {privilegeCode ? (
+            <div className="p-2.5 bg-[#1C1917] text-[#FAF8F5] border border-[#C7A97B]/60 flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
+                <span className="font-serif tracking-wider text-[11px] uppercase">
+                  {t('PRIVILEGE HONORED:', 'প্রিভিলেজ সক্রিয়:')}{' '}
+                  <strong className="font-mono text-[#C7A97B] font-semibold">{privilegeCode}</strong>
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={removePrivilege}
+                className="text-[10px] text-[#FAF8F5]/60 hover:text-white underline cursor-pointer tracking-wider transition-colors"
+              >
+                {t('REMOVE', 'মুছুন')}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={removePrivilege}
-              className="text-[10px] text-[#FAF8F5]/60 hover:text-white underline cursor-pointer tracking-wider transition-colors"
-            >
-              {t('REMOVE', 'মুছুন')}
-            </button>
-          </div>
+          ) : (
+            <div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={inputCode}
+                  onChange={(e) => {
+                    setInputCode(e.target.value.toUpperCase());
+                    setApplyError(null);
+                  }}
+                  placeholder={t('Privilege Code (e.g. EID7)', 'প্রিভিলেজ কোড (যেমন: EID7)')}
+                  className="flex-1 bg-white border border-[#E6DFD5] px-3 py-2 text-xs uppercase tracking-wider text-[#1C1917] placeholder:text-[#1C1917]/40 focus:outline-hidden focus:border-[#C7A97B]"
+                />
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  disabled={isApplying || !inputCode.trim()}
+                  className="px-4 py-2 bg-[#1C1917] hover:bg-[#1C1917]/90 disabled:opacity-40 text-[#F9F6F0] text-[11px] uppercase tracking-wider font-medium cursor-pointer transition-colors"
+                >
+                  {isApplying ? '...' : t('APPLY', 'প্রয়োগ')}
+                </button>
+              </div>
+              {applyError && (
+                <p className="text-[10px] text-rose-600 mt-1 font-light">{applyError}</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

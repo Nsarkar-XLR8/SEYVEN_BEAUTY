@@ -19,9 +19,10 @@ import {
   ClipboardPaste,
   Check,
   Send,
+  Edit3,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
-import { AdminProduct, OrderItem } from '@/types/admin';
+import { AdminProduct, AdminProductVariant, OrderItem } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
 
 interface ManualOrderModalProps {
@@ -37,11 +38,12 @@ const CHANNELS = [
   { id: 'Phone Call', label: 'Phone', icon: '📞' },
 ];
 
-const DELIVERY_ZONES = [
-  { id: 'dhaka-city', label: 'Dhaka City', fee: 70, tag: '৳70 (Inside Dhaka)' },
-  { id: 'dhaka-suburbs', label: 'Suburbs', fee: 100, tag: '৳100 (Savar, Gazipur, Narayanganj)' },
-  { id: 'outside-dhaka', label: 'Outside Dhaka', fee: 130, tag: '৳130 (All Other Districts)' },
-  { id: 'free', label: 'Free Delivery', fee: 0, tag: '৳0 (Special Offer)' },
+const PRESET_FEES = [
+  { label: 'Inside Dhaka (৳70)', fee: 70, zone: 'Dhaka City' },
+  { label: 'Suburbs (৳100)', fee: 100, zone: 'Dhaka Suburbs' },
+  { label: 'Outside Dhaka (৳130)', fee: 130, zone: 'Outside Dhaka' },
+  { label: 'Express (৳150)', fee: 150, zone: 'Express Courier' },
+  { label: 'Free Delivery (৳0)', fee: 0, zone: 'Free Delivery' },
 ];
 
 export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrderModalProps) {
@@ -58,9 +60,9 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
   const [address, setAddress] = useState('');
   const [source, setSource] = useState('Facebook Messenger');
 
-  // Delivery zone & fee
-  const [selectedZoneId, setSelectedZoneId] = useState<string>('dhaka-city');
-  const [customFee, setCustomFee] = useState<number>(70);
+  // Delivery zone & fee (Full freedom for admin)
+  const [deliveryFee, setDeliveryFee] = useState<number>(70);
+  const [zoneName, setZoneName] = useState<string>('Dhaka City');
 
   // Order items
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -106,7 +108,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
     ).slice(0, 10);
   }, [products, searchProductQuery]);
 
-  // Quick pick items (popular skincare staples)
+  // Quick pick items
   const quickPickProducts = useMemo(() => {
     return products.slice(0, 4);
   }, [products]);
@@ -116,7 +118,6 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
     return orderItems.reduce((acc, it) => acc + it.totalPrice, 0);
   }, [orderItems]);
 
-  const deliveryFee = customFee;
   const advanceDeduction = hasAdvanceFee ? advanceAmount : 0;
   const totalAmount = Math.max(0, subtotal + deliveryFee - discountBdt);
   const codDueAtDoorstep = Math.max(0, totalAmount - advanceDeduction);
@@ -159,7 +160,6 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
       }
     }
 
-    // Fallbacks if tags not found
     if (!parsedName && lines.length > 0) {
       const candidate = lines[0];
       if (!candidate.match(/\d{5,}/) && candidate.length < 40) {
@@ -192,8 +192,8 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
       lowerAddr.includes('keraniganj') ||
       lowerAddr.includes('কেরানীগঞ্জ')
     ) {
-      setSelectedZoneId('dhaka-suburbs');
-      setCustomFee(100);
+      setZoneName('Dhaka Suburbs');
+      setDeliveryFee(100);
       if (hasAdvanceFee) setAdvanceAmount(100);
     } else if (
       lowerAddr.includes('dhaka') ||
@@ -213,12 +213,12 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
       lowerAddr.includes('badda') ||
       lowerAddr.includes('বাড্ডা')
     ) {
-      setSelectedZoneId('dhaka-city');
-      setCustomFee(70);
+      setZoneName('Dhaka City');
+      setDeliveryFee(70);
       if (hasAdvanceFee) setAdvanceAmount(70);
     } else if (parsedAddress.length > 10) {
-      setSelectedZoneId('outside-dhaka');
-      setCustomFee(130);
+      setZoneName('Outside Dhaka');
+      setDeliveryFee(130);
       if (hasAdvanceFee) setAdvanceAmount(130);
     }
 
@@ -227,36 +227,60 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
     setTimeout(() => setPasteSuccessNotice(null), 4000);
   };
 
-  // Add product to order
-  const handleAddProduct = (prod: AdminProduct) => {
-    const unitPrice = prod.priceBdt || 1850;
-    const existingIndex = orderItems.findIndex((it) => it.id === prod.id);
+  // Add product to order (supports specific variant)
+  const handleAddProduct = (prod: AdminProduct, variant?: AdminProductVariant) => {
+    const unitPrice = variant?.priceBdt || prod.priceBdt || 1850;
+    const variantVolume = variant?.volume || prod.volume || '50 ML';
+    const sku = variant?.sku || prod.slug || 'SKU';
 
-    if (existingIndex >= 0) {
-      const updated = [...orderItems];
-      updated[existingIndex].quantity += 1;
-      updated[existingIndex].totalPrice = updated[existingIndex].quantity * updated[existingIndex].unitPrice;
-      setOrderItems(updated);
-    } else {
-      const newItem: OrderItem = {
-        id: prod.id,
-        sku: (prod.slug || prod.id || 'SKU').toUpperCase().substring(0, 14),
-        title: prod.titleEn,
-        brand: prod.brand || 'SEYVEN',
-        variant: prod.volume || 'Standard',
-        quantity: 1,
-        unitPrice,
-        totalPrice: unitPrice,
-        image: prod.imageUrl,
-      };
-      setOrderItems([...orderItems, newItem]);
-    }
-
+    const newItem: OrderItem = {
+      id: `${prod.id}-${variantVolume.replace(/\s+/g, '')}-${Date.now()}`,
+      sku: sku.toUpperCase().substring(0, 16),
+      title: prod.titleEn,
+      brand: prod.brand || 'SEYVEN',
+      variant: variantVolume,
+      quantity: 1,
+      unitPrice,
+      totalPrice: unitPrice,
+      image: prod.imageUrl,
+    };
+    setOrderItems((prev) => [...prev, newItem]);
     setSearchProductQuery('');
     setIsSearchOpen(false);
   };
 
-  // Update item quantity
+  // Add empty manual / custom product row (100% freedom for admin)
+  const handleAddManualItem = () => {
+    const newItem: OrderItem = {
+      id: `manual-${Date.now()}`,
+      sku: `CUSTOM-${Math.floor(1000 + Math.random() * 9000)}`,
+      title: '',
+      brand: 'Custom Item',
+      variant: '50 ML',
+      quantity: 1,
+      unitPrice: 1200,
+      totalPrice: 1200,
+    };
+    setOrderItems((prev) => [...prev, newItem]);
+  };
+
+  // Update item field (title, variant, price, quantity)
+  const handleUpdateItemField = (index: number, field: keyof OrderItem, val: any) => {
+    const updated = [...orderItems];
+    const item = { ...updated[index], [field]: val };
+
+    if (field === 'unitPrice' || field === 'quantity') {
+      const q = Math.max(1, Number(item.quantity) || 1);
+      const p = Math.max(0, Number(item.unitPrice) || 0);
+      item.quantity = q;
+      item.unitPrice = p;
+      item.totalPrice = q * p;
+    }
+
+    updated[index] = item;
+    setOrderItems(updated);
+  };
+
   const handleUpdateQuantity = (index: number, newQty: number) => {
     if (newQty <= 0) {
       handleRemoveItem(index);
@@ -268,24 +292,8 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
     setOrderItems(updated);
   };
 
-  // Update item unit price (for custom negotiated customer discounts)
-  const handleUpdateUnitPrice = (index: number, newPrice: number) => {
-    const updated = [...orderItems];
-    updated[index].unitPrice = Math.max(0, newPrice);
-    updated[index].totalPrice = updated[index].quantity * Math.max(0, newPrice);
-    setOrderItems(updated);
-  };
-
   const handleRemoveItem = (index: number) => {
     setOrderItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleZoneSelect = (zone: typeof DELIVERY_ZONES[0]) => {
-    setSelectedZoneId(zone.id);
-    setCustomFee(zone.fee);
-    if (hasAdvanceFee && zone.fee > 0) {
-      setAdvanceAmount(zone.fee);
-    }
   };
 
   // Submit Order
@@ -315,19 +323,18 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
       return;
     }
 
+    // Verify all items have title
+    const hasEmptyTitle = orderItems.some((it) => !it.title || !it.title.trim());
+    if (hasEmptyTitle) {
+      setError('Please provide a name/title for all added products.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const activeZone = DELIVERY_ZONES.find((z) => z.id === selectedZoneId);
-      const districtLabel =
-        selectedZoneId === 'dhaka-city'
-          ? 'Dhaka'
-          : selectedZoneId === 'dhaka-suburbs'
-          ? 'Dhaka Suburbs'
-          : 'Outside Dhaka';
-
       const combinedNotes = [
         `Social Desk: ${source}`,
-        `Zone: ${activeZone?.label || districtLabel}`,
+        `Zone: ${zoneName}`,
         hasAdvanceFee ? `Advance Delivery Paid: ৳${advanceAmount} (${advanceTrxId || 'No TrxID'})` : null,
         notes.trim() || null,
       ]
@@ -339,8 +346,8 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
         customerName: customerName.trim(),
         customerPhone: cleanPhone.startsWith('01') ? cleanPhone : cleanPhone.slice(-11),
         shippingAddress: address.trim(),
-        zone: districtLabel,
-        district: districtLabel,
+        zone: zoneName,
+        district: zoneName,
         items: orderItems,
         subtotal,
         deliveryFee,
@@ -392,7 +399,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                 </span>
               </h2>
               <p className="text-[11px] text-[#F9F6F0]/70 font-sans">
-                Book Messenger, WhatsApp & Instagram orders directly with 1-click Pathao dispatch
+                Full freedom manual entry with 1-click Pathao dispatch
               </p>
             </div>
           </div>
@@ -427,10 +434,10 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
               <button
                 type="button"
                 onClick={() => setShowSmartPaste(!showSmartPaste)}
-                className="text-xs font-semibold text-[#1C1917] flex items-center gap-1.5 hover:text-[#C7A97B] transition-colors"
+                className="text-xs font-semibold text-[#1C1917] flex items-center gap-1.5 hover:text-[#C7A97B] transition-colors cursor-pointer"
               >
                 <ClipboardPaste className="w-3.5 h-3.5 text-[#C7A97B]" />
-                <span>Smart Paste (চ্যাট মেসেজ থেকে এক ক্লিকে ফর্ম পূরণ)</span>
+                <span>Smart Paste (চ্যাট মেসেজ থেকে অটো-ফিল)</span>
                 <span className="text-[10px] font-mono font-normal text-[#1C1917]/50 ml-1">
                   {showSmartPaste ? '▲ Hide' : '▼ Click to paste customer text'}
                 </span>
@@ -450,7 +457,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                   <button
                     type="button"
                     onClick={handleSmartParse}
-                    className="px-3 py-1.5 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors shadow-xs"
+                    className="px-3 py-1.5 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Auto-Extract & Fill Fields</span>
@@ -474,7 +481,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                     key={ch.id}
                     type="button"
                     onClick={() => setSource(ch.id)}
-                    className={`px-2.5 py-1 text-xs rounded-full border transition-all flex items-center gap-1 ${
+                    className={`px-2.5 py-1 text-xs rounded-full border transition-all flex items-center gap-1 cursor-pointer ${
                       source === ch.id
                         ? 'bg-[#1C1917] text-[#C7A97B] border-[#1C1917] font-semibold shadow-xs'
                         : 'bg-[#F9F6F0] border-[#E6DFD5] text-[#1C1917]/70 hover:bg-[#EAE4D9]'
@@ -542,73 +549,92 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
               </div>
             </div>
 
-            {/* Delivery Zone Pills & Fee */}
-            <div className="space-y-1.5 pt-1 border-t border-[#F2ECE1]">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-[#1C1917]/80">
-                  Delivery Destination & Fee:
-                </label>
-                <div className="flex items-center gap-1.5 text-xs font-mono">
-                  <span className="text-[#1C1917]/60">Fee:</span>
-                  <span className="font-bold text-[#1C1917]">৳</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={customFee}
-                    onChange={(e) => setCustomFee(Number(e.target.value) || 0)}
-                    className="w-16 px-1.5 py-0.5 text-xs font-mono font-bold text-center bg-[#FAF8F5] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-                  />
+            {/* DELIVERY FEE & DESTINATION (Full Freedom for Admin) */}
+            <div className="bg-[#FAF8F5] border border-[#E6DFD5] rounded-lg p-3 space-y-2.5 pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-[#1C1917] block">
+                    Delivery Fee (৳ BDT) — আপনার ইচ্ছামত যেকোনো অ্যামাউন্ট বসান
+                  </label>
+                  <span className="text-[11px] text-[#1C1917]/60 font-sans">
+                    পাঠাও বা কুরিয়ার চার্জ অনুযায়ী স্বাধীনভাবে সেট করুন (যেমন 70, 80, 100, 130 বা 0)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-[#1C1917]/60">ফি:</span>
+                  <div className="relative w-28">
+                    <span className="absolute left-2.5 top-1.5 text-xs font-mono font-bold text-[#1C1917]/50">৳</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={deliveryFee}
+                      onChange={(e) => setDeliveryFee(Number(e.target.value) || 0)}
+                      placeholder="70"
+                      className="w-full pl-6 pr-2.5 py-1 text-sm font-mono font-bold bg-white border border-[#C7A97B]/70 rounded-md focus:border-[#1C1917] focus:outline-none shadow-xs text-right"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {DELIVERY_ZONES.map((zone) => {
-                  const isSelected = selectedZoneId === zone.id && customFee === zone.fee;
-                  return (
-                    <button
-                      key={zone.id}
-                      type="button"
-                      onClick={() => handleZoneSelect(zone)}
-                      className={`p-2 text-left rounded-lg border transition-all ${
-                        isSelected
-                          ? 'bg-[#1C1917] text-white border-[#1C1917] shadow-xs'
-                          : 'bg-[#FAF8F5] border-[#E6DFD5] text-[#1C1917]/80 hover:bg-[#EAE4D9]'
-                      }`}
-                    >
-                      <div className="text-[11px] font-semibold">{zone.label}</div>
-                      <div
-                        className={`text-[10px] font-mono ${
-                          isSelected ? 'text-[#C7A97B]' : 'text-[#1C1917]/60'
-                        }`}
-                      >
-                        ৳{zone.fee}
-                      </div>
-                    </button>
-                  );
-                })}
+              {/* Quick Preset Buttons for Delivery Fee */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[#EAE4D9]">
+                <span className="text-[10px] font-mono uppercase text-[#1C1917]/60 mr-1">Quick Presets:</span>
+                {PRESET_FEES.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      setDeliveryFee(preset.fee);
+                      setZoneName(preset.zone);
+                      if (hasAdvanceFee && preset.fee > 0) setAdvanceAmount(preset.fee);
+                    }}
+                    className={`px-2.5 py-1 text-xs font-mono rounded-md border transition-all cursor-pointer ${
+                      deliveryFee === preset.fee
+                        ? 'bg-[#1C1917] text-[#C7A97B] border-[#1C1917] font-semibold shadow-xs'
+                        : 'bg-white border-[#E6DFD5] text-[#1C1917]/70 hover:bg-[#FAF8F5]'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Section 2: Products & Order Items */}
+          {/* Section 2: Products & Order Items (Multi-Variant & Manual Editing) */}
           <div className="bg-white border border-[#E6DFD5] rounded-lg p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#1C1917] flex items-center gap-1.5">
-                <ShoppingBag className="w-3.5 h-3.5 text-[#C7A97B]" />
-                Products & Formulations ({orderItems.length} items)
-              </span>
-              {orderItems.length > 0 && (
+              <div>
+                <span className="text-xs font-semibold text-[#1C1917] flex items-center gap-1.5">
+                  <ShoppingBag className="w-3.5 h-3.5 text-[#C7A97B]" />
+                  <span>Products & Items ({orderItems.length} items)</span>
+                </span>
+                <span className="text-[11px] text-[#1C1917]/60 block mt-0.5">
+                  নাম, সাইজ/ভ্যারিয়েন্ট (15ml/30ml/50ml) ও প্রাইস যেকোনোটি এডিট করতে পারেন
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setOrderItems([])}
-                  className="text-[11px] text-rose-600 hover:underline"
+                  onClick={handleAddManualItem}
+                  className="px-2.5 py-1 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] text-[11px] font-mono font-semibold rounded-md flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
                 >
-                  Clear all
+                  <Plus className="w-3 h-3" />
+                  <span>+ Add Custom Item</span>
                 </button>
-              )}
+                {orderItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOrderItems([])}
+                    className="text-[11px] text-rose-600 hover:underline cursor-pointer"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Live Search Autocomplete */}
+            {/* Live Search Autocomplete with Multi-Variant SKU Support */}
             <div ref={searchContainerRef} className="relative">
               <div className="relative">
                 <Search className="w-4 h-4 text-[#1C1917]/40 absolute left-3 top-2.5" />
@@ -620,90 +646,119 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                     setSearchProductQuery(e.target.value);
                     setIsSearchOpen(true);
                   }}
-                  placeholder="🔍 Type product name or brand to quick-add (e.g. CeraVe, Serum, COSRX)..."
+                  placeholder="🔍 Type product name or brand to search (e.g. CeraVe, Skin1004, Serum)..."
                   className="w-full pl-9 pr-3 py-2 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:bg-white focus:outline-none"
                 />
               </div>
 
-              {/* Autocomplete Dropdown List */}
+              {/* Autocomplete Dropdown List with Variants */}
               {isSearchOpen && filteredProducts.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#C7A97B]/40 rounded-lg shadow-xl z-20 max-h-56 overflow-y-auto divide-y divide-[#F2ECE1]">
-                  {filteredProducts.map((p) => (
-                    <div
-                      key={p.id}
-                      onClick={() => handleAddProduct(p)}
-                      className="p-2.5 flex items-center justify-between hover:bg-[#FAF8F5] cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center space-x-2.5">
-                        {p.imageUrl ? (
-                          <img
-                            src={p.imageUrl}
-                            alt={p.titleEn}
-                            className="w-8 h-8 rounded object-cover border border-[#E6DFD5]"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded bg-[#F2ECE1] flex items-center justify-center text-[10px] text-[#1C1917]/50 font-mono">
-                            SKU
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#C7A97B]/40 rounded-lg shadow-xl z-20 max-h-64 overflow-y-auto divide-y divide-[#F2ECE1]">
+                  {filteredProducts.map((p) => {
+                    const hasVariants = Array.isArray(p.variants) && p.variants.length > 0;
+                    return (
+                      <div
+                        key={p.id}
+                        className="p-2.5 hover:bg-[#FAF8F5] transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2.5">
+                            {p.imageUrl ? (
+                              <img
+                                src={p.imageUrl}
+                                alt={p.titleEn}
+                                className="w-8 h-8 rounded object-cover border border-[#E6DFD5]"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded bg-[#F2ECE1] flex items-center justify-center text-[10px] text-[#1C1917]/50 font-mono">
+                                SKU
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-xs font-semibold text-[#1C1917]">{p.titleEn}</div>
+                              <div className="text-[10px] text-[#C7A97B] font-mono">
+                                {p.brand} {p.volume ? `• ${p.volume}` : ''}
+                              </div>
+                            </div>
+                          </div>
+
+                          {!hasVariants && (
+                            <button
+                              type="button"
+                              onClick={() => handleAddProduct(p)}
+                              className="px-2.5 py-1 bg-[#1C1917] text-[#C7A97B] rounded text-[11px] font-mono font-semibold cursor-pointer hover:bg-[#2C2724]"
+                            >
+                              + Add ({formatBdt(p.priceBdt || 1850)})
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Multi-Variant Pills Row (e.g. 15 ML, 30 ML, 50 ML, 100 ML) */}
+                        {hasVariants && (
+                          <div className="mt-2 pl-10 flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#F2ECE1]">
+                            <span className="text-[10px] font-mono text-[#1C1917]/50">Choose Size:</span>
+                            {p.variants?.map((v) => (
+                              <button
+                                key={v.id || v.volume}
+                                type="button"
+                                onClick={() => handleAddProduct(p, v)}
+                                className="px-2 py-0.5 bg-white hover:bg-[#1C1917] text-[#1C1917] hover:text-[#C7A97B] border border-[#E6DFD5] rounded text-[10px] font-mono font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>+ {v.volume}</span>
+                                <span className="text-[#C7A97B]">({formatBdt(v.priceBdt)})</span>
+                              </button>
+                            ))}
                           </div>
                         )}
-                        <div>
-                          <div className="text-xs font-semibold text-[#1C1917]">{p.titleEn}</div>
-                          <div className="text-[10px] text-[#C7A97B] font-mono">
-                            {p.brand} {p.volume ? `• ${p.volume}` : ''}
-                          </div>
-                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs font-mono font-bold text-[#1C1917]">
-                          {formatBdt(p.priceBdt || 1850)}
-                        </span>
-                        <button
-                          type="button"
-                          className="px-2 py-1 bg-[#1C1917] text-[#C7A97B] rounded text-[10px] font-mono font-semibold"
-                        >
-                          + Add
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
 
             {/* Quick Pick Chips */}
             {quickPickProducts.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                 <span className="text-[10px] font-mono uppercase text-[#1C1917]/50">Quick Add:</span>
                 {quickPickProducts.map((p) => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => handleAddProduct(p)}
-                    className="px-2.5 py-1 text-[11px] bg-[#FAF8F5] hover:bg-[#EAE4D9] text-[#1C1917] rounded-full border border-[#E6DFD5] transition-colors flex items-center gap-1"
+                    className="px-2.5 py-1 text-[11px] bg-[#FAF8F5] hover:bg-[#EAE4D9] text-[#1C1917] rounded-full border border-[#E6DFD5] transition-colors flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3 h-3 text-[#C7A97B]" />
-                    <span className="truncate max-w-[140px]">{p.titleEn}</span>
+                    <span className="truncate max-w-[130px]">{p.titleEn}</span>
                     <span className="text-[10px] font-mono text-[#C7A97B]">({formatBdt(p.priceBdt || 1850)})</span>
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Selected Items List */}
+            {/* Selected Items List with Full Inline Editing */}
             {orderItems.length === 0 ? (
-              <div className="py-6 text-center border border-dashed border-[#E6DFD5] rounded-lg bg-[#FAF8F5]/50">
-                <ShoppingBag className="w-6 h-6 mx-auto text-[#1C1917]/30 mb-1" />
+              <div className="py-7 text-center border border-dashed border-[#E6DFD5] rounded-lg bg-[#FAF8F5]/50 space-y-2">
+                <ShoppingBag className="w-6 h-6 mx-auto text-[#1C1917]/30" />
                 <p className="text-xs text-[#1C1917]/60">
-                  No products added yet. Type in search bar above or click quick-picks.
+                  No products added yet. Search above, click quick-picks, or add a custom item.
                 </p>
+                <button
+                  type="button"
+                  onClick={handleAddManualItem}
+                  className="px-3 py-1 bg-white border border-[#C7A97B] text-[#1C1917] rounded-md text-xs font-mono font-semibold hover:bg-[#FAF8F5] cursor-pointer"
+                >
+                  + Add Custom Item Manually
+                </button>
               </div>
             ) : (
               <div className="border border-[#E6DFD5] rounded-lg overflow-hidden bg-white">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#FAF8F5] border-b border-[#E6DFD5] text-[10px] font-mono uppercase text-[#1C1917]/60">
                     <tr>
-                      <th className="p-2.5">Item</th>
-                      <th className="p-2.5 w-24">Unit Price (৳)</th>
+                      <th className="p-2.5">Product Name</th>
+                      <th className="p-2.5 w-28">Variant / Size</th>
+                      <th className="p-2.5 w-24">Price (৳)</th>
                       <th className="p-2.5 w-24 text-center">Qty</th>
                       <th className="p-2.5 text-right w-24">Subtotal</th>
                       <th className="p-2.5 w-8"></th>
@@ -712,27 +767,50 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                   <tbody className="divide-y divide-[#F2ECE1]">
                     {orderItems.map((item, idx) => (
                       <tr key={item.id + idx} className="hover:bg-[#FDFBF7]">
+                        {/* Editable Product Title */}
                         <td className="p-2.5">
-                          <div className="font-medium text-[#1C1917]">{item.title}</div>
-                          <div className="text-[10px] font-mono text-[#C7A97B]">
-                            {item.brand} • {item.variant}
+                          <input
+                            type="text"
+                            required
+                            value={item.title}
+                            onChange={(e) => handleUpdateItemField(idx, 'title', e.target.value)}
+                            placeholder="e.g. Skin1004 Sun Serum"
+                            className="w-full px-2 py-1 text-xs font-medium bg-[#FAF8F5] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:bg-white focus:outline-none"
+                          />
+                          <div className="text-[10px] font-mono text-[#C7A97B] mt-0.5 px-0.5">
+                            {item.brand || 'Seyven Care'}
                           </div>
                         </td>
+
+                        {/* Editable Variant / Volume (e.g. 15 ML, 30 ML, 50 ML, 100 ML) */}
+                        <td className="p-2.5">
+                          <input
+                            type="text"
+                            value={item.variant}
+                            onChange={(e) => handleUpdateItemField(idx, 'variant', e.target.value)}
+                            placeholder="e.g. 50 ML"
+                            className="w-full px-2 py-1 text-xs font-mono bg-[#FAF8F5] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:bg-white focus:outline-none font-semibold text-[#1C1917]"
+                          />
+                        </td>
+
+                        {/* Editable Unit Price */}
                         <td className="p-2.5">
                           <input
                             type="number"
                             min="0"
                             value={item.unitPrice}
-                            onChange={(e) => handleUpdateUnitPrice(idx, Number(e.target.value) || 0)}
-                            className="w-20 px-1.5 py-1 text-xs font-mono font-bold bg-[#FAF8F5] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
+                            onChange={(e) => handleUpdateItemField(idx, 'unitPrice', Number(e.target.value) || 0)}
+                            className="w-full px-2 py-1 text-xs font-mono font-bold bg-[#FAF8F5] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:bg-white focus:outline-none"
                           />
                         </td>
+
+                        {/* Quantity Stepper */}
                         <td className="p-2.5">
                           <div className="flex items-center justify-center border border-[#E6DFD5] bg-[#FAF8F5] rounded">
                             <button
                               type="button"
                               onClick={() => handleUpdateQuantity(idx, item.quantity - 1)}
-                              className="px-2 py-1 text-xs text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-white"
+                              className="px-2 py-1 text-xs text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-white cursor-pointer"
                             >
                               -
                             </button>
@@ -740,20 +818,24 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                             <button
                               type="button"
                               onClick={() => handleUpdateQuantity(idx, item.quantity + 1)}
-                              className="px-2 py-1 text-xs text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-white"
+                              className="px-2 py-1 text-xs text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-white cursor-pointer"
                             >
                               +
                             </button>
                           </div>
                         </td>
+
+                        {/* Subtotal */}
                         <td className="p-2.5 text-right font-mono font-bold text-[#1C1917]">
                           {formatBdt(item.totalPrice)}
                         </td>
+
+                        {/* Remove */}
                         <td className="p-2.5 text-center">
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(idx)}
-                            className="text-rose-500 hover:text-rose-700 p-1"
+                            className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -774,7 +856,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Payment Method pill */}
+              {/* Payment Method */}
               <div>
                 <label className="text-xs font-medium text-[#1C1917]/80 block mb-1">
                   Payment Mode
@@ -783,7 +865,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('COD')}
-                    className={`flex-1 py-1.5 px-3 rounded-md text-xs font-semibold border transition-all ${
+                    className={`flex-1 py-1.5 px-3 rounded-md text-xs font-semibold border transition-all cursor-pointer ${
                       paymentMethod === 'COD'
                         ? 'bg-[#1C1917] text-white border-[#1C1917]'
                         : 'bg-[#FAF8F5] border-[#E6DFD5] text-[#1C1917]/70'
@@ -901,7 +983,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
               <span>{formatBdt(subtotal)}</span>
             </div>
             <div className="flex justify-between text-[#F9F6F0]/70">
-              <span>Delivery Fee ({selectedZoneId}):</span>
+              <span>Delivery Fee ({zoneName}):</span>
               <span>{formatBdt(deliveryFee)}</span>
             </div>
             {discountBdt > 0 && (
@@ -928,7 +1010,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-lg border border-[#E6DFD5] bg-white text-[#1C1917]/70 hover:bg-[#FAF8F5]"
+              className="px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-lg border border-[#E6DFD5] bg-white text-[#1C1917]/70 hover:bg-[#FAF8F5] cursor-pointer"
             >
               Cancel
             </button>

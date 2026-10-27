@@ -142,6 +142,15 @@ function safeStorageSet(key: string, value: string): boolean {
               state: item.state,
               publicationState: item.publicationState,
               volume: item.volume,
+              variants: Array.isArray(item.variants)
+                ? item.variants.map((v: any) => ({
+                    id: v.id,
+                    volume: v.volume,
+                    priceBdt: v.priceBdt,
+                    sku: v.sku,
+                    inStock: v.inStock ?? true,
+                  }))
+                : [],
               variantsCount: item.variantsCount || item.variants?.length || 1,
               imageUrl: typeof item.imageUrl === 'string' && item.imageUrl.length < 500
                 ? item.imageUrl

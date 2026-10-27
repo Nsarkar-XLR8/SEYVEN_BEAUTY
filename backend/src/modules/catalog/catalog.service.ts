@@ -188,14 +188,20 @@ export class CatalogService {
       // Variants mapping: multi-size support (5ml, 15ml, 30ml, 50ml, etc.)
       let variants: any[] = [];
       if (Array.isArray(p.variants) && p.variants.length > 0) {
-        variants = p.variants.map((v: any, idx: number) => ({
-          id: v.id || `var-${p.slug}-${idx}`,
-          sku: v.sku || `SYV-${p.slug.toUpperCase().slice(0, 8)}-${idx}`,
-          volume: v.volumeMlG ? `${v.volumeMlG} ML` : '50 ML',
-          priceBdt: Number(v.priceBdt) || 2450,
-          inStock: v.isActive ?? true,
-          stockCount: 50,
-        }));
+        variants = p.variants.map((v: any, idx: number) => {
+          const volNum = v.volumeMlG ? parseFloat(String(v.volumeMlG)) : null;
+          const volStr = v.volume || (volNum ? `${volNum} ML` : '50 ML');
+          return {
+            id: v.id || `var-${p.slug}-${idx}`,
+            sku: v.sku || `SYV-${p.slug.toUpperCase().slice(0, 8)}-${idx}`,
+            volume: volStr,
+            titleEn: v.titleEn || volStr,
+            titleBn: v.titleBn || volStr,
+            priceBdt: Number(v.priceBdt) || 2450,
+            inStock: v.isActive ?? true,
+            stockCount: 50,
+          };
+        });
       } else {
         variants = [
           {
@@ -450,14 +456,72 @@ export class CatalogService {
   async updateProduct(productIdOrSlug: string, dto: any) {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productIdOrSlug);
 
-    const updated = await this.prisma.product.update({
+    const existing = await this.prisma.product.findFirst({
       where: isUuid ? { id: productIdOrSlug } : { slug: productIdOrSlug },
+      include: { variants: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Product with identifier "${productIdOrSlug}" not found`);
+    }
+
+    let existingMeta: any = {};
+    if (existing.dermalProtocolEn) {
+      try {
+        existingMeta = JSON.parse(existing.dermalProtocolEn);
+      } catch {}
+    }
+
+    const updatedMeta = {
+      ...existingMeta,
+      brand: dto.brand !== undefined ? String(dto.brand).trim() : existingMeta.brand || 'Curated Formulation',
+      imageUrl: dto.imageUrl !== undefined ? dto.imageUrl : existingMeta.imageUrl || '',
+      images: Array.isArray(dto.images) && dto.images.length > 0 ? dto.images : existingMeta.images || [],
+      volume: dto.volume !== undefined ? dto.volume : existingMeta.volume || '',
+      routineStep: dto.routineStep !== undefined ? dto.routineStep : existingMeta.routineStep,
+      routinePeriod: dto.routinePeriod !== undefined ? dto.routinePeriod : existingMeta.routinePeriod,
+      originCountry: dto.originCountry !== undefined ? dto.originCountry : existingMeta.originCountry,
+      isPregnancySafe: dto.isPregnancySafe !== undefined ? dto.isPregnancySafe : existingMeta.isPregnancySafe,
+      purposeTagEn: dto.purposeTagEn !== undefined ? dto.purposeTagEn : existingMeta.purposeTagEn,
+      purposeTagBn: dto.purposeTagBn !== undefined ? dto.purposeTagBn : existingMeta.purposeTagBn,
+      dermalStoryEn: dto.dermalStoryEn !== undefined ? dto.dermalStoryEn : existingMeta.dermalStoryEn,
+      dermalStoryBn: dto.dermalStoryBn !== undefined ? dto.dermalStoryBn : existingMeta.dermalStoryBn,
+    };
+
+    // 1. Sync variants in PostgreSQL if provided
+    if (Array.isArray(dto.variants) && dto.variants.length > 0) {
+      try {
+        await this.prisma.productVariant.deleteMany({
+          where: { productId: existing.id },
+        });
+
+        await this.prisma.productVariant.createMany({
+          data: dto.variants.map((v: any, idx: number) => {
+            const volNum = parseFloat(v.volume) || parseFloat(v.volumeMlG) || null;
+            return {
+              productId: existing.id,
+              sku: v.sku || `SYV-${existing.slug.toUpperCase().slice(0, 8)}-${String(v.volume || idx).replace(/[^a-zA-Z0-9]/g, '')}`,
+              volumeMlG: volNum,
+              priceBdt: Number(v.priceBdt) || 0,
+              cogsBdt: Math.round((Number(v.priceBdt) || 0) * 0.45),
+              isActive: true,
+            };
+          }),
+        });
+      } catch (err: any) {
+        this.logger.warn(`[updateProduct Variant Sync Error] ${err?.message || err}`);
+      }
+    }
+
+    const updated = await this.prisma.product.update({
+      where: { id: existing.id },
       data: {
         ...(dto.titleEn ? { titleEn: dto.titleEn } : {}),
         ...(dto.titleBn ? { titleBn: dto.titleBn } : {}),
         ...(dto.shortDescriptionEn ? { shortDescriptionEn: dto.shortDescriptionEn } : {}),
         ...(dto.shortDescriptionBn ? { shortDescriptionBn: dto.shortDescriptionBn } : {}),
         ...(dto.state ? { publicationState: dto.state } : {}),
+        dermalProtocolEn: JSON.stringify(updatedMeta),
       },
       include: {
         category: true,
@@ -465,8 +529,13 @@ export class CatalogService {
       },
     }).catch(() => null);
 
-    // Invalidate Redis caches immediately
-    await this.invalidateProductCaches(productIdOrSlug);
+    // Invalidate Redis caches immediately for instant storefront reflection
+    await Promise.all([
+      this.invalidateProductCaches(existing.slug),
+      this.redis.del(this.CACHE_PRODUCTS_ALL),
+      this.redis.del(this.CACHE_CATEGORIES_ALL),
+    ]).catch(() => {});
+
     return updated || { success: true };
   }
 
@@ -635,10 +704,16 @@ export class CatalogService {
     const imageUrl = meta?.imageUrl || (Array.isArray(meta?.images) ? meta.images[0] : '') || '';
     const images = Array.isArray(meta?.images) && meta.images.length > 0 ? meta.images : (imageUrl ? [imageUrl] : []);
 
-    const variantsWithStock = product.variants.map((v: Record<string, unknown>) => {
+    const variantsWithStock = product.variants.map((v: any, idx: number) => {
       const stock = this.computeCalculatedStock(v);
+      const volNum = v.volumeMlG ? parseFloat(String(v.volumeMlG)) : null;
+      const volStr = v.volume || (volNum ? `${volNum} ML` : (meta?.volume || ''));
       return {
         ...v,
+        volume: volStr,
+        titleEn: v.titleEn || volStr || `Edition ${idx + 1}`,
+        titleBn: v.titleBn || volStr || `Edition ${idx + 1}`,
+        priceBdt: Number(v.priceBdt) || 0,
         availableStock: stock,
         stockStatus: stock > 10 ? 'IN_STOCK' : stock > 0 ? 'LOW_STOCK' : 'OUT_OF_STOCK',
       };

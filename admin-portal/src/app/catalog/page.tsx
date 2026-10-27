@@ -88,7 +88,7 @@ export default function AdminCatalogDeskPage() {
 
   // Product Modal State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState<'ESSENTIALS' | 'VARIANTS' | 'CLINICAL'>('ESSENTIALS');
+  const [modalTab, setModalTab] = useState<'ESSENTIALS' | 'VARIANTS'>('ESSENTIALS');
   const [editingFullProduct, setEditingFullProduct] = useState<AdminProduct | null>(null);
 
   const [prodTitleEn, setProdTitleEn] = useState('');
@@ -203,7 +203,7 @@ export default function AdminCatalogDeskPage() {
           const data = await res.json();
           if (data.url) {
             setProdImages((prev) => [...prev, data.url]);
-            setToastMessage('☁️ ছবি Cloudinary CDN-এ WebP হিসেবে সফলভাবে আপলোড হয়েছে!');
+            setToastMessage('☁️ Image successfully uploaded to Cloudinary CDN!');
             setTimeout(() => setToastMessage(null), 3500);
             continue;
           }
@@ -1378,17 +1378,6 @@ export default function AdminCatalogDeskPage() {
               >
                 <span>2. 📦 Sizes & Pricing ({prodVariants.length})</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setModalTab('CLINICAL')}
-                className={`px-3 py-1.5 rounded transition-all flex items-center gap-1.5 cursor-pointer ${
-                  modalTab === 'CLINICAL'
-                    ? 'bg-[#1C1917] text-[#C7A97B] font-bold shadow-xs'
-                    : 'bg-[#F9F6F0] text-[#1C1917]/70 hover:bg-[#E6DFD5]'
-                }`}
-              >
-                <span>3. 🧬 Clinical, Safety & INCI</span>
-              </button>
             </div>
 
             <form onSubmit={handleCreateOrUpdateProduct} className="space-y-4 text-xs font-mono">
@@ -1792,7 +1781,7 @@ export default function AdminCatalogDeskPage() {
                       className="w-full py-2 border-2 border-dashed border-[#C7A97B]/50 hover:border-[#C7A97B] text-[#8C6D3B] hover:text-[#1C1917] text-xs font-mono font-medium rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer bg-white"
                     >
                       <Plus className="w-4 h-4 text-[#C7A97B]" />
-                      <span>+ Add Another Size Variant (অন্য আরেকটি সাইজ যোগ করুন)</span>
+                      <span>+ Add Another Size Variant</span>
                     </button>
 
                     {/* Calculated Price Range Display */}
@@ -1812,277 +1801,6 @@ export default function AdminCatalogDeskPage() {
                         {prodVariants.length} Active Edition{prodVariants.length !== 1 ? 's' : ''}
                       </span>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ================================================================= */}
-              {/* TAB 3: CLINICAL, SAFETY & INCI SPECS                              */}
-              {/* ================================================================= */}
-              {modalTab === 'CLINICAL' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
-                  {/* Preset Auto-Fill Quick Action Banner */}
-                  <div className="p-3 bg-gradient-to-r from-amber-50 to-[#F9F6F0] border border-[#C7A97B]/60 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] uppercase font-bold text-[#8C6D3B] flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-[#C7A97B]" />
-                        <span>Smart Clinical Auto-Presets</span>
-                      </span>
-                      <p className="text-[10px] text-[#1C1917]/70 font-mono">
-                        Auto-populate clinical stories, usage steps & INCI based on &quot;{prodCategory}&quot;.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        applyClinicalPresets(prodCategory);
-                        showToast(`✓ Clinical presets loaded for ${prodCategory}!`);
-                      }}
-                      className="px-3 py-1.5 bg-[#1C1917] hover:bg-[#2A2623] text-[#F9F6F0] text-[10px] font-mono uppercase tracking-wider rounded font-bold shrink-0 flex items-center gap-1.5 shadow-xs cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3 text-[#C7A97B]" />
-                      <span>✨ Auto-Fill Presets</span>
-                    </button>
-                  </div>
-
-                  {/* Routine Step, Timing & Origin */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[#1C1917]/70 uppercase font-semibold">Routine Step *</label>
-                      <input
-                        type="text"
-                        value={prodRoutineStep}
-                        onChange={(e) => setProdRoutineStep(e.target.value)}
-                        placeholder="e.g. Sun Protection, Treat & Serum"
-                        className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[#1C1917]/70 uppercase font-semibold">Ideal Time to Apply *</label>
-                      <div className="grid grid-cols-3 gap-1">
-                        {['AM', 'PM', 'AM & PM'].map((p) => (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => setProdRoutinePeriod(p)}
-                            className={`py-2 text-[10px] font-mono rounded border transition-colors cursor-pointer ${
-                              prodRoutinePeriod === p
-                                ? 'bg-[#1C1917] text-[#C7A97B] font-bold border-[#1C1917]'
-                                : 'bg-white border-[#E6DFD5] text-[#1C1917]/70 hover:border-[#C7A97B]'
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[#1C1917]/70 uppercase font-semibold">Country of Origin *</label>
-                      <input
-                        type="text"
-                        list="origin-countries-list"
-                        value={prodOriginCountry}
-                        onChange={(e) => setProdOriginCountry(e.target.value)}
-                        placeholder="e.g. Republic of Korea, France, Japan"
-                        className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono text-[#1C1917] focus:border-[#C7A97B] focus:outline-none"
-                      />
-                      <datalist id="origin-countries-list">
-                        <option value="Republic of Korea">Republic of Korea (দক্ষিণ কোরিয়া)</option>
-                        <option value="France">France (ফ্রান্স)</option>
-                        <option value="Japan">Japan (জাপান)</option>
-                        <option value="United States">United States (যুক্তরাষ্ট্র)</option>
-                        <option value="United Kingdom">United Kingdom (যুক্তরাজ্য)</option>
-                        <option value="India">India (ভারত)</option>
-                        <option value="Canada">Canada</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Australia">Australia</option>
-                        <option value="International Authenticity">International Authenticity</option>
-                      </datalist>
-                    </div>
-                  </div>
-
-                  {/* Pregnancy Safe Toggle */}
-                  <div className="p-3 bg-[#F9F6F0] border border-[#E6DFD5] rounded-lg flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-[#1C1917] uppercase font-bold block">
-                        Pregnancy & Nursing Safety
-                      </span>
-                      <span className="text-[9px] text-[#1C1917]/60">
-                        Displays safety certification badge on customer PDP.
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setProdIsPregnancySafe(true)}
-                        className={`px-3 py-1 text-[10px] font-mono uppercase rounded border transition-colors ${
-                          prodIsPregnancySafe
-                            ? 'bg-emerald-700 text-white font-bold border-emerald-700'
-                            : 'bg-white border-[#E6DFD5] text-[#1C1917]/70'
-                        }`}
-                      >
-                        ✓ Safe to Use
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProdIsPregnancySafe(false)}
-                        className={`px-3 py-1 text-[10px] font-mono uppercase rounded border transition-colors ${
-                          !prodIsPregnancySafe
-                            ? 'bg-amber-700 text-white font-bold border-amber-700'
-                            : 'bg-white border-[#E6DFD5] text-[#1C1917]/70'
-                        }`}
-                      >
-                        Consult OB-GYN
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* "Why Your Skin Will Love This" (Dermal Story / Climate Note) */}
-                  <div className="space-y-2 p-3 bg-white border border-[#E6DFD5] rounded-lg">
-                    <label className="text-[10px] text-[#1C1917] uppercase font-bold flex items-center gap-1.5">
-                      <Heart className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>Why Your Skin Will Love This (Climate & Dermal Story)</span>
-                    </label>
-
-                    <div className="space-y-1">
-                      <span className="text-[9px] text-[#1C1917]/60 uppercase">English Climate Note:</span>
-                      <textarea
-                        rows={2}
-                        value={prodDermalStoryEn}
-                        onChange={(e) => setProdDermalStoryEn(e.target.value)}
-                        placeholder="e.g. Ultra-lightweight high-protection formulation calibrated for humid subtropical climates..."
-                        className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[9px] text-[#1C1917]/60 uppercase">বাংলা রূপচর্চা পরামর্শ:</span>
-                      <textarea
-                        rows={2}
-                        value={prodDermalStoryBn}
-                        onChange={(e) => setProdDermalStoryBn(e.target.value)}
-                        placeholder="e.g. উষ্ণ ও আর্দ্র আবহাওয়ায় ত্বককে রোদ ও পরিবেশগত দূষণ থেকে রক্ষা করতে নিখুঁত ওয়াটার-লাইট ফর্মুলেশন..."
-                        className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono font-bangla"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Key Active Hero Ingredients */}
-                  <div className="space-y-1.5 p-3 bg-white border border-[#E6DFD5] rounded-lg">
-                    <label className="text-[10px] text-[#1C1917] uppercase font-bold flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>Active Hero Ingredients (Comma Separated)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={prodKeyActives}
-                      onChange={(e) => setProdKeyActives(e.target.value)}
-                      placeholder="e.g. Centella Asiatica, Niacinamide, Hyaluronic Acid, Strawberry Extract"
-                      className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono text-[#1C1917]"
-                    />
-                    <span className="text-[9px] text-[#1C1917]/60 font-mono block">
-                      Each comma-separated active is automatically converted into an elegant active card on the PDP!
-                    </span>
-                  </div>
-
-                  {/* How to Apply (3 Steps) */}
-                  <div className="space-y-2 p-3 bg-white border border-[#E6DFD5] rounded-lg">
-                    <label className="text-[10px] text-[#1C1917] uppercase font-bold flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>How to Apply & Daily Routine (ব্যবহারের নিয়ম)</span>
-                    </label>
-
-                    {/* Step 1 */}
-                    <div className="p-2.5 bg-[#F9F6F0] border border-[#E6DFD5] rounded space-y-1.5">
-                      <span className="text-[9px] font-bold text-[#1C1917] uppercase">Step 1:</span>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input
-                          type="text"
-                          value={prodUsageStep1Title}
-                          onChange={(e) => setProdUsageStep1Title(e.target.value)}
-                          placeholder="Title (e.g. Two-Finger Rule)"
-                          className="p-1.5 bg-white border border-[#E6DFD5] rounded text-xs"
-                        />
-                        <input
-                          type="text"
-                          value={prodUsageStep1Desc}
-                          onChange={(e) => setProdUsageStep1Desc(e.target.value)}
-                          placeholder="Instruction (e.g. Dispense two finger lengths 15 mins prior)"
-                          className="sm:col-span-2 p-1.5 bg-white border border-[#E6DFD5] rounded text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="p-2.5 bg-[#F9F6F0] border border-[#E6DFD5] rounded space-y-1.5">
-                      <span className="text-[9px] font-bold text-[#1C1917] uppercase">Step 2:</span>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input
-                          type="text"
-                          value={prodUsageStep2Title}
-                          onChange={(e) => setProdUsageStep2Title(e.target.value)}
-                          placeholder="Title (e.g. Press & Absorb)"
-                          className="p-1.5 bg-white border border-[#E6DFD5] rounded text-xs"
-                        />
-                        <input
-                          type="text"
-                          value={prodUsageStep2Desc}
-                          onChange={(e) => setProdUsageStep2Desc(e.target.value)}
-                          placeholder="Instruction (e.g. Gently press into face and neck)"
-                          className="sm:col-span-2 p-1.5 bg-white border border-[#E6DFD5] rounded text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Step 3 (Optional) */}
-                    <div className="p-2.5 bg-[#F9F6F0] border border-[#E6DFD5] rounded space-y-1.5">
-                      <span className="text-[9px] font-bold text-[#1C1917] uppercase">Step 3 (Optional):</span>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input
-                          type="text"
-                          value={prodUsageStep3Title}
-                          onChange={(e) => setProdUsageStep3Title(e.target.value)}
-                          placeholder="Title (e.g. Reapply Regular)"
-                          className="p-1.5 bg-white border border-[#E6DFD5] rounded text-xs"
-                        />
-                        <input
-                          type="text"
-                          value={prodUsageStep3Desc}
-                          onChange={(e) => setProdUsageStep3Desc(e.target.value)}
-                          placeholder="Instruction (e.g. Reapply every 2-3 hours)"
-                          className="sm:col-span-2 p-1.5 bg-white border border-[#E6DFD5] rounded text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Full INCI Ingredients */}
-                  <div className="space-y-1.5 p-3 bg-white border border-[#E6DFD5] rounded-lg">
-                    <label className="text-[10px] text-[#1C1917] uppercase font-bold flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>Full Ingredients List (INCI)</span>
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={prodFullInci}
-                      onChange={(e) => setProdFullInci(e.target.value)}
-                      placeholder="e.g. Aqua, Glycerin, Niacinamide, Zinc Oxide, Ethylhexyl Methoxycinnamate..."
-                      className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono"
-                    />
-                  </div>
-
-                  {/* Storage Guidance */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-[#1C1917]/70 uppercase font-semibold">Storage Guidance Note</label>
-                    <input
-                      type="text"
-                      value={prodStorageGuidance}
-                      onChange={(e) => setProdStorageGuidance(e.target.value)}
-                      placeholder="e.g. Store in a cool dry place below 25°C away from direct sunlight."
-                      className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono"
-                    />
                   </div>
                 </div>
               )}

@@ -8,11 +8,9 @@ import { getProductBySlug, getAllProducts, createDynamicProductDetail, ProductDe
 import { PdpGallery } from '@/components/pdp/pdp-gallery';
 import { PdpMetaBlock } from '@/components/pdp/pdp-meta-block';
 import { PdpDeliveryEstimator } from '@/components/pdp/pdp-delivery-estimator';
-import { PdpClinicalAccordion } from '@/components/pdp/pdp-clinical-accordion';
 import { PdpWaitlistModal } from '@/components/pdp/pdp-waitlist-modal';
 import { PdpJsonLd } from '@/components/pdp/pdp-jsonld';
 import { ProductCard } from '@/components/storefront/product-card';
-import { PdpClinicalEfficacy } from '@/components/pdp/pdp-clinical-efficacy';
 
 interface PdpClientViewProps {
   slug: string;
@@ -141,20 +139,12 @@ export function PdpClientView({ slug }: PdpClientViewProps) {
               onOpenWaitlist={() => setIsWaitlistOpen(true)}
             />
 
-            {/* Clinical Formulation & INCI Accordion */}
-            <PdpClinicalAccordion product={product} />
-
             {/* Dynamic Delivery Estimator Widget */}
             <PdpDeliveryEstimator productPriceBdt={product.priceBdt} />
           </div>
 
         </div>
       </div>
-
-      {/* Clinical Efficacy & Dermatological Standards */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 border-t border-[#E6DFD5]">
-        <PdpClinicalEfficacy productId={product.id} productTitle={product.titleEn} />
-      </section>
 
       {/* Synergistic Routine Recommendations Carousel / Grid */}
       {relatedProducts.length > 0 && (

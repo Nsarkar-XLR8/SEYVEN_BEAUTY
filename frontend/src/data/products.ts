@@ -105,34 +105,40 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
         },
       ];
 
-  const vol = raw.volume || '50 ML';
+  const vol = raw.volume || '';
   const rawBrand = (raw.brand || '').trim() || 'Curated Care';
   const categoryStr = typeof raw.category === 'object' && raw.category
     ? raw.category.nameEn || raw.category.slug || ''
     : String(raw.category || '');
   const catLower = categoryStr.toLowerCase();
 
-  // Multi-size variants mapping
+  // Multi-size variants mapping - strictly dynamic
   let variants: ProductVariant[] = [];
   if (Array.isArray(raw.variants) && raw.variants.length > 0) {
-    variants = raw.variants.map((v: any, idx: number) => ({
-      id: v.id || `var-${raw.id || raw.slug}-${idx}`,
-      sku: v.sku || `SYV-${(raw.slug || 'SKU').toUpperCase().slice(0, 8)}-${(v.volume || vol).replace(/\s+/g, '')}`,
-      titleEn: v.titleEn || `${v.volume || vol} Flacon`,
-      titleBn: v.titleBn || `${v.volume || vol} সংস্করণ`,
-      volume: v.volume || vol,
-      priceBdt: Number(v.priceBdt) || Number(raw.priceBdt) || 2450,
-      inStock: v.inStock ?? true,
-      stockCount: v.stockCount ?? 25,
-    }));
+    variants = raw.variants.map((v: any, idx: number) => {
+      const volNum = v.volumeMlG ? parseFloat(String(v.volumeMlG)) : null;
+      const volStr = v.volume || (volNum ? `${volNum} ML` : (v.volumeMl ? `${v.volumeMl} ML` : ''));
+      const displayTitle = v.titleEn || volStr || (vol ? `${vol}` : `Edition ${idx + 1}`);
+      return {
+        id: v.id || `var-${raw.id || raw.slug}-${idx}`,
+        sku: v.sku || `SYV-${(raw.slug || 'SKU').toUpperCase().slice(0, 8)}-${(volStr || String(idx)).replace(/[^a-zA-Z0-9]/g, '')}`,
+        titleEn: displayTitle,
+        titleBn: displayTitle,
+        volume: volStr || vol,
+        priceBdt: Number(v.priceBdt) || Number(raw.priceBdt) || 0,
+        inStock: v.inStock ?? true,
+        stockCount: v.stockCount ?? 25,
+      };
+    });
   } else {
-    const singlePrice = Number(raw.priceBdt) || 2450;
+    const singlePrice = Number(raw.priceBdt) || 0;
+    const fallbackVol = vol || 'Standard Edition';
     variants = [
       {
         id: `var-${raw.id || raw.slug}`,
         sku: raw.sku || `SYV-${(raw.slug || 'SKU').toUpperCase().slice(0, 10)}`,
-        titleEn: `${vol} Standard Bottle`,
-        titleBn: `${vol} বোতল`,
+        titleEn: fallbackVol,
+        titleBn: fallbackVol,
         volume: vol,
         priceBdt: singlePrice,
         inStock: true,

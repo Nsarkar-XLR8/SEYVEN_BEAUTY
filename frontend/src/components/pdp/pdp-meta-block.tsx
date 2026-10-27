@@ -156,11 +156,12 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
       {product.variants.length > 1 && (
         <div className="space-y-2 pt-2">
           <label className="text-[10px] uppercase tracking-[0.25em] text-[#1C1917]/70 font-medium block">
-            {t('SELECT EDITION / SIZE', 'সাইজ বা সংস্করণ নির্বাচন করুন')}
+            SELECT EDITION / SIZE
           </label>
           <div className="grid grid-cols-2 gap-3">
             {product.variants.map((v) => {
               const isSelected = v.id === selectedVariant.id;
+              const displayLabel = v.volume || v.titleEn;
               return (
                 <button
                   key={v.id}
@@ -173,7 +174,7 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
                   }`}
                 >
                   <p className="text-[11px] uppercase tracking-[0.14em] font-sans text-[#1C1917] font-medium">
-                    {lang === 'bn' ? v.titleBn : v.titleEn}
+                    {displayLabel}
                   </p>
                   <p className="text-[11px] font-sans font-semibold tracking-wide text-[#8C6D3B] tabular-nums mt-0.5">
                     {formatBdt(v.priceBdt)}

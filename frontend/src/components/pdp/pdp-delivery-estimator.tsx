@@ -1,91 +1,91 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { MapPin, Clock, Truck, CheckCircle2 } from 'lucide-react';
-import { useLanguage } from '@/context/language-context';
+import React from 'react';
+import { Truck, ShieldCheck, Sparkles } from 'lucide-react';
 import { formatBdt } from '@/lib/formatters';
-import { BD_DISTRICTS, getDeliveryEstimate } from '@/lib/delivery-calculator';
+import { useCart } from '@/context/cart-context';
+import { BRAND } from '@/lib/constants';
 
 interface PdpDeliveryEstimatorProps {
   productPriceBdt: number;
 }
 
 export function PdpDeliveryEstimator({ productPriceBdt }: PdpDeliveryEstimatorProps) {
-  const { lang, t } = useLanguage();
-  const [selectedDistrictId, setSelectedDistrictId] = useState('dhaka');
+  const { settings } = useCart();
 
-  const estimate = getDeliveryEstimate(selectedDistrictId, productPriceBdt);
+  const insideDhakaFee = settings?.standardDeliveryDhakaBdt ?? BRAND.thresholds.standardDeliveryDhakaBdt;
+  const outsideDhakaFee = settings?.standardDeliveryOutsideBdt ?? BRAND.thresholds.standardDeliveryOutsideBdt;
+  const freeThreshold = settings?.freeDeliveryThresholdBdt ?? BRAND.thresholds.freeDeliveryBdt;
+  const isQualifiedForFree = productPriceBdt >= freeThreshold;
 
   return (
     <div className="p-4 sm:p-5 bg-[#F9F6F0] border border-[#E6DFD5] space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2 text-xs uppercase tracking-[0.2em] font-medium text-[#1C1917]">
-          <MapPin className="w-3.5 h-3.5 text-[#C7A97B]" />
-          <span>{t('BANGLADESH DELIVERY ESTIMATOR', 'ডেলিভারি সময় ও চার্জ')}</span>
+          <Truck className="w-3.5 h-3.5 text-[#C7A97B]" />
+          <span>NATIONWIDE DELIVERY // ALL OVER BANGLADESH</span>
         </div>
-        <span className="text-[9px] uppercase tracking-wider text-[#C7A97B] font-medium">
-          64 DISTRICTS COVERAGE
+        <span className="text-[9px] uppercase tracking-wider text-[#C7A97B] font-medium border border-[#C7A97B]/40 px-2 py-0.5 rounded-full">
+          64 Districts Covered
         </span>
       </div>
 
-      {/* District Dropdown Selector */}
-      <div className="space-y-1.5">
-        <label
-          htmlFor="district-select"
-          className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block"
-        >
-          {t('SELECT YOUR DESTINATION DISTRICT', 'আপনার জেলা নির্বাচন করুন')}
-        </label>
-        <div className="relative">
-          <select
-            id="district-select"
-            value={selectedDistrictId}
-            onChange={(e) => setSelectedDistrictId(e.target.value)}
-            className="w-full bg-[#F9F6F0] border border-[#E6DFD5] text-xs font-serif text-[#1C1917] px-3 py-2.5 appearance-none focus:outline-hidden focus:border-[#C7A97B] transition-colors cursor-pointer"
-          >
-            {BD_DISTRICTS.map((district) => (
-              <option key={district.id} value={district.id}>
-                {lang === 'bn' ? `${district.nameBn} (${district.division})` : `${district.nameEn} District (${district.division})`}
-              </option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-[#1C1917]/60">
-            ▼
-          </div>
+      {/* Dynamic Rates Grid (Inside Dhaka vs All Over Bangladesh) */}
+      <div className="grid grid-cols-2 gap-3 pt-1">
+        {/* Inside Dhaka */}
+        <div className="p-3 bg-white border border-[#E6DFD5] rounded-sm space-y-1">
+          <span className="text-[10px] uppercase tracking-wider text-[#1C1917]/70 font-semibold block">
+            Inside Dhaka
+          </span>
+          <p className="text-xs font-serif font-bold text-[#1C1917]">
+            {isQualifiedForFree ? (
+              <span className="text-emerald-700">FREE</span>
+            ) : (
+              formatBdt(insideDhakaFee)
+            )}
+          </p>
+          <span className="text-[10px] text-[#1C1917]/60 block">
+            1–2 Days (Next Day Available)
+          </span>
+        </div>
+
+        {/* Outside Dhaka / All Over Bangladesh */}
+        <div className="p-3 bg-white border border-[#E6DFD5] rounded-sm space-y-1">
+          <span className="text-[10px] uppercase tracking-wider text-[#1C1917]/70 font-semibold block">
+            Outside Dhaka (All Over BD)
+          </span>
+          <p className="text-xs font-serif font-bold text-[#1C1917]">
+            {isQualifiedForFree ? (
+              <span className="text-emerald-700">FREE</span>
+            ) : (
+              formatBdt(outsideDhakaFee)
+            )}
+          </p>
+          <span className="text-[10px] text-[#1C1917]/60 block">
+            2–3 Days (Doorstep Transit)
+          </span>
         </div>
       </div>
 
-      {/* Estimated Output Card */}
-      <div className="grid grid-cols-2 gap-3 pt-1 border-t border-[#E6DFD5]/70">
-        {/* Estimated Transit Time */}
-        <div className="space-y-1">
-          <div className="flex items-center space-x-1.5 text-[10px] uppercase tracking-wider text-[#1C1917]/60">
-            <Clock className="w-3 h-3 text-[#C7A97B]" />
-            <span>{t('ESTIMATED ARRIVAL', 'সম্ভাব্য সময়')}</span>
-          </div>
-          <p className="text-xs font-medium text-[#1C1917]">
-            {lang === 'bn' ? estimate.estimatedDaysBn : estimate.estimatedDaysEn}
-          </p>
-        </div>
-
-        {/* Shipping Fee */}
-        <div className="space-y-1">
-          <div className="flex items-center space-x-1.5 text-[10px] uppercase tracking-wider text-[#1C1917]/60">
-            <Truck className="w-3 h-3 text-[#C7A97B]" />
-            <span>{t('DELIVERY FEE', 'ডেলিভারি চার্জ')}</span>
-          </div>
-          <p className="text-xs font-medium">
-            {estimate.isFreeDelivery ? (
-              <span className="text-emerald-700 font-semibold tracking-wide">
-                {t('FREE (QUALIFIED)', 'ফ্রি ডেলিভারি')}
+      {/* Free Delivery / Privilege Indicator */}
+      <div className="pt-2 border-t border-[#E6DFD5]/70 flex items-center justify-between text-[11px] text-[#1C1917]/80">
+        <div className="flex items-center space-x-1.5">
+          {isQualifiedForFree ? (
+            <>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+              <span className="font-medium text-emerald-800">
+                This item qualifies for Complimentary Free Delivery!
               </span>
-            ) : (
-              <span className="text-[#1C1917]">
-                {formatBdt(estimate.deliveryFeeBdt)}
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
+              <span>
+                Free Delivery nationwide on orders over <strong>{formatBdt(freeThreshold)}</strong>
               </span>
-            )}
-          </p>
+            </>
+          )}
         </div>
       </div>
     </div>

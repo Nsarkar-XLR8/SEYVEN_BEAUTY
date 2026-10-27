@@ -152,16 +152,13 @@ export function PdpClientView({ slug }: PdpClientViewProps) {
           <div className="space-y-2 mb-8">
             <div className="flex items-center space-x-2 text-[10px] uppercase tracking-[0.25em] text-[#C7A97B] font-medium">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{t('DERMAL SYNERGY // COMPLEMENTARY REGIMEN', 'পরিপূরক রুটিন // ত্বকের সম্পূর্ণ যত্ন')}</span>
+              <span>DERMAL SYNERGY // COMPLEMENTARY REGIMEN</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-serif uppercase tracking-[0.18em] font-light text-[#1C1917]">
-              {t('PAIRS SYNERGISTICALLY WITH THIS FORMULATION', 'এই প্রোডাক্টের সাথে নিখুঁত সমন্বয়')}
+              PAIRS SYNERGISTICALLY WITH THIS FORMULATION
             </h2>
             <p className="text-xs text-[#1C1917]/70 font-light max-w-2xl">
-              {t(
-                'Formulated to layer seamlessly without pilling, pH conflict, or lipid barrier overload in high-humidity climates.',
-                'উষ্ণ ও আর্দ্র আবহাওয়ায় ত্বকের ভারসাম্য বজায় রাখতে এই প্রোডাক্টগুলোর যুগপৎ ব্যবহার অত্যন্ত কার্যকরী।'
-              )}
+              Formulated to layer seamlessly without pilling, pH conflict, or lipid barrier overload in high-humidity climates.
             </p>
           </div>
 

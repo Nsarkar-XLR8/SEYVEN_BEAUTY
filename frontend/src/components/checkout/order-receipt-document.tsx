@@ -1,4 +1,5 @@
 import React from 'react';
+import { BRAND } from '@/lib/constants';
 
 export interface OrderReceiptItem {
   id: string;
@@ -22,6 +23,8 @@ export interface OrderReceiptData {
   items?: OrderReceiptItem[];
   createdAt?: string;
   estimatedDays?: string;
+  supportPhone?: string;
+  supportWhatsApp?: string;
 }
 
 interface OrderReceiptDocumentProps {
@@ -201,10 +204,10 @@ export function OrderReceiptDocument({ orderData }: OrderReceiptDocumentProps) {
             SEYVEN
           </p>
           <p className="text-[8.5px]">
-            Customer Care: care@seyven.com.bd &bull; +880 1700 000000
+            Customer Care: {BRAND.supportEmail} &bull; {orderData.supportWhatsApp || orderData.supportPhone || BRAND.supportWhatsApp}
           </p>
           <p className="text-[8px] text-[#1C1917]/50">
-            Gulshan-1, Dhaka-1212, Bangladesh &bull; www.seyven.com.bd
+            {BRAND.registeredAddress} &bull; www.theseyven.com
           </p>
         </div>
 

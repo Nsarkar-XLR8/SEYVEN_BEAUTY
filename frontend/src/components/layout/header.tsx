@@ -13,7 +13,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenSearch }: HeaderProps) {
-  const { itemCount, openBag } = useCart();
+  const { itemCount, openBag, settings } = useCart();
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -336,7 +336,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
 
               <div className="space-y-1 text-[9px] text-[#1C1917]/50 pt-1 border-t border-[#E6DFD5]/40">
                 <p className="uppercase tracking-[0.15em] text-[#C7A97B] font-medium">
-                  DIRECT CLIENT CARE · {BRAND.supportPhone}
+                  DIRECT CLIENT CARE · {settings?.supportPhone || BRAND.supportPhone}
                 </p>
                 <p className="tracking-[0.05em]">
                   {BRAND.corporate.vatBin}

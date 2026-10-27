@@ -4,10 +4,13 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
 import { BRAND } from '@/lib/constants';
 
 export default function PrivacyPolicyPage() {
   const { t } = useLanguage();
+  const { settings } = useCart();
+  const supportWhatsApp = settings?.supportWhatsApp || BRAND.supportWhatsApp;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-8 pb-28 lg:pb-16 text-[#1C1917]">
@@ -65,8 +68,8 @@ export default function PrivacyPolicyPage() {
           </h2>
           <p>
             {t(
-              `If you wish to update your saved address or delete your order history, please contact our care concierge at ${BRAND.supportEmail} or via WhatsApp at ${BRAND.supportWhatsApp}.`,
-              `আপনার সংরক্ষিত ঠিকানা আপডেট করতে বা কোনো তথ্য সম্পর্কে জানতে আমাদের কাস্টমার কেয়ারে যোগাযোগ করুন: ${BRAND.supportEmail} অথবা হোয়াটসঅ্যাপ: ${BRAND.supportWhatsApp}।`
+              `If you wish to update your saved address or delete your order history, please contact our care concierge at ${BRAND.supportEmail} or via WhatsApp at ${supportWhatsApp}.`,
+              `আপনার সংরক্ষিত ঠিকানা আপডেট করতে বা কোনো তথ্য সম্পর্কে জানতে আমাদের কাস্টমার কেয়ারে যোগাযোগ করুন: ${BRAND.supportEmail} অথবা হোয়াটসঅ্যাপ: ${supportWhatsApp}।`
             )}
           </p>
         </section>

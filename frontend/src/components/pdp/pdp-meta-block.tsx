@@ -5,6 +5,7 @@ import { ShoppingBag, Check, ShieldCheck, Truck, Sparkles, Bell, ArrowRight, Mes
 import { useCart } from '@/context/cart-context';
 import { useLanguage } from '@/context/language-context';
 import { formatBdt } from '@/lib/formatters';
+import { getPrimaryConciergeAction } from '@/lib/concierge';
 import { ProductDetail, ProductVariant } from '@/data/products';
 
 interface PdpMetaBlockProps {
@@ -15,7 +16,7 @@ interface PdpMetaBlockProps {
 export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
   const router = useRouter();
   const { lang, t } = useLanguage();
-  const { addItem, openBag } = useCart();
+  const { addItem, openBag, settings } = useCart();
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
     product.variants[0] || {
@@ -83,6 +84,13 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
 
     router.push('/checkout');
   };
+
+  const conciergeAction = getPrimaryConciergeAction(settings, {
+    productTitle: product.titleEn,
+    volume: selectedVariant.volume,
+    priceBdt: currentPrice,
+    quantity,
+  });
 
   return (
     <div className="space-y-6 lg:max-w-xl">
@@ -261,18 +269,16 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
           )}
         </div>
 
-        {/* WhatsApp 1-Tap Direct Order for Meta (Instagram/Facebook) community */}
+        {/* Dynamic 1-Tap Direct Order Concierge (Powered by Admin Settings: Messenger or WhatsApp) */}
         {isCurrentVariantInStock && (
           <a
-            href={`https://wa.me/8801700000000?text=${encodeURIComponent(
-              `Hi SEYVEN! I saw this on Instagram/Facebook and would like to order:\n\n• Product: ${product.titleEn} (${selectedVariant.volume})\n• Price: ৳${Math.round(currentPrice).toLocaleString('en-IN')}\n• Quantity: ${quantity}\n\nPlease confirm my delivery details.`
-            )}`}
+            href={conciergeAction.url}
             target="_blank"
             rel="noopener noreferrer"
             className="group w-full py-3.5 px-4 bg-transparent hover:bg-[#1C1917] text-[#1C1917] hover:text-[#FAF8F5] border border-[#1C1917]/30 hover:border-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2.5 text-center rounded-none shadow-xs cursor-pointer"
           >
             <MessageCircle className="w-4 h-4 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-all duration-300 group-hover:scale-110" />
-            <span>{t('ORDER VIA WHATSAPP CONCIERGE', 'হোয়াটসঅ্যাপে সরাসরি অর্ডার করুন')}</span>
+            <span>{t(conciergeAction.labelEn, conciergeAction.labelBn)}</span>
           </a>
         )}
 
@@ -340,14 +346,12 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
 
           <div className="flex items-center gap-2">
             <a
-              href={`https://wa.me/8801700000000?text=${encodeURIComponent(
-                `Hi SEYVEN! I want to order this product:\n\n• Product: ${product.titleEn} (${selectedVariant.volume})\n• Price: ৳${Math.round(currentPrice).toLocaleString('en-IN')}\n\nPlease take my delivery address.`
-              )}`}
+              href={conciergeAction.url}
               target="_blank"
               rel="noopener noreferrer"
               className="group p-3 bg-transparent hover:bg-[#1C1917] border border-[#1C1917]/30 hover:border-[#1C1917] text-[#1C1917] hover:text-[#FAF8F5] transition-all duration-300 flex items-center justify-center shrink-0 rounded-none cursor-pointer"
-              aria-label="Order on WhatsApp"
-              title="Order on WhatsApp"
+              aria-label={conciergeAction.labelEn}
+              title={conciergeAction.labelEn}
             >
               <MessageCircle className="w-4 h-4 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-all duration-300 group-hover:scale-110" />
             </a>

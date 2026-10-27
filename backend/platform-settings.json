@@ -7,10 +7,14 @@
   "freeDeliveryThresholdBdt": 3000,
   "supportPhone": "+880 9612 000000",
   "supportWhatsApp": "+880 1700 000000",
+  "supportMessenger": "https://m.me/seyvenofficial",
+  "supportFacebook": "https://www.facebook.com/seyvenofficial",
+  "supportInstagram": "https://www.instagram.com/seyven_beauty/",
+  "primaryConciergeChannel": "MESSENGER",
   "isCampaignActive": false,
   "campaignTitle": "Festive Eid Sanctuary Privilege",
   "campaignDiscountPercent": 7,
   "campaignStartDate": "2026-10-19T06:45:36.189Z",
   "campaignEndDate": "2026-11-03T06:45:36.190Z",
-  "updatedAt": "2026-10-24T13:51:21.693Z"
+  "updatedAt": "2026-10-27T06:30:00.000Z"
 }

@@ -5,12 +5,16 @@ import Link from 'next/link';
 import { Crown, Sparkles, Award, ArrowRight, ShieldCheck, Check, ArrowLeft, Heart, MessageCircle, Gift } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { useAuth } from '@/context/auth-context';
+import { useCart } from '@/context/cart-context';
+import { getPrimaryConciergeAction } from '@/lib/concierge';
 import { formatBdt } from '@/lib/formatters';
 import { ReplenishmentDrawer } from '@/components/loyalty/replenishment-drawer';
 
 export default function LoyaltyPage() {
   const { lang, t } = useLanguage();
   const { user, isAuthenticated, openAuthModal } = useAuth();
+  const { settings } = useCart();
+  const concierge = getPrimaryConciergeAction(settings);
   const [mounted, setMounted] = useState(false);
 
   React.useEffect(() => {
@@ -101,13 +105,13 @@ export default function LoyaltyPage() {
               {t('EXPLORE THE EDIT', 'ফর্মুলেশন দেখুন')}
             </Link>
             <a
-              href="https://wa.me/8801700000000"
+              href={concierge.url}
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 border border-[#FAF8F5]/30 text-[#FAF8F5] text-[11px] uppercase tracking-[0.2em] hover:bg-[#FAF8F5] hover:text-[#1C1917] transition-colors rounded-sm inline-flex items-center space-x-2"
             >
-              <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-              <span>{t('PRIVATE CONCIERGE', 'হোয়াটসঅ্যাপ কনসিয়ার্জ')}</span>
+              <MessageCircle className="w-3.5 h-3.5 text-[#C7A97B]" />
+              <span>{t('PRIVATE CONCIERGE', 'প্রাইভেট কনসিয়ার্জ')}</span>
             </a>
           </div>
         </div>

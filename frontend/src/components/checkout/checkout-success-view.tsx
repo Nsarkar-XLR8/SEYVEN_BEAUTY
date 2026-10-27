@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Copy, Check, Download, Truck, ArrowRight, Phone } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
+import { BRAND } from '@/lib/constants';
+import { buildWhatsAppUrl } from '@/lib/concierge';
 import { OrderReceiptDocument, OrderReceiptData } from './order-receipt-document';
 import { generateAndDownloadSeyvenReceipt } from '@/lib/pdf-generator';
 
@@ -13,6 +16,7 @@ interface CheckoutSuccessViewProps {
 
 export function CheckoutSuccessView({ orderData }: CheckoutSuccessViewProps) {
   const { lang, t } = useLanguage();
+  const { settings } = useCart();
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -208,15 +212,27 @@ export function CheckoutSuccessView({ orderData }: CheckoutSuccessViewProps) {
 
         {/* Direct WhatsApp Concierge Help */}
         <div className="text-center pt-2">
-          <p className="text-xs text-[#1C1917]/70 flex items-center justify-center space-x-1.5">
-            <Phone className="w-3.5 h-3.5 text-[#C7A97B]" />
-            <span>
-              {t(
-                'Questions regarding delivery? WhatsApp Concierge: +880 1700 000000',
-                'ডেলিভারি সংক্রান্ত যেকোনো সহায়তায় হোয়াটসঅ্যাপ করুন: +৮৮০ ১৭০০ ০০০০০০'
-              )}
-            </span>
-          </p>
+          {(() => {
+            const rawPhone = settings?.supportWhatsApp || BRAND.supportWhatsApp;
+            const inquiryMsg = `Hi SEYVEN Concierge! I have an inquiry about my Order #${orderData.orderId}.`;
+            const waUrl = buildWhatsAppUrl(rawPhone, inquiryMsg);
+            return (
+              <p className="text-xs text-[#1C1917]/70 flex items-center justify-center space-x-1.5">
+                <Phone className="w-3.5 h-3.5 text-[#C7A97B]" />
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline hover:text-[#C7A97B] transition-colors"
+                >
+                  {t(
+                    `Questions regarding delivery? WhatsApp Concierge: ${rawPhone} ↗`,
+                    `ডেলিভারি সংক্রান্ত যেকোনো সহায়তায় হোয়াটসঅ্যাপ করুন: ${rawPhone} ↗`
+                  )}
+                </a>
+              </p>
+            );
+          })()}
         </div>
       </div>
 

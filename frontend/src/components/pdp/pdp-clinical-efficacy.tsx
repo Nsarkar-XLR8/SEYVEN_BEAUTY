@@ -4,6 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { Sparkles, MessageCircle, ArrowRight, Compass, Shield, HeartHandshake } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
+import { getPrimaryConciergeAction } from '@/lib/concierge';
 
 interface PdpClinicalEfficacyProps {
   productId: string;
@@ -12,6 +14,11 @@ interface PdpClinicalEfficacyProps {
 
 export function PdpClinicalEfficacy({ productId, productTitle }: PdpClinicalEfficacyProps) {
   const { t } = useLanguage();
+  const { settings } = useCart();
+  const concierge = getPrimaryConciergeAction(settings, {
+    productTitle,
+    priceBdt: 0,
+  });
 
   const highlights = [
     {
@@ -107,13 +114,13 @@ export function PdpClinicalEfficacy({ productId, productTitle }: PdpClinicalEffi
 
         <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <a
-            href="https://wa.me/8801700000000"
+            href={concierge.url}
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-3.5 bg-[#C7A97B] text-[#1C1917] text-[10px] uppercase tracking-[0.25em] font-medium hover:bg-[#C7A97B]/90 transition-colors flex items-center justify-center space-x-2 text-center"
           >
             <MessageCircle className="w-3.5 h-3.5" />
-            <span>{t('WHATSAPP CONCIERGE', 'হোয়াটসঅ্যাপ কনসিয়ার্জ')}</span>
+            <span>{t(concierge.shortLabel + ' CONCIERGE', concierge.labelBn)}</span>
           </a>
 
           <Link

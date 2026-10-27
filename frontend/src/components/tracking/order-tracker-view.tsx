@@ -5,6 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search, Package, Truck, CheckCircle2, Clock, ShieldCheck, ExternalLink, AlertCircle, Phone, ArrowRight, RotateCcw } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
+import { BRAND } from '@/lib/constants';
+import { buildWhatsAppUrl } from '@/lib/concierge';
 import { formatBdt } from '@/lib/formatters';
 import { apiFetch } from '@/lib/api-client';
 
@@ -43,6 +46,7 @@ export function OrderTrackerView() {
   const urlPhone = searchParams.get('phone') || '';
 
   const { lang, t } = useLanguage();
+  const { settings } = useCart();
   const [orderIdInput, setOrderIdInput] = useState(urlOrderId);
   const [phoneInput, setPhoneInput] = useState(urlPhone);
   const [isSearching, setIsSearching] = useState(false);
@@ -476,15 +480,31 @@ export function OrderTrackerView() {
 
       {/* Support Strip */}
       <div className="text-center pt-2">
-        <p className="text-xs text-[#1C1917]/70 flex items-center justify-center space-x-1.5">
-          <Phone className="w-3.5 h-3.5 text-[#C7A97B]" />
-          <span>
-            {t(
-              'Urgent Delivery Inquiry? WhatsApp SEYVEN Concierge: +880 1700 000000',
-              'জরুরি ডেলিভারি তথ্যের জন্য হোয়াটসঅ্যাপ কনসিয়ার্জ: +৮৮০ ১৭০০ ০০০০০০'
-            )}
-          </span>
-        </p>
+        {(() => {
+          const rawPhone = settings?.supportWhatsApp || BRAND.supportWhatsApp;
+          const inquiryUrl = buildWhatsAppUrl(
+            rawPhone,
+            trackingResult
+              ? `Hi SEYVEN Concierge! I have a tracking inquiry regarding Order #${trackingResult.orderId}.`
+              : 'Hi SEYVEN Concierge! I have an inquiry about my parcel delivery.'
+          );
+          return (
+            <p className="text-xs text-[#1C1917]/70 flex items-center justify-center space-x-1.5">
+              <Phone className="w-3.5 h-3.5 text-[#C7A97B]" />
+              <a
+                href={inquiryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline hover:text-[#C7A97B] transition-colors"
+              >
+                {t(
+                  `Urgent Delivery Inquiry? WhatsApp SEYVEN Concierge: ${rawPhone} ↗`,
+                  `জরুরি ডেলিভারি তথ্যের জন্য হোয়াটসঅ্যাপ কনসিয়ার্জ: ${rawPhone} ↗`
+                )}
+              </a>
+            </p>
+          );
+        })()}
       </div>
     </div>
   );

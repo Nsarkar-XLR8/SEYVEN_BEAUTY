@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
+import { SettingsService } from '../../settings/settings.service';
 
 export interface SendNewsletterEmailOptions {
   toEmail: string;
@@ -21,7 +22,10 @@ export class NewsletterEmailService {
   private readonly appUrl: string;
   private readonly apiUrl: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly settingsService: SettingsService,
+  ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY') || process.env.RESEND_API_KEY;
     if (apiKey && apiKey.trim() !== '') {
       this.resend = new Resend(apiKey);
@@ -43,6 +47,10 @@ export class NewsletterEmailService {
     const { recipientName, subject, previewText, contentHtml, discountCode, discountBanner, unsubscribeToken } = options;
     const unsubscribeUrl = `${this.apiUrl}/newsletter/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
     const catalogUrl = `${this.appUrl}/catalog`;
+
+    const platformSettings = this.settingsService.getSettings();
+    const supportPhone = platformSettings.supportPhone;
+    const supportWhatsApp = platformSettings.supportWhatsApp;
 
     const discountBlock = discountBanner || discountCode ? `
       <!-- Luxury Promotional / Festive Banner -->
@@ -132,8 +140,8 @@ export class NewsletterEmailService {
                 SEYVEN BEAUTY SANCTUARY &bull; BANGLADESH
               </p>
               <p style="margin: 0 0 12px 0; font-size: 10px; color: #8E8B85; line-height: 1.5;">
-                Level 14, Lotus Kamal Tower, Gulshan-1, Dhaka-1212<br/>
-                Concierge Hotline: +880 9612 000000 | WhatsApp: +880 1700 000000
+                K.B. Saha Road, Amlapara, Chashara Commercial Area, Narayanganj - 1400, Bangladesh<br/>
+                Concierge Hotline: ${supportPhone} | WhatsApp: ${supportWhatsApp}
               </p>
 
               <!-- Compliant Unsubscribe Link -->

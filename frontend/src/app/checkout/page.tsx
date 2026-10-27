@@ -8,6 +8,8 @@ import { useCart } from '@/context/cart-context';
 import { useLanguage } from '@/context/language-context';
 import { useAuth } from '@/context/auth-context';
 import { formatBdt } from '@/lib/formatters';
+import { buildWhatsAppUrl, sanitizeMessengerUrl } from '@/lib/concierge';
+import { BRAND } from '@/lib/constants';
 import { CheckoutOrderSummary } from '@/components/checkout/checkout-order-summary';
 import { CheckoutPaymentSelector, PaymentMethod } from '@/components/checkout/checkout-payment-selector';
 import { CheckoutLoyaltySlider } from '@/components/checkout/checkout-loyalty-slider';
@@ -57,6 +59,12 @@ export default function CheckoutPage() {
   const isFreeDeliveryEligible = Math.max(0, subtotalBdt - discountBdt) >= freeThreshold;
   const deliveryFeeBdt = isFreeDeliveryEligible ? 0 : (isInsideDhaka ? standardFeeDhaka : standardFeeOutside);
   const netPayableBdt = Math.max(0, subtotalBdt - discountBdt - loyaltyDiscountBdt + deliveryFeeBdt);
+
+  const isMessengerConcierge = settings?.primaryConciergeChannel === 'MESSENGER';
+  const conciergeMessage = `Hi SEYVEN Concierge! I want to confirm my order:\n\n• Items: ${items.map((i) => `${i.titleEn} (x${i.quantity})`).join(', ')}\n• Total: ${formatBdt(netPayableBdt)}\n• Area: ${activeDistrictName}\n\nPlease take my address.`;
+  const conciergeCheckoutUrl = isMessengerConcierge
+    ? sanitizeMessengerUrl(settings?.supportMessenger || BRAND.supportMessenger)
+    : buildWhatsAppUrl(settings?.supportWhatsApp || BRAND.supportWhatsApp, conciergeMessage);
 
   // Handle Order Placement
   const handleCommitOrder = async (e: React.FormEvent) => {
@@ -129,6 +137,8 @@ export default function CheckoutPage() {
         estimatedDays: isInsideDhaka
           ? (lang === 'bn' ? '১-২ কর্মদিবস' : '1-2 Days')
           : (lang === 'bn' ? '২-৩ কর্মদিবস' : '2-3 Days'),
+        supportPhone: settings?.supportPhone || '',
+        supportWhatsApp: settings?.supportWhatsApp || '',
       };
 
       // Dispatch live order to backend & database & trigger admin email
@@ -489,15 +499,17 @@ export default function CheckoutPage() {
 
               <div className="text-center pt-1">
                 <a
-                  href={`https://wa.me/8801700000000?text=${encodeURIComponent(
-                    `Hi SEYVEN Concierge! I would like to place this order via WhatsApp:\n\n• Items: ${items.map((i) => `${i.titleEn} (x${i.quantity})`).join(', ')}\n• Total: ${formatBdt(netPayableBdt)}\n• Destination: ${activeDistrictName}\n\nPlease confirm my delivery details.`
-                  )}`}
+                  href={conciergeCheckoutUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center space-x-1.5 text-[11px] uppercase tracking-[0.18em] text-[#1C1917]/70 hover:text-[#C7A97B] transition-colors"
                 >
                   <MessageCircle className="w-3.5 h-3.5 text-[#C7A97B]" />
-                  <span>{t('PREFER ASSISTED WHATSAPP CHECKOUT? TAP HERE', 'অথবা হোয়াটসঅ্যাপ কনসিয়ার্জে অর্ডার করুন')}</span>
+                  <span>
+                    {isMessengerConcierge
+                      ? t('PREFER ASSISTED MESSENGER CHECKOUT? TAP HERE', 'অথবা মেসেঞ্জার কনসিয়ার্জে অর্ডার করুন')
+                      : t('PREFER ASSISTED WHATSAPP CHECKOUT? TAP HERE', 'অথবা হোয়াটসঅ্যাপ কনসিয়ার্জে অর্ডার করুন')}
+                  </span>
                 </a>
               </div>
             </div>
@@ -553,14 +565,12 @@ export default function CheckoutPage() {
 
           <div className="flex items-center gap-2 flex-1 max-w-[240px]">
             <a
-              href={`https://wa.me/8801700000000?text=${encodeURIComponent(
-                `Hi SEYVEN Concierge! I want to confirm my order:\n\n• Items: ${items.map((i) => `${i.titleEn} (x${i.quantity})`).join(', ')}\n• Total: ${formatBdt(netPayableBdt)}\n• Area: ${activeDistrictName}\n\nPlease take my address.`
-              )}`}
+              href={conciergeCheckoutUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="p-3 bg-[#F9F6F0] border border-[#C7A97B]/70 hover:bg-[#E6DFD5]/40 text-[#1C1917] transition-all flex items-center justify-center shrink-0 cursor-pointer"
-              aria-label="Order on WhatsApp"
-              title="Order on WhatsApp"
+              aria-label={isMessengerConcierge ? 'Order on Messenger' : 'Order on WhatsApp'}
+              title={isMessengerConcierge ? 'Order on Messenger' : 'Order on WhatsApp'}
             >
               <MessageCircle className="w-4 h-4 text-[#C7A97B]" />
             </a>

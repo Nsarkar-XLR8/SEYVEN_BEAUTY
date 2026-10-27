@@ -6,6 +6,7 @@ import { Sparkles, ArrowRight, ShieldCheck, HeartHandshake, CheckCircle2, Messag
 import { useLanguage } from '@/context/language-context';
 import { useCart } from '@/context/cart-context';
 import { ProductCard } from '@/components/storefront/product-card';
+import { getPrimaryConciergeAction } from '@/lib/concierge';
 
 import { getAllProducts, createDynamicProductDetail, ProductDetail } from '@/data/products';
 
@@ -30,6 +31,7 @@ function FacebookIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
 export default function HomePage() {
   const { lang, t } = useLanguage();
   const { settings } = useCart();
+  const concierge = getPrimaryConciergeAction(settings);
   const [products, setProducts] = React.useState<ProductDetail[]>([]);
 
   React.useEffect(() => {
@@ -192,13 +194,13 @@ export default function HomePage() {
             {/* Dynamic Concierge Action Hub */}
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 flex-wrap">
               <a
-                href={settings?.supportMessenger || 'https://m.me/seyvenofficial'}
+                href={concierge.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto px-7 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2.5 rounded-none"
               >
                 <MessageCircle className="w-4 h-4 text-[#C7A97B]" />
-                <span>{t('SKINCARE CONSULTATION (MESSENGER)', 'মেসেঞ্জারে স্কিন কনসালটেন্সি')}</span>
+                <span>{t(`SKINCARE CONSULTATION (${concierge.shortLabel})`, `${concierge.shortLabel} কনসালটেন্সি`)}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
 

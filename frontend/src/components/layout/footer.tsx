@@ -7,6 +7,8 @@ import { BRAND } from '@/lib/constants';
 import { useLanguage } from '@/context/language-context';
 import { useCart } from '@/context/cart-context';
 
+import { buildWhatsAppUrl, sanitizeMessengerUrl, sanitizeInstagramUrl } from '@/lib/concierge';
+
 export function Footer() {
   const { lang, t } = useLanguage();
   const { settings } = useCart();
@@ -16,9 +18,12 @@ export function Footer() {
   const [subscribeMessage, setSubscribeMessage] = useState<string | null>(null);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
-  const messengerLink = settings?.supportMessenger || 'https://m.me/seyvenofficial';
-  const instagramLink = settings?.supportInstagram || 'https://www.instagram.com/seyven_beauty/';
-  const facebookLink = settings?.supportFacebook || 'https://www.facebook.com/seyvenofficial';
+  const supportPhone = settings?.supportPhone || BRAND.supportPhone;
+  const supportWhatsApp = settings?.supportWhatsApp || BRAND.supportWhatsApp;
+  const messengerLink = sanitizeMessengerUrl(settings?.supportMessenger || BRAND.supportMessenger);
+  const instagramLink = sanitizeInstagramUrl(settings?.supportInstagram || BRAND.supportInstagram);
+  const facebookLink = settings?.supportFacebook || BRAND.supportFacebook;
+  const whatsAppUrl = buildWhatsAppUrl(supportWhatsApp, 'Hi SEYVEN Concierge! I would like to inquire about your dermal formulations.');
 
   const toggleAccordion = (id: string) => {
     setOpenAccordion(openAccordion === id ? null : id);
@@ -199,8 +204,8 @@ export function Footer() {
                   {BRAND.registeredAddress}
                 </p>
                 <div className="flex flex-col space-y-1 pt-1">
-                  <a href={`tel:${BRAND.supportPhone}`} className="text-white hover:text-[#C7A97B] font-medium tracking-wider">
-                    {BRAND.supportPhone}
+                  <a href={`tel:${supportPhone}`} className="text-white hover:text-[#C7A97B] font-medium tracking-wider">
+                    {supportPhone}
                   </a>
                   <span className="text-[10px] text-[#6E6B65]">{BRAND.officeHours}</span>
                 </div>
@@ -208,7 +213,14 @@ export function Footer() {
                   <span className="text-[10px] uppercase tracking-[0.15em] text-[#C7A97B] block font-medium">
                     WhatsApp Concierge
                   </span>
-                  <span className="text-xs text-white font-mono">{BRAND.supportWhatsApp}</span>
+                  <a
+                    href={whatsAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-white hover:text-[#C7A97B] font-mono transition-colors"
+                  >
+                    {supportWhatsApp} ↗
+                  </a>
                 </div>
               </div>
             )}
@@ -244,8 +256,8 @@ export function Footer() {
                 {BRAND.registeredAddress}
               </p>
               <div className="pt-1">
-                <a href={`tel:${BRAND.supportPhone}`} className="text-white hover:text-[#C7A97B] font-medium tracking-wider block">
-                  {BRAND.supportPhone}
+                <a href={`tel:${supportPhone}`} className="text-white hover:text-[#C7A97B] font-medium tracking-wider block">
+                  {supportPhone}
                 </a>
                 <span className="text-[10px] text-[#6E6B65] block mt-0.5">{BRAND.officeHours}</span>
               </div>
@@ -254,12 +266,20 @@ export function Footer() {
               </p>
               <div className="pt-2 flex flex-col gap-1.5 text-[10px] font-mono">
                 <a
+                  href={whatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:text-[#C7A97B] transition-colors flex items-center gap-1.5"
+                >
+                  <span>WhatsApp: {supportWhatsApp} ↗</span>
+                </a>
+                <a
                   href={messengerLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#C7A97B] hover:underline flex items-center gap-1.5"
                 >
-                  <span>Messenger: m.me/seyvenofficial ↗</span>
+                  <span>Messenger: {messengerLink.replace(/^https?:\/\//, '')} ↗</span>
                 </a>
                 <a
                   href={facebookLink}
@@ -267,7 +287,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="text-[#8E8B85] hover:text-white hover:underline flex items-center gap-1.5"
                 >
-                  <span>Facebook: /seyvenofficial ↗</span>
+                  <span>Facebook: /{facebookLink.replace(/^https?:\/\/(www\.)?facebook\.com\/?/, '')} ↗</span>
                 </a>
                 <a
                   href={instagramLink}
@@ -275,7 +295,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="text-[#8E8B85] hover:text-white hover:underline flex items-center gap-1.5"
                 >
-                  <span>Instagram: @seyven_beauty ↗</span>
+                  <span>Instagram: @{instagramLink.replace(/^https?:\/\/(www\.)?instagram\.com\/?/, '').replace(/\/$/, '')} ↗</span>
                 </a>
               </div>
             </div>

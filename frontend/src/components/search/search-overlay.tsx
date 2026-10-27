@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { Search, X, ArrowRight, Sparkles, Loader2, MessageCircle } from 'lucide-react';
 import { apiFetch } from '@/lib/api-client';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
+import { getPrimaryConciergeAction } from '@/lib/concierge';
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -34,6 +36,8 @@ interface SearchCategory {
 
 export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const { t, lang } = useLanguage();
+  const { settings } = useCart();
+  const concierge = getPrimaryConciergeAction(settings);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -347,13 +351,13 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     {t('EXPLORE THE EDIT', 'ক্যাটালগ দেখুন')}
                   </Link>
                   <a
-                    href="https://wa.me/8801700000000"
+                    href={concierge.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 bg-[#25D366] text-white text-[10px] uppercase tracking-[0.2em] hover:bg-[#20ba59] transition-colors rounded-sm inline-flex items-center space-x-2"
+                    className="px-4 py-2 bg-[#1C1917] text-white text-[10px] uppercase tracking-[0.2em] hover:bg-[#C7A97B] transition-colors rounded-sm inline-flex items-center space-x-2"
                   >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    <span>{t('WHATSAPP CONCIERGE', 'হোয়াটসঅ্যাপ কনসিয়ার্জ')}</span>
+                    <MessageCircle className="w-3.5 h-3.5 text-[#C7A97B]" />
+                    <span>{t(concierge.shortLabel + ' CONCIERGE', concierge.labelBn)}</span>
                   </a>
                 </div>
               </div>

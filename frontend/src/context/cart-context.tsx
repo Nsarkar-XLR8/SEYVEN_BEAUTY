@@ -44,11 +44,11 @@ const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsState = {
   standardDeliveryDhakaBdt: BRAND.thresholds.standardDeliveryDhakaBdt,
   standardDeliveryOutsideBdt: BRAND.thresholds.standardDeliveryOutsideBdt,
   freeDeliveryThresholdBdt: BRAND.thresholds.freeDeliveryBdt,
-  supportPhone: '+880 9612 000000',
-  supportWhatsApp: '+880 1700 000000',
-  supportMessenger: 'https://m.me/seyvenofficial',
-  supportFacebook: 'https://www.facebook.com/seyvenofficial',
-  supportInstagram: 'https://www.instagram.com/seyven_beauty/',
+  supportPhone: BRAND.supportPhone,
+  supportWhatsApp: BRAND.supportWhatsApp,
+  supportMessenger: BRAND.supportMessenger,
+  supportFacebook: BRAND.supportFacebook,
+  supportInstagram: BRAND.supportInstagram,
   primaryConciergeChannel: 'MESSENGER',
   isCampaignActive: false,
   campaignTitle: 'Festive Eid Sanctuary Privilege',
@@ -122,28 +122,34 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const refreshSettings = React.useCallback(async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
-      const res = await fetch(`${apiUrl}/settings`, { cache: 'no-store' });
+      const res = await fetch('/api/settings', { cache: 'no-store' }).catch(() =>
+        fetch(`${apiUrl}/settings`, { cache: 'no-store' })
+      );
       const json = await res.json();
       if (json.success && json.data) {
-        setSettings({
+        const nextSettings: PlatformSettingsState = {
           isVatEnabled: json.data.isVatEnabled === true,
           vatRatePercent: Number(json.data.vatRatePercent) || 0,
           isVatInclusive: json.data.isVatInclusive === true,
           standardDeliveryDhakaBdt: Number(json.data.standardDeliveryDhakaBdt) || 70,
           standardDeliveryOutsideBdt: Number(json.data.standardDeliveryOutsideBdt) || 130,
           freeDeliveryThresholdBdt: Number(json.data.freeDeliveryThresholdBdt) || 3000,
-          supportPhone: json.data.supportPhone || '+880 9612 000000',
-          supportWhatsApp: json.data.supportWhatsApp || '+880 1700 000000',
-          supportMessenger: json.data.supportMessenger || 'https://m.me/seyvenofficial',
-          supportFacebook: json.data.supportFacebook || 'https://www.facebook.com/seyvenofficial',
-          supportInstagram: json.data.supportInstagram || 'https://www.instagram.com/seyven_beauty/',
+          supportPhone: json.data.supportPhone || BRAND.supportPhone,
+          supportWhatsApp: json.data.supportWhatsApp || BRAND.supportWhatsApp,
+          supportMessenger: json.data.supportMessenger || BRAND.supportMessenger,
+          supportFacebook: json.data.supportFacebook || BRAND.supportFacebook,
+          supportInstagram: json.data.supportInstagram || BRAND.supportInstagram,
           primaryConciergeChannel: json.data.primaryConciergeChannel || 'MESSENGER',
           isCampaignActive: json.data.isCampaignActive === true,
           campaignTitle: json.data.campaignTitle || '',
           campaignDiscountPercent: Number(json.data.campaignDiscountPercent) || 0,
           campaignStartDate: json.data.campaignStartDate || null,
           campaignEndDate: json.data.campaignEndDate || null,
-        });
+        };
+        setSettings(nextSettings);
+        try {
+          localStorage.setItem('seyven_platform_settings', JSON.stringify(nextSettings));
+        } catch {}
       }
     } catch {
       // Keep defaults if backend offline
@@ -156,6 +162,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const savedItems = localStorage.getItem('seyven_bag_items');
       if (savedItems) {
         setItems(JSON.parse(savedItems));
+      }
+
+      const savedSettings = localStorage.getItem('seyven_platform_settings');
+      if (savedSettings) {
+        try {
+          setSettings((prev) => ({ ...prev, ...JSON.parse(savedSettings) }));
+        } catch {}
       }
 
       // Check URL for automatic privilege dispatch link (e.g. ?privilege=EID7)
@@ -178,8 +191,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       // Listen for window focus to immediately reflect changes made in admin portal
       window.addEventListener('focus', refreshSettings);
+
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'seyven_platform_settings' && e.newValue) {
+          try {
+            setSettings((prev) => ({ ...prev, ...JSON.parse(e.newValue!) }));
+          } catch {}
+        }
+      };
+      window.addEventListener('storage', handleStorageChange);
+
       return () => {
         window.removeEventListener('focus', refreshSettings);
+        window.removeEventListener('storage', handleStorageChange);
       };
     } catch {
       // ignore

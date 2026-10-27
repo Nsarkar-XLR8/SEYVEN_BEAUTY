@@ -5,10 +5,14 @@ import Link from 'next/link';
 import { Shield, Lock, Trash2, CheckCircle2, Phone, HeartHandshake, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { useAuth } from '@/context/auth-context';
+import { useCart } from '@/context/cart-context';
+import { getPrimaryConciergeAction } from '@/lib/concierge';
 
 export default function PrivacyCenterPage() {
   const { lang, t } = useLanguage();
   const { user, isAuthenticated, openAuthModal } = useAuth();
+  const { settings } = useCart();
+  const concierge = getPrimaryConciergeAction(settings);
   const [mounted, setMounted] = useState(false);
 
   React.useEffect(() => {
@@ -186,12 +190,12 @@ export default function PrivacyCenterPage() {
             </span>
           </div>
           <a
-            href="https://wa.me/8801700000000"
+            href={concierge.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 bg-[#1C1917] text-[#F9F6F0] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#1C1917]/90 transition-colors shrink-0"
+            className="px-4 py-2 bg-[#1C1917] text-[#F9F6F0] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#C7A97B] hover:text-[#1C1917] transition-colors shrink-0"
           >
-            {t('WHATSAPP CONCIERGE', 'হোয়াটসঅ্যাপ হেল্পলাইন')}
+            {t(`${concierge.shortLabel} CONCIERGE`, `${concierge.shortLabel} হেল্পলাইন`)}
           </a>
         </div>
 

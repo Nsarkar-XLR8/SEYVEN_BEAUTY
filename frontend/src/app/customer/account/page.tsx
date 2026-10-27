@@ -6,12 +6,16 @@ import { useRouter } from 'next/navigation';
 import { User, Package, Award, Sparkles, MessageCircle, LogOut, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
+import { getPrimaryConciergeAction } from '@/lib/concierge';
 import { BRAND } from '@/lib/constants';
 
 export default function CustomerAccountPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout, openAuthModal } = useAuth();
   const { t } = useLanguage();
+  const { settings } = useCart();
+  const concierge = getPrimaryConciergeAction(settings);
   const [mounted, setMounted] = React.useState(false);
 
   useEffect(() => {
@@ -139,26 +143,26 @@ export default function CustomerAccountPage() {
           </div>
         </Link>
 
-        {/* Card 3: WhatsApp Concierge */}
+        {/* Card 3: Dynamic Storefront Concierge */}
         <a
-          href="https://wa.me/8801700000000"
+          href={concierge.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-6 bg-[#F9F6F0] border border-[#E6DFD5] hover:border-[#25D366] transition-all duration-200 group flex flex-col justify-between space-y-4"
+          className="p-6 bg-[#F9F6F0] border border-[#E6DFD5] hover:border-[#C7A97B] transition-all duration-200 group flex flex-col justify-between space-y-4"
         >
           <div className="space-y-2">
-            <div className="w-10 h-10 rounded-full bg-[#25D366]/10 flex items-center justify-center text-[#25D366] group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-full bg-[#C7A97B]/10 flex items-center justify-center text-[#C7A97B] group-hover:scale-105 transition-transform">
               <MessageCircle className="w-5 h-5 stroke-[1.5]" />
             </div>
             <h2 className="text-xs uppercase tracking-[0.2em] font-serif font-medium text-[#1C1917]">
-              {t('WHATSAPP BEAUTY ADVISOR', 'হোয়াটসঅ্যাপ কনসাল্টেশন')}
+              {t(`${concierge.shortLabel} BEAUTY ADVISOR`, `${concierge.shortLabel} কনসাল্টেশন`)}
             </h2>
             <p className="text-[11px] text-[#1C1917]/70 font-light leading-relaxed">
               {t('Speak directly with our skincare concierge for quick orders or advice.', 'যেকোনো প্রশ্ন বা সরাসরি অর্ডারের জন্য আমাদের সাথে কথা বলুন।')}
             </p>
           </div>
-          <div className="flex items-center space-x-1.5 text-[10px] uppercase tracking-[0.2em] text-[#25D366] font-medium pt-2">
-            <span>{t('CHAT ON WHATSAPP', 'মেসেজ দিন')}</span>
+          <div className="flex items-center space-x-1.5 text-[10px] uppercase tracking-[0.2em] text-[#C7A97B] font-medium pt-2">
+            <span>{t(`CHAT ON ${concierge.shortLabel}`, 'মেসেজ দিন')}</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
           </div>
         </a>

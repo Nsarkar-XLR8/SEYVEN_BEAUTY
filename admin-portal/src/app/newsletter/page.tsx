@@ -81,6 +81,13 @@ export default function AdminNewsletterPage() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [searchSubscriber, setSearchSubscriber] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [platformSettings, setPlatformSettings] = useState<{
+    supportPhone: string;
+    supportWhatsApp: string;
+  }>({
+    supportPhone: '+880 9612 000000',
+    supportWhatsApp: '+880 1700 000000',
+  });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -107,6 +114,19 @@ export default function AdminNewsletterPage() {
       if (campRes && Array.isArray(campRes)) {
         setCampaigns(campRes);
       }
+
+      // Settings
+      fetch('/api/settings')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => {
+          if (json?.data) {
+            setPlatformSettings({
+              supportPhone: json.data.supportPhone || '+880 9612 000000',
+              supportWhatsApp: json.data.supportWhatsApp || '+880 1700 000000',
+            });
+          }
+        })
+        .catch(() => {});
 
       // DLQ
       const dlqRes = await fetch(`${apiUrl}/newsletter/dlq`).then((r) => (r.ok ? r.json() : null));
@@ -601,8 +621,8 @@ export default function AdminNewsletterPage() {
                     SEYVEN BEAUTY SANCTUARY &bull; BANGLADESH
                   </p>
                   <p className="text-[9px] leading-tight text-[#8E8B85]">
-                    Level 14, Lotus Kamal Tower, Gulshan-1, Dhaka-1212<br/>
-                    Support Hotline: +880 9612 000000 | WhatsApp: +880 1700 000000
+                    K.B. Saha Road, Amlapara, Chashara Commercial Area, Narayanganj - 1400, Bangladesh<br/>
+                    Support Hotline: {platformSettings.supportPhone} | WhatsApp: {platformSettings.supportWhatsApp}
                   </p>
                   <div className="pt-2 border-t border-[#E6DFD5]/60 text-[9px] text-[#A8A29E]">
                     You received this dispatch as a SEYVEN subscriber.<br/>

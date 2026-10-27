@@ -4,10 +4,15 @@ import React from 'react';
 import Link from 'next/link';
 import { RotateCcw, ShieldCheck, MessageCircle, Phone, ArrowLeft, CheckCircle2, Truck, HeartHandshake } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
+import { getPrimaryConciergeAction } from '@/lib/concierge';
 import { BRAND } from '@/lib/constants';
 
 export function RmaRequestView() {
   const { lang, t } = useLanguage();
+  const { settings } = useCart();
+  const concierge = getPrimaryConciergeAction(settings);
+  const supportPhone = settings?.supportPhone || BRAND.supportPhone;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-10 pb-28 lg:pb-16">
@@ -62,23 +67,21 @@ export function RmaRequestView() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <a
-            href={`https://wa.me/8801700000000?text=${encodeURIComponent(
-              'Hi SEYVEN Client Concierge! I need assistance with an exchange or replacement for my recent order.'
-            )}`}
+            href={concierge.url}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-8 py-3.5 bg-[#1C1917] hover:bg-[#1C1917]/90 text-[#F9F6F0] text-xs uppercase tracking-[0.22em] font-medium transition-all shadow-sm flex items-center justify-center space-x-2"
           >
             <MessageCircle className="w-4 h-4 text-[#C7A97B]" />
-            <span>{t('CHAT ON WHATSAPP', 'হোয়াটসঅ্যাপে মেসেজ পাঠান')}</span>
+            <span>{t(`CHAT ON ${concierge.shortLabel}`, 'মেসেজ পাঠান')}</span>
           </a>
 
           <a
-            href={`tel:${BRAND.supportPhone.replace(/\s+/g, '')}`}
+            href={`tel:${supportPhone.replace(/\s+/g, '')}`}
             className="w-full sm:w-auto px-8 py-3.5 border border-[#1C1917] hover:bg-[#1C1917] hover:text-[#F9F6F0] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all flex items-center justify-center space-x-2"
           >
             <Phone className="w-4 h-4 text-[#C7A97B]" />
-            <span>{t('CALL CONCIERGE', 'সরাসরি কল করুন')}</span>
+            <span>{supportPhone}</span>
           </a>
         </div>
       </div>

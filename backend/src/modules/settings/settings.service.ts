@@ -30,7 +30,7 @@ const DEFAULT_SETTINGS: PlatformSettings = {
   isVatInclusive: true,
   standardDeliveryDhakaBdt: 70,
   standardDeliveryOutsideBdt: 130,
-  freeDeliveryThresholdBdt: 2000,
+  freeDeliveryThresholdBdt: 3000,
   supportPhone: '+880 9612 000000',
   supportWhatsApp: '+880 1700 000000',
   supportMessenger: 'https://m.me/seyvenofficial',

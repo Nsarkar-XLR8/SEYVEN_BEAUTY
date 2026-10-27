@@ -370,8 +370,8 @@ export class OrdersService {
         dto.shippingAddress.thanaArea,
       );
       deliveryFee = zone.baseFee;
-      // Free delivery on ৳2,000 threshold
-      if (subtotal >= 2000) {
+      // Free delivery on threshold (default ৳3,000)
+      if (subtotal >= 3000) {
         deliveryFee = 0;
       }
     }

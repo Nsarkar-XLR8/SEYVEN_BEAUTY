@@ -19,7 +19,7 @@ export const BRAND = {
     tin: '782910482910',
   },
   thresholds: {
-    freeDeliveryBdt: 2000,
+    freeDeliveryBdt: 3000,
     standardDeliveryDhakaBdt: 70,
     standardDeliveryOutsideBdt: 130,
   },

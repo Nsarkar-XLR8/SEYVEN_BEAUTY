@@ -64,6 +64,9 @@ export function CartDrawer() {
     activePrivilegeLabel,
     deliveryFeeBdt,
     totalBdt,
+    freeDeliveryThreshold,
+    amountNeededForFreeDelivery,
+    freeDeliveryProgressPercent,
     isBagOpen,
     closeBag,
     updateQuantity,
@@ -110,6 +113,36 @@ export function CartDrawer() {
               <X className="w-5 h-5 stroke-[1.5]" />
             </button>
           </div>
+
+          {/* Dynamic Free Delivery Progress Bar (100% Dynamic from Admin Settings) */}
+          {items.length > 0 && (
+            <div className="px-5 sm:px-6 py-2.5 bg-[#F5F1E8] border-b border-[#E6DFD5] space-y-1.5 shrink-0">
+              <div className="flex items-center justify-between text-[11px] font-serif">
+                {amountNeededForFreeDelivery > 0 ? (
+                  <span className="text-[#1C1917]/80">
+                    {t(
+                      `Add ৳${amountNeededForFreeDelivery.toLocaleString()} more for Complimentary Delivery`,
+                      `ফ্রি ডেলিভারির জন্য আরও ৳${amountNeededForFreeDelivery.toLocaleString()} যোগ করুন`
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-emerald-800 font-medium flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C7A97B]" />
+                    {t('Complimentary Nationwide Delivery Unlocked', 'কমপ্লিমেন্টারি ফ্রি ডেলিভারি সক্রিয় হয়েছে')}
+                  </span>
+                )}
+                <span className="text-[10px] font-mono text-[#78716C]">
+                  ৳{(subtotalBdt - discountBdt).toLocaleString()} / ৳{freeDeliveryThreshold.toLocaleString()}
+                </span>
+              </div>
+              <div className="w-full h-1 bg-[#E6DFD5] overflow-hidden rounded-full">
+                <div
+                  className="h-full bg-[#C7A97B] transition-all duration-300"
+                  style={{ width: `${freeDeliveryProgressPercent}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* 2. Scrollable Middle Body (Items + Voucher + Cost Breakdown) */}
           <div className="flex-1 overflow-y-auto overscroll-contain -webkit-overflow-scrolling: touch px-4 sm:px-6 py-3 space-y-4 min-h-0">

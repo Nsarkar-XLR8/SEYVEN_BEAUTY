@@ -24,9 +24,13 @@ export const BD_DISTRICTS: DistrictOption[] = [
   { id: 'bogura', nameEn: 'Bogura', nameBn: 'Bogura', division: 'Rajshahi', estimatedDaysEn: '3-4 Days', estimatedDaysBn: '3-4 Days', feeBdt: 130 },
 ];
 
-export function getDeliveryEstimate(districtId: string, cartTotalBdt: number = 0) {
+export function getDeliveryEstimate(
+  districtId: string,
+  cartTotalBdt: number = 0,
+  freeDeliveryThresholdBdt: number = 3000
+) {
   const district = BD_DISTRICTS.find((d) => d.id === districtId) || BD_DISTRICTS[0];
-  const isFree = cartTotalBdt >= 2000;
+  const isFree = cartTotalBdt >= freeDeliveryThresholdBdt;
   return {
     district,
     isFreeDelivery: isFree,

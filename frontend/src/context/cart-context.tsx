@@ -93,8 +93,8 @@ const CartContext = createContext<CartContextType>({
   discountBdt: 0,
   deliveryFeeBdt: 70,
   totalBdt: 0,
-  freeDeliveryThreshold: 2000,
-  amountNeededForFreeDelivery: 2000,
+  freeDeliveryThreshold: 3000,
+  amountNeededForFreeDelivery: 3000,
   freeDeliveryProgressPercent: 0,
   isBagOpen: false,
   privilegeCode: null,
@@ -131,7 +131,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           isVatInclusive: json.data.isVatInclusive === true,
           standardDeliveryDhakaBdt: Number(json.data.standardDeliveryDhakaBdt) || 70,
           standardDeliveryOutsideBdt: Number(json.data.standardDeliveryOutsideBdt) || 130,
-          freeDeliveryThresholdBdt: Number(json.data.freeDeliveryThresholdBdt) || 2000,
+          freeDeliveryThresholdBdt: Number(json.data.freeDeliveryThresholdBdt) || 3000,
           supportPhone: json.data.supportPhone || '+880 9612 000000',
           supportWhatsApp: json.data.supportWhatsApp || '+880 1700 000000',
           supportMessenger: json.data.supportMessenger || 'https://m.me/seyvenofficial',
@@ -248,10 +248,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     ? Math.round(subtotalBdt * (settings.vatRatePercent / 100))
     : 0;
   const freeDeliveryThreshold = settings.freeDeliveryThresholdBdt;
-  const deliveryFeeBdt = items.length === 0 ? 0 : settings.standardDeliveryDhakaBdt;
-  const amountNeededForFreeDelivery = Math.max(0, freeDeliveryThreshold - subtotalBdt);
-  const freeDeliveryProgressPercent = Math.min(100, Math.round((subtotalBdt / freeDeliveryThreshold) * 100));
-  const totalBdt = Math.max(0, subtotalBdt + vatBdt + deliveryFeeBdt - discountBdt);
+  const eligibleAmount = Math.max(0, subtotalBdt - discountBdt);
+  const isFreeDelivery = eligibleAmount >= freeDeliveryThreshold;
+  const deliveryFeeBdt = items.length === 0 ? 0 : (isFreeDelivery ? 0 : settings.standardDeliveryDhakaBdt);
+  const amountNeededForFreeDelivery = Math.max(0, freeDeliveryThreshold - eligibleAmount);
+  const freeDeliveryProgressPercent = Math.min(100, Math.round((eligibleAmount / (freeDeliveryThreshold || 3000)) * 100));
+  const totalBdt = Math.max(0, eligibleAmount + vatBdt + deliveryFeeBdt);
 
   const openBag = () => setIsBagOpen(true);
   const closeBag = () => setIsBagOpen(false);

@@ -50,10 +50,12 @@ export default function CheckoutPage() {
     ? (lang === 'bn' ? 'ঢাকার ভেতরে' : 'Inside Dhaka')
     : (lang === 'bn' ? 'ঢাকার বাইরে / সারাদেশে' : 'Outside Dhaka (Nationwide)');
 
-  // Delivery Fee strictly matches selected destination (Inside Dhaka: ৳70, Outside Dhaka: ৳130)
-  const standardFeeDhaka = settings?.standardDeliveryDhakaBdt ?? 70;
-  const standardFeeOutside = settings?.standardDeliveryOutsideBdt ?? 130;
-  const deliveryFeeBdt = isInsideDhaka ? standardFeeDhaka : standardFeeOutside;
+  // Dynamic Delivery Fee strictly matches selected destination & admin threshold
+  const standardFeeDhaka = Number(settings?.standardDeliveryDhakaBdt) || 70;
+  const standardFeeOutside = Number(settings?.standardDeliveryOutsideBdt) || 130;
+  const freeThreshold = Number(settings?.freeDeliveryThresholdBdt) || 3000;
+  const isFreeDeliveryEligible = Math.max(0, subtotalBdt - discountBdt) >= freeThreshold;
+  const deliveryFeeBdt = isFreeDeliveryEligible ? 0 : (isInsideDhaka ? standardFeeDhaka : standardFeeOutside);
   const netPayableBdt = Math.max(0, subtotalBdt - discountBdt - loyaltyDiscountBdt + deliveryFeeBdt);
 
   // Handle Order Placement

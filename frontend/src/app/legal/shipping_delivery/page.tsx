@@ -4,10 +4,15 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Truck, Clock, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
+import { useCart } from '@/context/cart-context';
 import { BRAND } from '@/lib/constants';
 
 export default function ShippingDeliveryPage() {
   const { t } = useLanguage();
+  const { settings } = useCart();
+  const threshold = Number(settings?.freeDeliveryThresholdBdt) || 3000;
+  const dhakaFee = Number(settings?.standardDeliveryDhakaBdt) || 70;
+  const outsideFee = Number(settings?.standardDeliveryOutsideBdt) || 130;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-8 pb-28 lg:pb-16 text-[#1C1917]">
@@ -39,7 +44,7 @@ export default function ShippingDeliveryPage() {
           <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#C7A97B] block">
             {t('INSIDE DHAKA METRO', 'ঢাকার ভেতরে')}
           </span>
-          <p className="text-xl font-serif font-medium text-[#1C1917]">৳70</p>
+          <p className="text-xl font-serif font-medium text-[#1C1917]">৳{dhakaFee}</p>
           <p className="text-xs text-[#1C1917]/70 font-light">
             {t('1–2 Business Days Express Delivery via Pathao directly to your doorstep.', '১-২ কর্মদিবসের মধ্যে পাঠাও কুরিয়ারের মাধ্যমে দ্রুততম হোম ডেলিভারি।')}
           </p>
@@ -49,7 +54,7 @@ export default function ShippingDeliveryPage() {
           <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#C7A97B] block">
             {t('OUTSIDE DHAKA (ALL 64 DISTRICTS)', 'ঢাকার বাইরে (সারাদেশ)')}
           </span>
-          <p className="text-xl font-serif font-medium text-[#1C1917]">৳130</p>
+          <p className="text-xl font-serif font-medium text-[#1C1917]">৳{outsideFee}</p>
           <p className="text-xs text-[#1C1917]/70 font-light">
             {t('2–3 Business Days Doorstep Courier via Pathao Courier Express.', '২-৩ কর্মদিবসের মধ্যে নির্ভরযোগ্য পাঠাও এক্সপ্রেস ডেলিভারি।')}
           </p>
@@ -58,12 +63,12 @@ export default function ShippingDeliveryPage() {
 
       <div className="p-4 bg-[#F9F6F0] border-l-2 border-[#C7A97B] text-xs text-[#1C1917]/85 space-y-1">
         <strong className="block text-[#1C1917]">
-          {t('Complimentary Free Delivery on Orders ৳2,000+', '২,০০০ টাকা বা তার বেশি অর্ডারে ফ্রি ডেলিভারি')}
+          {t(`Complimentary Free Delivery on Orders ৳${threshold.toLocaleString()}+`, `৳${threshold.toLocaleString()} বা তার বেশি অর্ডারে ফ্রি ডেলিভারি`)}
         </strong>
         <p className="font-light">
           {t(
-            'Whenever your shopping bag total reaches ৳2,000 or more, delivery fees are completely waived across Bangladesh.',
-            'আপনার শপিং ব্যাগের মোট মূল্য ২,০০০ টাকা বা তার বেশি হলেই ডেলিভারি চার্জ সম্পূর্ণ ফ্রি।'
+            `Whenever your shopping bag total reaches ৳${threshold.toLocaleString()} or more, delivery fees are completely waived across Bangladesh.`,
+            `আপনার শপিং ব্যাগের মোট মূল্য ৳${threshold.toLocaleString()} বা তার বেশি হলেই ডেলিভারি চার্জ সম্পূর্ণ ফ্রি।`
           )}
         </p>
       </div>

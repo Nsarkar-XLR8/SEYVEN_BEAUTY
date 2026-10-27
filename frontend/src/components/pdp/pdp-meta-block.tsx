@@ -141,7 +141,7 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
           {isCurrentVariantInStock ? (
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[#F9F6F0] border border-[#C7A97B]/40 text-[9px] uppercase tracking-[0.2em] text-[#1C1917] font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-              <span>{t('[ IN STOCK — SHIPS TODAY ]', '[ স্টকে আছে — আজই ডেলিভারি প্রস্তুত ]')}</span>
+              <span>{t('[ IN STOCK ]', '[ স্টকে আছে ]')}</span>
             </div>
           ) : (
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[#1C1917]/5 border border-[#1C1917]/20 text-[9px] uppercase tracking-[0.2em] text-[#1C1917]/70">

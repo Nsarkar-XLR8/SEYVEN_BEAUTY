@@ -29,7 +29,7 @@ export default function PlatformSettingsPage() {
   const [isVatInclusive, setIsVatInclusive] = useState(true);
   const [standardDeliveryDhakaBdt, setStandardDeliveryDhakaBdt] = useState<number>(70);
   const [standardDeliveryOutsideBdt, setStandardDeliveryOutsideBdt] = useState<number>(130);
-  const [freeDeliveryThresholdBdt, setFreeDeliveryThresholdBdt] = useState<number>(2000);
+  const [freeDeliveryThresholdBdt, setFreeDeliveryThresholdBdt] = useState<number>(3000);
   const [supportPhone, setSupportPhone] = useState('+880 9612 000000');
   const [supportWhatsApp, setSupportWhatsApp] = useState('+880 1700 000000');
   const [supportMessenger, setSupportMessenger] = useState('https://m.me/seyvenofficial');
@@ -71,7 +71,7 @@ export default function PlatformSettingsPage() {
           setIsVatInclusive(typeof d.isVatInclusive === 'boolean' ? d.isVatInclusive : true);
           setStandardDeliveryDhakaBdt(Number(d.standardDeliveryDhakaBdt) || 70);
           setStandardDeliveryOutsideBdt(Number(d.standardDeliveryOutsideBdt) || 130);
-          setFreeDeliveryThresholdBdt(Number(d.freeDeliveryThresholdBdt) || 2000);
+          setFreeDeliveryThresholdBdt(Number(d.freeDeliveryThresholdBdt) || 3000);
           if (d.supportPhone) setSupportPhone(d.supportPhone);
           if (d.supportWhatsApp) setSupportWhatsApp(d.supportWhatsApp);
           if (d.supportMessenger) setSupportMessenger(d.supportMessenger);
@@ -411,10 +411,29 @@ export default function PlatformSettingsPage() {
             </div>
 
             {/* Free Delivery Threshold */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] uppercase tracking-wider font-medium text-[#1C1917]">
-                Free Delivery Threshold (BDT)
-              </label>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] uppercase tracking-wider font-medium text-[#1C1917]">
+                  Free Delivery Threshold (BDT)
+                </label>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-[10px] uppercase tracking-wider text-[#78716C] font-mono mr-1">Presets:</span>
+                  {[3000, 4000, 5000].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setFreeDeliveryThresholdBdt(val)}
+                      className={`px-2 py-0.5 text-[10px] font-mono font-medium border transition-colors cursor-pointer ${
+                        freeDeliveryThresholdBdt === val
+                          ? 'bg-[#1C1917] text-[#FAF8F5] border-[#1C1917]'
+                          : 'bg-[#F9F6F0] text-[#1C1917] border-[#E6DFD5] hover:border-[#C7A97B]'
+                      }`}
+                    >
+                      ৳{val.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="relative">
                 <span className="absolute left-3 top-3 text-xs font-mono text-[#C7A97B]">৳</span>
                 <input
@@ -427,7 +446,7 @@ export default function PlatformSettingsPage() {
                 />
               </div>
               <p className="text-[10px] text-[#78716C] font-light">
-                Orders above this subtotal enjoy 100% complimentary delivery.
+                Orders equal or greater than ৳{freeDeliveryThresholdBdt.toLocaleString()} automatically unlock 100% complimentary delivery nationwide. Admin can set 3000, 4000, 5000, or any custom amount dynamically.
               </p>
             </div>
           </div>

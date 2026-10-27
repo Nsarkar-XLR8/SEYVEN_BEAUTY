@@ -39,7 +39,7 @@ interface StoredCartItem {
 export class CartService {
   private readonly logger = new Logger(CartService.name);
   public static readonly CART_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days sliding TTL
-  public static readonly FREE_DELIVERY_THRESHOLD = 2000; // ৳2,000 BDT
+  public static readonly FREE_DELIVERY_THRESHOLD = 3000; // ৳3,000 BDT default (dynamic via settings)
 
   constructor(
     private readonly prisma: PrismaService,

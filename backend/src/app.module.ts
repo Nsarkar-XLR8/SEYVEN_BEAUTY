@@ -24,8 +24,10 @@ import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { NewsletterModule } from './modules/newsletter/newsletter.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { AppController } from './app.controller';
 
 @Module({
+  controllers: [AppController],
   imports: [
     AppConfigModule,
     DatabaseModule,

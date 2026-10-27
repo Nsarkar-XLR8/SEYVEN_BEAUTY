@@ -69,9 +69,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-correlation-id', 'x-idempotency-key'],
   });
 
-  // Global Prefix for API endpoints (excluding health checks, root docs, and SEO sitemap)
+  // Global Prefix for API endpoints (excluding root probe, health checks, root docs, and SEO sitemap)
   app.setGlobalPrefix(apiPrefix, {
-    exclude: ['health/live', 'health/ready', 'docs', 'reference', 'openapi.json', 'sitemap.xml'],
+    exclude: ['/', 'health/live', 'health/ready', 'docs', 'reference', 'openapi.json', 'sitemap.xml'],
   });
 
   // Global Interceptors, Filters & Pipes

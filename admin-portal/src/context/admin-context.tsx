@@ -681,6 +681,10 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         deliveryFeeBdt: newOrder.deliveryFee,
         discountBdt: newOrder.discount,
         paymentMethod: newOrder.paymentMethod,
+        source: newOrder.source,
+        status: newOrder.status,
+        advancePaid: newOrder.advancePaid,
+        agentNotes: newOrder.agentNotes,
       }),
     }).catch(() => {});
 

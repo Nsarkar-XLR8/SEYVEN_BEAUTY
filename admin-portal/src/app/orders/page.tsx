@@ -634,8 +634,12 @@ export default function AdminOrdersDeskPage() {
       <ManualOrderModal
         isOpen={isManualOrderOpen}
         onClose={() => setIsManualOrderOpen(false)}
-        onOrderCreated={(orderId) => {
-          showToast(`F-Commerce Order ${orderId} booked & confirmed!`);
+        onOrderCreated={(orderId, consignmentId) => {
+          if (consignmentId) {
+            showToast(`✅ Order ${orderId} created & dispatched with Pathao (Consignment: #${consignmentId})!`);
+          } else {
+            showToast(`✅ Order ${orderId} booked & confirmed!`);
+          }
           refreshOrders();
         }}
       />

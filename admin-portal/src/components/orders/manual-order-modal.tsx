@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   X,
   Plus,
@@ -15,122 +15,280 @@ import {
   CheckCircle2,
   AlertCircle,
   Search,
+  Sparkles,
+  ClipboardPaste,
+  Check,
+  Send,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
-import { AdminProduct, OrderItem, OrderStatus } from '@/types/admin';
+import { AdminProduct, OrderItem } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
-import { BD_ALL_DISTRICTS, DistrictItem } from '@/data/bangladesh-districts';
 
 interface ManualOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onOrderCreated: (orderId: string) => void;
+  onOrderCreated: (orderId: string, consignmentId?: string) => void;
 }
 
 const CHANNELS = [
-  'Facebook Messenger',
-  'WhatsApp',
-  'Phone Call',
-  'Instagram DM',
-  'Direct Inquiry',
+  { id: 'Facebook Messenger', label: 'Messenger', icon: '💬' },
+  { id: 'WhatsApp', label: 'WhatsApp', icon: '📱' },
+  { id: 'Instagram DM', label: 'Instagram', icon: '📸' },
+  { id: 'Phone Call', label: 'Phone', icon: '📞' },
+];
+
+const DELIVERY_ZONES = [
+  { id: 'dhaka-city', label: 'Dhaka City', fee: 70, tag: '৳70 (Inside Dhaka)' },
+  { id: 'dhaka-suburbs', label: 'Suburbs', fee: 100, tag: '৳100 (Savar, Gazipur, Narayanganj)' },
+  { id: 'outside-dhaka', label: 'Outside Dhaka', fee: 130, tag: '৳130 (All Other Districts)' },
+  { id: 'free', label: 'Free Delivery', fee: 0, tag: '৳0 (Special Offer)' },
 ];
 
 export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrderModalProps) {
-  const { products, addManualOrder } = useAdmin();
+  const { products, addManualOrder, assignCourier } = useAdmin();
+
+  // Smart Paste State
+  const [showSmartPaste, setShowSmartPaste] = useState(false);
+  const [pastedText, setPastedText] = useState('');
+  const [pasteSuccessNotice, setPasteSuccessNotice] = useState<string | null>(null);
 
   // Form states
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
   const [source, setSource] = useState('Facebook Messenger');
 
-  // District selector state
-  const [selectedDistrictId, setSelectedDistrictId] = useState<string>('dhaka-city');
-  const [districtSearch, setDistrictSearch] = useState('');
-  const [customDeliveryFee, setCustomDeliveryFee] = useState<number | null>(null);
+  // Delivery zone & fee
+  const [selectedZoneId, setSelectedZoneId] = useState<string>('dhaka-city');
+  const [customFee, setCustomFee] = useState<number>(70);
 
-  const [address, setAddress] = useState('');
+  // Order items
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [searchProductQuery, setSearchProductQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Payment & Advance
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH' | 'NAGAD' | 'CARD'>('COD');
   const [hasAdvanceFee, setHasAdvanceFee] = useState(false);
-  const [advanceAmount, setAdvanceAmount] = useState(70);
+  const [advanceAmount, setAdvanceAmount] = useState<number>(70);
   const [advanceTrxId, setAdvanceTrxId] = useState('');
-  const [notes, setNotes] = useState('');
-  const [initialStatus, setInitialStatus] = useState<OrderStatus>('CONFIRMED');
-
-  // Items in the manual order
-  const [selectedProductId, setSelectedProductId] = useState<string>(products[0]?.id || '');
-  const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [discountBdt, setDiscountBdt] = useState<number>(0);
+  const [notes, setNotes] = useState('');
+
+  // Pathao Auto-Ship Toggle
+  const [autoBookPathao, setAutoBookPathao] = useState(true);
+
+  // Submission state
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Active district item
-  const activeDistrict = useMemo(() => {
-    return BD_ALL_DISTRICTS.find((d) => d.id === selectedDistrictId) || BD_ALL_DISTRICTS[0];
-  }, [selectedDistrictId]);
+  // Close search dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  // Filtered districts by search term
-  const filteredDistricts = useMemo(() => {
-    if (!districtSearch.trim()) return BD_ALL_DISTRICTS;
-    const q = districtSearch.toLowerCase().trim();
-    return BD_ALL_DISTRICTS.filter(
-      (d) =>
-        d.nameEn.toLowerCase().includes(q) ||
-        d.nameBn.includes(q) ||
-        d.division.toLowerCase().includes(q)
-    );
-  }, [districtSearch]);
+  // Filter products for live autocomplete
+  const filteredProducts = useMemo(() => {
+    if (!searchProductQuery.trim()) return products.slice(0, 8);
+    const q = searchProductQuery.toLowerCase().trim();
+    return products.filter(
+      (p) =>
+        p.titleEn.toLowerCase().includes(q) ||
+        (p.brand && p.brand.toLowerCase().includes(q)) ||
+        (p.slug && p.slug.toLowerCase().includes(q))
+    ).slice(0, 10);
+  }, [products, searchProductQuery]);
 
-  // Delivery fee logic (allows operator custom override)
-  const deliveryFee = customDeliveryFee !== null ? customDeliveryFee : activeDistrict.standardFee;
-  const subtotal = orderItems.reduce((acc, it) => acc + it.totalPrice, 0);
+  // Quick pick items (popular skincare staples)
+  const quickPickProducts = useMemo(() => {
+    return products.slice(0, 4);
+  }, [products]);
+
+  // Calculations
+  const subtotal = useMemo(() => {
+    return orderItems.reduce((acc, it) => acc + it.totalPrice, 0);
+  }, [orderItems]);
+
+  const deliveryFee = customFee;
+  const advanceDeduction = hasAdvanceFee ? advanceAmount : 0;
   const totalAmount = Math.max(0, subtotal + deliveryFee - discountBdt);
+  const codDueAtDoorstep = Math.max(0, totalAmount - advanceDeduction);
 
   if (!isOpen) return null;
 
-  const handleSelectDistrict = (dist: DistrictItem) => {
-    setSelectedDistrictId(dist.id);
-    setCustomDeliveryFee(null); // Reset custom override to default
-    if (hasAdvanceFee) {
-      setAdvanceAmount(dist.standardFee);
+  // Smart Paste Parser
+  const handleSmartParse = () => {
+    if (!pastedText.trim()) return;
+
+    let parsedName = '';
+    let parsedPhone = '';
+    let parsedAddress = '';
+
+    // Extract BD phone (013 - 019 followed by 8 digits)
+    const phoneMatch = pastedText.match(/(?:\+?8801|01)[3-9]\d{8}/);
+    if (phoneMatch) {
+      let clean = phoneMatch[0].replace(/\D/g, '');
+      if (clean.length > 11) clean = clean.slice(-11);
+      parsedPhone = clean;
     }
+
+    // Lines parsing
+    const lines = pastedText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    for (const line of lines) {
+      const lower = line.toLowerCase();
+      if (lower.startsWith('name:') || lower.startsWith('নাম:') || lower.startsWith('client:')) {
+        parsedName = line.replace(/^(name:|নাম:|client:)\s*/i, '').trim();
+      } else if (
+        lower.startsWith('address:') ||
+        lower.startsWith('ঠিকানা:') ||
+        lower.startsWith('addr:') ||
+        lower.startsWith('location:')
+      ) {
+        parsedAddress = line.replace(/^(address:|ঠিকানা:|addr:|location:)\s*/i, '').trim();
+      }
+    }
+
+    // Fallbacks if tags not found
+    if (!parsedName && lines.length > 0) {
+      const candidate = lines[0];
+      if (!candidate.match(/\d{5,}/) && candidate.length < 40) {
+        parsedName = candidate;
+      }
+    }
+
+    if (!parsedAddress) {
+      const candidates = lines.filter(
+        (l) => l !== parsedName && !l.includes(parsedPhone) && l.length > 8
+      );
+      if (candidates.length > 0) {
+        parsedAddress = candidates.join(', ');
+      }
+    }
+
+    if (parsedName) setCustomerName(parsedName);
+    if (parsedPhone) setPhone(parsedPhone);
+    if (parsedAddress) setAddress(parsedAddress);
+
+    // Auto-detect Zone based on address keywords
+    const lowerAddr = (parsedAddress + ' ' + pastedText).toLowerCase();
+    if (
+      lowerAddr.includes('savar') ||
+      lowerAddr.includes('সাভার') ||
+      lowerAddr.includes('gazipur') ||
+      lowerAddr.includes('গাজীপুর') ||
+      lowerAddr.includes('narayanganj') ||
+      lowerAddr.includes('নারায়ণগঞ্জ') ||
+      lowerAddr.includes('keraniganj') ||
+      lowerAddr.includes('কেরানীগঞ্জ')
+    ) {
+      setSelectedZoneId('dhaka-suburbs');
+      setCustomFee(100);
+      if (hasAdvanceFee) setAdvanceAmount(100);
+    } else if (
+      lowerAddr.includes('dhaka') ||
+      lowerAddr.includes('ঢাকা') ||
+      lowerAddr.includes('uttara') ||
+      lowerAddr.includes('উত্তরা') ||
+      lowerAddr.includes('mirpur') ||
+      lowerAddr.includes('মিরপুর') ||
+      lowerAddr.includes('dhanmondi') ||
+      lowerAddr.includes('ধানমন্ডি') ||
+      lowerAddr.includes('gulshan') ||
+      lowerAddr.includes('গুলশান') ||
+      lowerAddr.includes('banani') ||
+      lowerAddr.includes('বনানী') ||
+      lowerAddr.includes('mohammadpur') ||
+      lowerAddr.includes('মোহাম্মদপুর') ||
+      lowerAddr.includes('badda') ||
+      lowerAddr.includes('বাড্ডা')
+    ) {
+      setSelectedZoneId('dhaka-city');
+      setCustomFee(70);
+      if (hasAdvanceFee) setAdvanceAmount(70);
+    } else if (parsedAddress.length > 10) {
+      setSelectedZoneId('outside-dhaka');
+      setCustomFee(130);
+      if (hasAdvanceFee) setAdvanceAmount(130);
+    }
+
+    setPasteSuccessNotice('Extracted customer details successfully!');
+    setShowSmartPaste(false);
+    setTimeout(() => setPasteSuccessNotice(null), 4000);
   };
 
-  const handleAddItem = () => {
-    const prod = products.find((p) => p.id === selectedProductId);
-    if (!prod) return;
-
+  // Add product to order
+  const handleAddProduct = (prod: AdminProduct) => {
     const unitPrice = prod.priceBdt || 1850;
     const existingIndex = orderItems.findIndex((it) => it.id === prod.id);
 
     if (existingIndex >= 0) {
       const updated = [...orderItems];
-      updated[existingIndex].quantity += selectedQuantity;
-      updated[existingIndex].totalPrice = updated[existingIndex].quantity * unitPrice;
+      updated[existingIndex].quantity += 1;
+      updated[existingIndex].totalPrice = updated[existingIndex].quantity * updated[existingIndex].unitPrice;
       setOrderItems(updated);
     } else {
       const newItem: OrderItem = {
         id: prod.id,
-        sku: (prod.slug || prod.id || 'SKU').toUpperCase().substring(0, 12),
+        sku: (prod.slug || prod.id || 'SKU').toUpperCase().substring(0, 14),
         title: prod.titleEn,
-        brand: prod.brand,
+        brand: prod.brand || 'SEYVEN',
         variant: prod.volume || 'Standard',
-        quantity: selectedQuantity,
+        quantity: 1,
         unitPrice,
-        totalPrice: unitPrice * selectedQuantity,
+        totalPrice: unitPrice,
         image: prod.imageUrl,
       };
       setOrderItems([...orderItems, newItem]);
     }
 
-    setSelectedQuantity(1);
+    setSearchProductQuery('');
+    setIsSearchOpen(false);
+  };
+
+  // Update item quantity
+  const handleUpdateQuantity = (index: number, newQty: number) => {
+    if (newQty <= 0) {
+      handleRemoveItem(index);
+      return;
+    }
+    const updated = [...orderItems];
+    updated[index].quantity = newQty;
+    updated[index].totalPrice = newQty * updated[index].unitPrice;
+    setOrderItems(updated);
+  };
+
+  // Update item unit price (for custom negotiated customer discounts)
+  const handleUpdateUnitPrice = (index: number, newPrice: number) => {
+    const updated = [...orderItems];
+    updated[index].unitPrice = Math.max(0, newPrice);
+    updated[index].totalPrice = updated[index].quantity * Math.max(0, newPrice);
+    setOrderItems(updated);
   };
 
   const handleRemoveItem = (index: number) => {
     setOrderItems((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleZoneSelect = (zone: typeof DELIVERY_ZONES[0]) => {
+    setSelectedZoneId(zone.id);
+    setCustomFee(zone.fee);
+    if (hasAdvanceFee && zone.fee > 0) {
+      setAdvanceAmount(zone.fee);
+    }
+  };
+
+  // Submit Order
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -140,15 +298,15 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
       return;
     }
 
-    const cleanPhone = phone.trim().replace(/\s+/g, '');
-    const isBdPhone = /^(\+?8801|01)[3-9]\d{8}$/.test(cleanPhone);
+    const cleanPhone = phone.trim().replace(/\D/g, '');
+    const isBdPhone = /^(?:\+?8801|01)[3-9]\d{8}$/.test(cleanPhone);
     if (!isBdPhone) {
-      setError('Please enter a valid 11-digit Bangladeshi mobile number (e.g. 017XXXXXXXX).');
+      setError('Please enter a valid 11-digit Bangladeshi mobile number (01XXXXXXXXX).');
       return;
     }
 
     if (!address.trim() || address.trim().length < 5) {
-      setError('Please enter full delivery address (House, Road, Area).');
+      setError('Please enter the delivery address (House, Road, Area, City).');
       return;
     }
 
@@ -159,22 +317,30 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
 
     setIsSubmitting(true);
     try {
+      const activeZone = DELIVERY_ZONES.find((z) => z.id === selectedZoneId);
+      const districtLabel =
+        selectedZoneId === 'dhaka-city'
+          ? 'Dhaka'
+          : selectedZoneId === 'dhaka-suburbs'
+          ? 'Dhaka Suburbs'
+          : 'Outside Dhaka';
+
       const combinedNotes = [
-        `Booked via ${source}`,
-        `District: ${activeDistrict.nameEn} (${activeDistrict.nameBn})`,
-        hasAdvanceFee ? `Advance fee paid: ৳${advanceAmount} (TrxID: ${advanceTrxId || 'N/A'})` : null,
+        `Social Desk: ${source}`,
+        `Zone: ${activeZone?.label || districtLabel}`,
+        hasAdvanceFee ? `Advance Delivery Paid: ৳${advanceAmount} (${advanceTrxId || 'No TrxID'})` : null,
         notes.trim() || null,
       ]
         .filter(Boolean)
         .join(' | ');
 
+      // 1. Create order in context and backend
       const newOrder = await addManualOrder({
         customerName: customerName.trim(),
-        customerPhone: cleanPhone,
-        customerEmail: email.trim() || undefined,
+        customerPhone: cleanPhone.startsWith('01') ? cleanPhone : cleanPhone.slice(-11),
         shippingAddress: address.trim(),
-        zone: `${activeDistrict.nameEn} Zone`,
-        district: activeDistrict.nameEn,
+        zone: districtLabel,
+        district: districtLabel,
         items: orderItems,
         subtotal,
         deliveryFee,
@@ -182,356 +348,408 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
         totalAmount,
         paymentMethod,
         source,
-        status: initialStatus,
+        status: 'CONFIRMED',
         advancePaid: hasAdvanceFee ? advanceAmount : 0,
         agentNotes: combinedNotes,
       });
 
-      onOrderCreated(newOrder.id);
+      // 2. If Auto-Book with Pathao is selected, book consignment immediately!
+      let bookedConsignmentId: string | undefined;
+      if (autoBookPathao) {
+        try {
+          const courierRes = await assignCourier(newOrder.id, 'Pathao');
+          if (courierRes?.success && courierRes?.consignmentId) {
+            bookedConsignmentId = courierRes.consignmentId;
+          }
+        } catch (cErr) {
+          console.error('Auto-Pathao booking error:', cErr);
+        }
+      }
+
+      onOrderCreated(newOrder.id, bookedConsignmentId);
       onClose();
-    } catch {
-      setError('Failed to book manual order. Please check inputs.');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to place manual order. Please check inputs.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#1C1917]/70 backdrop-blur-xs select-text overflow-y-auto">
-      <div className="w-full max-w-2xl bg-[#F9F6F0] rounded-xl border border-[#C7A97B]/40 shadow-2xl overflow-hidden my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#1C1917]/75 backdrop-blur-xs select-text overflow-y-auto">
+      <div className="w-full max-w-3xl bg-[#FDFBF7] rounded-xl border border-[#C7A97B]/40 shadow-2xl overflow-hidden my-4 flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#1C1917] text-[#F9F6F0]">
-          <div className="flex items-center space-x-2">
-            <MessageCircle className="w-5 h-5 text-[#C7A97B]" />
+        <div className="flex items-center justify-between px-5 py-3.5 bg-[#1C1917] text-[#F9F6F0] shrink-0 border-b border-[#C7A97B]/30">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-1.5 rounded-lg bg-[#C7A97B]/20 text-[#C7A97B]">
+              <MessageCircle className="w-4 h-4" />
+            </div>
             <div>
-              <h2 className="font-serif text-lg text-[#F9F6F0] tracking-wide">
-                Book Assisted Order (F-Commerce / Social Desk)
+              <h2 className="font-serif text-base text-[#F9F6F0] tracking-wide font-semibold flex items-center gap-2">
+                <span>Fast Manual Order Desk</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#C7A97B]/20 text-[#C7A97B] font-normal border border-[#C7A97B]/30">
+                  Social Commerce
+                </span>
               </h2>
-              <p className="text-[11px] text-[#F9F6F0]/60 font-mono">
-                Manual order booking across all 65 districts of Bangladesh
+              <p className="text-[11px] text-[#F9F6F0]/70 font-sans">
+                Book Messenger, WhatsApp & Instagram orders directly with 1-click Pathao dispatch
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded text-[#F9F6F0]/70 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded text-[#F9F6F0]/70 hover:text-white hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[82vh] overflow-y-auto">
+        {/* Modal Scrollable Body */}
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1 text-[#1C1917]">
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded text-xs flex items-center gap-2 font-mono">
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg text-xs flex items-center gap-2 font-mono">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Section 1: Customer Details */}
-          <div className="space-y-3">
-            <div className="text-[10px] uppercase font-mono tracking-[0.2em] text-[#C7A97B] font-bold border-b border-[#E6DFD5] pb-1 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5" />
-              <span>1. Client & Channel Information</span>
+          {pasteSuccessNotice && (
+            <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2 font-sans font-medium">
+              <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+              <span>{pasteSuccessNotice}</span>
+            </div>
+          )}
+
+          {/* Quick Smart Paste Bar */}
+          <div className="bg-white border border-[#E6DFD5] rounded-lg p-3 shadow-xs">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowSmartPaste(!showSmartPaste)}
+                className="text-xs font-semibold text-[#1C1917] flex items-center gap-1.5 hover:text-[#C7A97B] transition-colors"
+              >
+                <ClipboardPaste className="w-3.5 h-3.5 text-[#C7A97B]" />
+                <span>Smart Paste (চ্যাট মেসেজ থেকে এক ক্লিকে ফর্ম পূরণ)</span>
+                <span className="text-[10px] font-mono font-normal text-[#1C1917]/50 ml-1">
+                  {showSmartPaste ? '▲ Hide' : '▼ Click to paste customer text'}
+                </span>
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block mb-1">
-                  Customer Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="e.g. Nusrat Jahan"
-                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
+            {showSmartPaste && (
+              <div className="mt-2.5 space-y-2 pt-2 border-t border-[#F2ECE1]">
+                <textarea
+                  rows={3}
+                  value={pastedText}
+                  onChange={(e) => setPastedText(e.target.value)}
+                  placeholder="মেসেঞ্জারের মেসেজ পেস্ট করুন, যেমন:&#10;তানজিলা আহমেদ&#10;01712345678&#10;বাড়ি ১২, রোড ৪, সেক্টর ৭, উত্তরা, ঢাকা"
+                  className="w-full p-2.5 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:outline-none font-sans"
                 />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSmartParse}
+                    className="px-3 py-1.5 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors shadow-xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Auto-Extract & Fill Fields</span>
+                  </button>
+                </div>
               </div>
-
-              <div>
-                <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block mb-1">
-                  Mobile Number (BD 11-Digit) *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="017XXXXXXXX"
-                  className="w-full px-3 py-2 text-xs font-mono bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block mb-1">
-                  Inquiry Channel
-                </label>
-                <select
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-                >
-                  {CHANNELS.map((ch) => (
-                    <option key={ch} value={ch}>
-                      {ch}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block mb-1">
-                  Email (Optional)
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="client@gmail.com"
-                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-                />
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Section 2: Shipping Destination (65 Districts of Bangladesh) */}
-          <div className="space-y-3">
-            <div className="text-[10px] uppercase font-mono tracking-[0.2em] text-[#C7A97B] font-bold border-b border-[#E6DFD5] pb-1 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>2. Delivery Destination (65 Bangladesh Districts)</span>
-              </div>
-              <span className="text-[10px] text-[#C7A97B] font-mono font-bold">
-                Selected: {activeDistrict.nameEn} ({activeDistrict.nameBn})
-              </span>
-            </div>
-
-            {/* Quick 1-Tap Frequent District Pills */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-mono uppercase text-[#1C1917]/50 block">
-                Quick Select Frequent Zones:
+          {/* Section 1: Customer Details & Channel */}
+          <div className="bg-white border border-[#E6DFD5] rounded-lg p-4 shadow-xs space-y-3">
+            {/* Channel Source Selector */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F2ECE1] pb-2.5">
+              <span className="text-xs font-semibold text-[#1C1917]/80 flex items-center gap-1.5">
+                <Send className="w-3.5 h-3.5 text-[#C7A97B]" />
+                Order Source:
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {[
-                  { id: 'dhaka-city', label: 'Dhaka City (৳70)' },
-                  { id: 'dhaka-suburbs', label: 'Dhaka Suburbs (৳100)' },
-                  { id: 'chattogram', label: 'Chattogram (৳130)' },
-                  { id: 'gazipur', label: 'Gazipur (৳130)' },
-                  { id: 'sylhet', label: 'Sylhet (৳130)' },
-                  { id: 'bogura', label: 'Bogura (৳130)' },
-                  { id: 'cumilla', label: 'Cumilla (৳130)' },
-                ].map((pill) => (
+                {CHANNELS.map((ch) => (
                   <button
-                    key={pill.id}
+                    key={ch.id}
                     type="button"
-                    onClick={() => {
-                      const found = BD_ALL_DISTRICTS.find((d) => d.id === pill.id);
-                      if (found) handleSelectDistrict(found);
-                    }}
-                    className={`px-2.5 py-1 text-[11px] font-mono rounded border transition-colors ${
-                      selectedDistrictId === pill.id
-                        ? 'bg-[#1C1917] text-[#C7A97B] border-[#1C1917] font-bold'
-                        : 'bg-white border-[#E6DFD5] text-[#1C1917]/70 hover:bg-[#E6DFD5]/40'
+                    onClick={() => setSource(ch.id)}
+                    className={`px-2.5 py-1 text-xs rounded-full border transition-all flex items-center gap-1 ${
+                      source === ch.id
+                        ? 'bg-[#1C1917] text-[#C7A97B] border-[#1C1917] font-semibold shadow-xs'
+                        : 'bg-[#F9F6F0] border-[#E6DFD5] text-[#1C1917]/70 hover:bg-[#EAE4D9]'
                     }`}
                   >
-                    {pill.label}
+                    <span>{ch.icon}</span>
+                    <span>{ch.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* District Search & Dropdown Row */}
+            {/* Name & Phone */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              {/* Searchable All 65 Districts Dropdown */}
               <div>
-                <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block mb-1">
-                  All 65 Districts & Zones ({BD_ALL_DISTRICTS.length})
+                <label className="text-xs font-medium text-[#1C1917]/80 block mb-1">
+                  Customer Name *
                 </label>
-                <select
-                  value={selectedDistrictId}
-                  onChange={(e) => {
-                    const found = BD_ALL_DISTRICTS.find((d) => d.id === e.target.value);
-                    if (found) handleSelectDistrict(found);
-                  }}
-                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none font-medium"
-                >
-                  {/* Grouped by Division */}
-                  {['Dhaka', 'Chattogram', 'Sylhet', 'Rajshahi', 'Khulna', 'Barishal', 'Rangpur', 'Mymensingh'].map(
-                    (divName) => {
-                      const inDiv = BD_ALL_DISTRICTS.filter((d) => d.division === divName);
-                      return (
-                        <optgroup key={divName} label={`--- ${divName} Division (${inDiv.length}) ---`}>
-                          {inDiv.map((dist) => (
-                            <option key={dist.id} value={dist.id}>
-                              {dist.nameEn} ({dist.nameBn}) — ৳{dist.standardFee}
-                            </option>
-                          ))}
-                        </optgroup>
-                      );
-                    }
-                  )}
-                </select>
-              </div>
-
-              {/* Delivery Fee with Custom Override option */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block">
-                    Delivery Fee (BDT) — আপনি নিজে বসাতে পারেন
-                  </label>
-                  {customDeliveryFee !== null && (
-                    <button
-                      type="button"
-                      onClick={() => setCustomDeliveryFee(null)}
-                      className="text-[10px] font-mono text-[#C7A97B] hover:underline"
-                    >
-                      Reset (৳{activeDistrict.standardFee})
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-xs font-mono font-bold text-[#1C1917]/40">৳</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={deliveryFee}
-                      onChange={(e) => setCustomDeliveryFee(Number(e.target.value) || 0)}
-                      placeholder="0"
-                      className="w-full pl-7 pr-3 py-2 text-xs font-mono font-bold bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-                    />
-                  </div>
-                  {/* Quick Preset Buttons for Delivery Fee */}
-                  <div className="flex flex-wrap items-center gap-1 text-[10px] font-mono">
-                    <span className="text-[#1C1917]/50 mr-0.5">Preset:</span>
-                    {[
-                      { label: 'Free (৳0)', value: 0 },
-                      { label: '৳60', value: 60 },
-                      { label: '৳70 (Dhaka)', value: 70 },
-                      { label: '৳100 (Suburb)', value: 100 },
-                      { label: '৳130 (Outside)', value: 130 },
-                      { label: '৳150 (Urgent)', value: 150 },
-                    ].map((preset) => (
-                      <button
-                        key={preset.value}
-                        type="button"
-                        onClick={() => setCustomDeliveryFee(preset.value)}
-                        className={`px-2 py-0.5 rounded border transition-colors ${
-                          deliveryFee === preset.value
-                            ? 'bg-[#1C1917] text-[#C7A97B] border-[#1C1917] font-bold'
-                            : 'bg-white border-[#E6DFD5] text-[#1C1917]/70 hover:bg-[#E6DFD5]/40'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
+                <div className="relative">
+                  <User className="w-3.5 h-3.5 text-[#1C1917]/40 absolute left-2.5 top-2.5" />
+                  <input
+                    type="text"
+                    required
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="e.g. Tanzila Ahmed"
+                    className="w-full pl-8 pr-3 py-2 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:bg-white focus:outline-none"
+                  />
                 </div>
               </div>
 
-              {/* Full Address */}
-              <div className="sm:col-span-2">
-                <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block mb-1">
-                  Detailed Address (House, Road, Block, Thana / Area) *
+              <div>
+                <label className="text-xs font-medium text-[#1C1917]/80 block mb-1">
+                  Mobile Number (BD 11-Digit) *
                 </label>
+                <div className="relative">
+                  <Phone className="w-3.5 h-3.5 text-[#1C1917]/40 absolute left-2.5 top-2.5" />
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="017XXXXXXXX"
+                    className="w-full pl-8 pr-3 py-2 text-xs font-mono bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="text-xs font-medium text-[#1C1917]/80 block mb-1">
+                Full Delivery Address (House, Road, Area, District) *
+              </label>
+              <div className="relative">
+                <MapPin className="w-3.5 h-3.5 text-[#1C1917]/40 absolute left-2.5 top-2.5" />
                 <textarea
                   rows={2}
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder={`e.g. House 42, Road 11, Block D, ${activeDistrict.nameEn}`}
-                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
+                  placeholder="e.g. House 14, Road 5, Block C, Banani, Dhaka"
+                  className="w-full pl-8 pr-3 py-2 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:bg-white focus:outline-none"
                 />
+              </div>
+            </div>
+
+            {/* Delivery Zone Pills & Fee */}
+            <div className="space-y-1.5 pt-1 border-t border-[#F2ECE1]">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-[#1C1917]/80">
+                  Delivery Destination & Fee:
+                </label>
+                <div className="flex items-center gap-1.5 text-xs font-mono">
+                  <span className="text-[#1C1917]/60">Fee:</span>
+                  <span className="font-bold text-[#1C1917]">৳</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={customFee}
+                    onChange={(e) => setCustomFee(Number(e.target.value) || 0)}
+                    className="w-16 px-1.5 py-0.5 text-xs font-mono font-bold text-center bg-[#FAF8F5] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {DELIVERY_ZONES.map((zone) => {
+                  const isSelected = selectedZoneId === zone.id && customFee === zone.fee;
+                  return (
+                    <button
+                      key={zone.id}
+                      type="button"
+                      onClick={() => handleZoneSelect(zone)}
+                      className={`p-2 text-left rounded-lg border transition-all ${
+                        isSelected
+                          ? 'bg-[#1C1917] text-white border-[#1C1917] shadow-xs'
+                          : 'bg-[#FAF8F5] border-[#E6DFD5] text-[#1C1917]/80 hover:bg-[#EAE4D9]'
+                      }`}
+                    >
+                      <div className="text-[11px] font-semibold">{zone.label}</div>
+                      <div
+                        className={`text-[10px] font-mono ${
+                          isSelected ? 'text-[#C7A97B]' : 'text-[#1C1917]/60'
+                        }`}
+                      >
+                        ৳{zone.fee}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Section 3: Add Items */}
-          <div className="space-y-3">
-            <div className="text-[10px] uppercase font-mono tracking-[0.2em] text-[#C7A97B] font-bold border-b border-[#E6DFD5] pb-1 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>3. Formulations & Routine Items</span>
-              </div>
-              <span className="text-[10px] text-[#1C1917]/60">
-                {orderItems.length} {orderItems.length === 1 ? 'Item' : 'Items'} selected
+          {/* Section 2: Products & Order Items */}
+          <div className="bg-white border border-[#E6DFD5] rounded-lg p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#1C1917] flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-[#C7A97B]" />
+                Products & Formulations ({orderItems.length} items)
               </span>
-            </div>
-
-            {/* Product Selector Row */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <select
-                value={selectedProductId}
-                onChange={(e) => setSelectedProductId(e.target.value)}
-                className="flex-1 px-3 py-2 text-xs bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-              >
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.brand} — {p.titleEn} ({formatBdt(p.priceBdt || 1850)})
-                  </option>
-                ))}
-              </select>
-
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center border border-[#E6DFD5] bg-white rounded">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedQuantity((q) => Math.max(1, q - 1))}
-                    className="px-2.5 py-1.5 text-xs text-[#1C1917]/70 hover:text-[#1C1917]"
-                  >
-                    —
-                  </button>
-                  <span className="px-2 text-xs font-mono font-bold">{selectedQuantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedQuantity((q) => q + 1)}
-                    className="px-2.5 py-1.5 text-xs text-[#1C1917]/70 hover:text-[#1C1917]"
-                  >
-                    +
-                  </button>
-                </div>
-
+              {orderItems.length > 0 && (
                 <button
                   type="button"
-                  onClick={handleAddItem}
-                  className="px-3 py-2 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] text-xs font-mono font-semibold rounded flex items-center gap-1 transition-colors shrink-0"
+                  onClick={() => setOrderItems([])}
+                  className="text-[11px] text-rose-600 hover:underline"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Line</span>
+                  Clear all
                 </button>
-              </div>
+              )}
             </div>
 
-            {/* Selected Items Table */}
-            {orderItems.length > 0 && (
-              <div className="border border-[#E6DFD5] rounded-lg overflow-hidden bg-white text-xs">
-                <table className="w-full text-left">
-                  <thead className="bg-[#F9F6F0] border-b border-[#E6DFD5] text-[10px] font-mono uppercase text-[#1C1917]/60">
+            {/* Live Search Autocomplete */}
+            <div ref={searchContainerRef} className="relative">
+              <div className="relative">
+                <Search className="w-4 h-4 text-[#1C1917]/40 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={searchProductQuery}
+                  onFocus={() => setIsSearchOpen(true)}
+                  onChange={(e) => {
+                    setSearchProductQuery(e.target.value);
+                    setIsSearchOpen(true);
+                  }}
+                  placeholder="🔍 Type product name or brand to quick-add (e.g. CeraVe, Serum, COSRX)..."
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              {/* Autocomplete Dropdown List */}
+              {isSearchOpen && filteredProducts.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#C7A97B]/40 rounded-lg shadow-xl z-20 max-h-56 overflow-y-auto divide-y divide-[#F2ECE1]">
+                  {filteredProducts.map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => handleAddProduct(p)}
+                      className="p-2.5 flex items-center justify-between hover:bg-[#FAF8F5] cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        {p.imageUrl ? (
+                          <img
+                            src={p.imageUrl}
+                            alt={p.titleEn}
+                            className="w-8 h-8 rounded object-cover border border-[#E6DFD5]"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded bg-[#F2ECE1] flex items-center justify-center text-[10px] text-[#1C1917]/50 font-mono">
+                            SKU
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-xs font-semibold text-[#1C1917]">{p.titleEn}</div>
+                          <div className="text-[10px] text-[#C7A97B] font-mono">
+                            {p.brand} {p.volume ? `• ${p.volume}` : ''}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-mono font-bold text-[#1C1917]">
+                          {formatBdt(p.priceBdt || 1850)}
+                        </span>
+                        <button
+                          type="button"
+                          className="px-2 py-1 bg-[#1C1917] text-[#C7A97B] rounded text-[10px] font-mono font-semibold"
+                        >
+                          + Add
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Pick Chips */}
+            {quickPickProducts.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-mono uppercase text-[#1C1917]/50">Quick Add:</span>
+                {quickPickProducts.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleAddProduct(p)}
+                    className="px-2.5 py-1 text-[11px] bg-[#FAF8F5] hover:bg-[#EAE4D9] text-[#1C1917] rounded-full border border-[#E6DFD5] transition-colors flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3 text-[#C7A97B]" />
+                    <span className="truncate max-w-[140px]">{p.titleEn}</span>
+                    <span className="text-[10px] font-mono text-[#C7A97B]">({formatBdt(p.priceBdt || 1850)})</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Selected Items List */}
+            {orderItems.length === 0 ? (
+              <div className="py-6 text-center border border-dashed border-[#E6DFD5] rounded-lg bg-[#FAF8F5]/50">
+                <ShoppingBag className="w-6 h-6 mx-auto text-[#1C1917]/30 mb-1" />
+                <p className="text-xs text-[#1C1917]/60">
+                  No products added yet. Type in search bar above or click quick-picks.
+                </p>
+              </div>
+            ) : (
+              <div className="border border-[#E6DFD5] rounded-lg overflow-hidden bg-white">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#FAF8F5] border-b border-[#E6DFD5] text-[10px] font-mono uppercase text-[#1C1917]/60">
                     <tr>
-                      <th className="p-2">Item</th>
-                      <th className="p-2">Qty</th>
-                      <th className="p-2 text-right">Price</th>
-                      <th className="p-2 text-right">Total</th>
-                      <th className="p-2 text-center w-8"></th>
+                      <th className="p-2.5">Item</th>
+                      <th className="p-2.5 w-24">Unit Price (৳)</th>
+                      <th className="p-2.5 w-24 text-center">Qty</th>
+                      <th className="p-2.5 text-right w-24">Subtotal</th>
+                      <th className="p-2.5 w-8"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E6DFD5]">
-                    {orderItems.map((it, idx) => (
-                      <tr key={it.id + idx}>
-                        <td className="p-2">
-                          <div className="font-semibold text-[#1C1917]">{it.title}</div>
-                          <div className="text-[10px] font-mono text-[#C7A97B]">{it.brand} • {it.variant}</div>
+                  <tbody className="divide-y divide-[#F2ECE1]">
+                    {orderItems.map((item, idx) => (
+                      <tr key={item.id + idx} className="hover:bg-[#FDFBF7]">
+                        <td className="p-2.5">
+                          <div className="font-medium text-[#1C1917]">{item.title}</div>
+                          <div className="text-[10px] font-mono text-[#C7A97B]">
+                            {item.brand} • {item.variant}
+                          </div>
                         </td>
-                        <td className="p-2 font-mono">{it.quantity}</td>
-                        <td className="p-2 text-right font-mono">{formatBdt(it.unitPrice)}</td>
-                        <td className="p-2 text-right font-mono font-bold text-[#1C1917]">
-                          {formatBdt(it.totalPrice)}
+                        <td className="p-2.5">
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.unitPrice}
+                            onChange={(e) => handleUpdateUnitPrice(idx, Number(e.target.value) || 0)}
+                            className="w-20 px-1.5 py-1 text-xs font-mono font-bold bg-[#FAF8F5] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
+                          />
                         </td>
-                        <td className="p-2 text-center">
+                        <td className="p-2.5">
+                          <div className="flex items-center justify-center border border-[#E6DFD5] bg-[#FAF8F5] rounded">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateQuantity(idx, item.quantity - 1)}
+                              className="px-2 py-1 text-xs text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-white"
+                            >
+                              -
+                            </button>
+                            <span className="px-2 text-xs font-mono font-bold">{item.quantity}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateQuantity(idx, item.quantity + 1)}
+                              className="px-2 py-1 text-xs text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-white"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </td>
+                        <td className="p-2.5 text-right font-mono font-bold text-[#1C1917]">
+                          {formatBdt(item.totalPrice)}
+                        </td>
+                        <td className="p-2.5 text-center">
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(idx)}
@@ -548,43 +766,54 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
             )}
           </div>
 
-          {/* Section 4: Payment & Advance Protection */}
-          <div className="space-y-3">
-            <div className="text-[10px] uppercase font-mono tracking-[0.2em] text-[#C7A97B] font-bold border-b border-[#E6DFD5] pb-1 flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5" />
-              <span>4. Payment & Advance Delivery Fee</span>
-            </div>
+          {/* Section 3: Payment, Discount & Advance Protection */}
+          <div className="bg-white border border-[#E6DFD5] rounded-lg p-4 shadow-xs space-y-3">
+            <span className="text-xs font-semibold text-[#1C1917] flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-[#C7A97B]" />
+              Payment & Advance Delivery Fee
+            </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Payment Method pill */}
               <div>
-                <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block mb-1">
-                  Payment Method
+                <label className="text-xs font-medium text-[#1C1917]/80 block mb-1">
+                  Payment Mode
                 </label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-                >
-                  <option value="COD">Cash on Delivery (COD) - Zero Advance</option>
-                </select>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('COD')}
+                    className={`flex-1 py-1.5 px-3 rounded-md text-xs font-semibold border transition-all ${
+                      paymentMethod === 'COD'
+                        ? 'bg-[#1C1917] text-white border-[#1C1917]'
+                        : 'bg-[#FAF8F5] border-[#E6DFD5] text-[#1C1917]/70'
+                    }`}
+                  >
+                    Cash on Delivery (COD)
+                  </button>
+                </div>
               </div>
 
+              {/* Special Discount */}
               <div>
-                <label className="text-[11px] font-mono uppercase text-[#1C1917]/70 block mb-1">
-                  Custom Discount (৳ BDT)
+                <label className="text-xs font-medium text-[#1C1917]/80 block mb-1">
+                  Special Discount (৳ BDT)
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={discountBdt}
-                  onChange={(e) => setDiscountBdt(Number(e.target.value) || 0)}
-                  placeholder="0"
-                  className="w-full px-3 py-2 text-xs font-mono bg-white border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-                />
+                <div className="relative">
+                  <span className="absolute left-2.5 top-2 text-xs font-mono text-[#1C1917]/40">৳</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={discountBdt}
+                    onChange={(e) => setDiscountBdt(Number(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-full pl-6 pr-3 py-1.5 text-xs font-mono font-bold bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:outline-none"
+                  />
+                </div>
               </div>
 
               {/* Advance Delivery Fee Checkbox */}
-              <div className="sm:col-span-2 p-3 bg-white border border-[#E6DFD5] rounded-lg space-y-2">
+              <div className="sm:col-span-2 p-3 bg-[#FAF8F5] border border-[#E6DFD5] rounded-lg space-y-2">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -601,7 +830,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                 </label>
 
                 {hasAdvanceFee && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-[#E6DFD5]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[#E6DFD5]">
                     <div>
                       <label className="text-[10px] font-mono uppercase text-[#1C1917]/60 block mb-0.5">
                         Advance Paid (BDT)
@@ -610,7 +839,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                         type="number"
                         value={advanceAmount}
                         onChange={(e) => setAdvanceAmount(Number(e.target.value) || 0)}
-                        className="w-full px-2 py-1.5 text-xs font-mono bg-[#F9F6F0] border border-[#E6DFD5] rounded"
+                        className="w-full px-2 py-1.5 text-xs font-mono bg-white border border-[#E6DFD5] rounded"
                       />
                     </div>
                     <div>
@@ -622,23 +851,57 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                         value={advanceTrxId}
                         onChange={(e) => setAdvanceTrxId(e.target.value)}
                         placeholder="e.g. BL9912AZX"
-                        className="w-full px-2 py-1.5 text-xs font-mono uppercase bg-[#F9F6F0] border border-[#E6DFD5] rounded"
+                        className="w-full px-2 py-1.5 text-xs font-mono uppercase bg-white border border-[#E6DFD5] rounded"
                       />
                     </div>
                   </div>
                 )}
               </div>
+
+              {/* Staff Notes */}
+              <div className="sm:col-span-2">
+                <label className="text-xs font-medium text-[#1C1917]/80 block mb-1">
+                  Delivery Instruction / Staff Note
+                </label>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g. Deliver after 4 PM, Fragile glass bottle"
+                  className="w-full px-3 py-1.5 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:outline-none"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Section 5: Order Summary Pill */}
-          <div className="p-4 bg-[#1C1917] text-[#F9F6F0] rounded-lg font-mono text-xs space-y-1.5 border border-[#C7A97B]/40">
+          {/* Section 4: Pathao One-Click Auto-Ship Checkbox */}
+          <div className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-lg flex items-start space-x-3">
+            <input
+              type="checkbox"
+              id="autoBookPathao"
+              checked={autoBookPathao}
+              onChange={(e) => setAutoBookPathao(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded text-[#1C1917] focus:ring-[#C7A97B]"
+            />
+            <label htmlFor="autoBookPathao" className="cursor-pointer text-xs">
+              <span className="font-bold text-[#1C1917] flex items-center gap-1.5">
+                <Truck className="w-3.5 h-3.5 text-amber-700" />
+                Book Consignment directly with Pathao Courier (Auto-Ship)
+              </span>
+              <p className="text-[11px] text-[#1C1917]/70 mt-0.5">
+                Saves order & immediately connects to Pathao API to generate Consignment ID & tracking URL.
+              </p>
+            </label>
+          </div>
+
+          {/* Section 5: Order Financial Summary */}
+          <div className="p-4 bg-[#1C1917] text-[#F9F6F0] rounded-xl font-mono text-xs space-y-1.5 border border-[#C7A97B]/40 shadow-lg">
             <div className="flex justify-between text-[#F9F6F0]/70">
               <span>Subtotal:</span>
               <span>{formatBdt(subtotal)}</span>
             </div>
             <div className="flex justify-between text-[#F9F6F0]/70">
-              <span>Delivery Fee ({activeDistrict.nameEn}):</span>
+              <span>Delivery Fee ({selectedZoneId}):</span>
               <span>{formatBdt(deliveryFee)}</span>
             </div>
             {discountBdt > 0 && (
@@ -647,39 +910,42 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                 <span>-{formatBdt(discountBdt)}</span>
               </div>
             )}
-            <div className="flex justify-between text-base font-bold text-[#C7A97B] pt-1.5 border-t border-white/10">
-              <span>Total Payable:</span>
-              <span>{formatBdt(totalAmount)}</span>
-            </div>
-            {hasAdvanceFee && (
-              <div className="flex justify-between text-[11px] text-[#F9F6F0]/80 italic">
-                <span>COD Balance due at doorstep:</span>
-                <span>{formatBdt(Math.max(0, totalAmount - advanceAmount))}</span>
+            {hasAdvanceFee && advanceAmount > 0 && (
+              <div className="flex justify-between text-amber-300">
+                <span>Advance Paid (bKash/Nagad):</span>
+                <span>-{formatBdt(advanceAmount)}</span>
               </div>
             )}
+            <div className="flex justify-between items-baseline text-base font-bold text-[#C7A97B] pt-2 border-t border-white/10">
+              <span className="font-serif">Cash to Collect at Doorstep:</span>
+              <span className="text-lg font-mono text-white">{formatBdt(codDueAtDoorstep)}</span>
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#E6DFD5]">
+          {/* Modal Actions */}
+          <div className="flex items-center justify-end space-x-3 pt-2">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded border border-[#E6DFD5] bg-white text-[#1C1917]/70 hover:bg-[#F9F6F0]"
+              className="px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-lg border border-[#E6DFD5] bg-white text-[#1C1917]/70 hover:bg-[#FAF8F5]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] font-mono text-xs font-bold uppercase tracking-wider rounded border border-[#C7A97B]/50 shadow-md flex items-center gap-2"
+              className="px-6 py-2.5 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] font-mono text-xs font-bold uppercase tracking-wider rounded-lg border border-[#C7A97B]/50 shadow-md flex items-center gap-2 transition-all cursor-pointer"
             >
               {isSubmitting ? (
-                <span>Booking Order...</span>
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-[#C7A97B] border-t-transparent rounded-full animate-spin" />
+                  <span>Placing & Booking...</span>
+                </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-[#C7A97B]" />
-                  <span>Book & Confirm Order</span>
+                  <span>{autoBookPathao ? 'Confirm & Ship with Pathao' : 'Confirm Order'}</span>
                 </>
               )}
             </button>
@@ -689,3 +955,4 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
     </div>
   );
 }
+

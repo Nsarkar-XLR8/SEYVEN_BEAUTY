@@ -13,6 +13,7 @@ export class ResendEmailService {
   private readonly logger = new Logger(ResendEmailService.name);
   private resend: Resend | null = null;
   private readonly senderEmail: string;
+  private readonly replyToEmail: string;
 
   constructor() {
     const apiKey = process.env.RESEND_API_KEY;
@@ -25,6 +26,7 @@ export class ResendEmailService {
 
     // Default sender: either verified domain or Resend testing onboarding address
     this.senderEmail = process.env.RESEND_FROM_EMAIL || 'SEYVEN <onboarding@resend.dev>';
+    this.replyToEmail = process.env.RESEND_REPLY_TO || process.env.RESEND_EMAIL || 'officialseyven@gmail.com';
   }
 
   /**
@@ -125,6 +127,7 @@ export class ResendEmailService {
         const response = await this.resend.emails.send({
           from: this.senderEmail,
           to: toEmail,
+          replyTo: this.replyToEmail,
           subject,
           html,
         });
@@ -409,6 +412,7 @@ export class ResendEmailService {
         const response = await this.resend.emails.send({
           from: this.senderEmail,
           to: adminEmail,
+          replyTo: order.customerEmail || this.replyToEmail,
           subject,
           html,
         });
@@ -427,6 +431,7 @@ export class ResendEmailService {
             const customerRes = await this.resend.emails.send({
               from: this.senderEmail,
               to: order.customerEmail,
+              replyTo: this.replyToEmail,
               subject: `Your SEYVEN Order Confirmation: #${order.orderNumber}`,
               html,
             });

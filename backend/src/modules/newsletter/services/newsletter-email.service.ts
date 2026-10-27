@@ -19,6 +19,7 @@ export class NewsletterEmailService {
   private readonly logger = new Logger(NewsletterEmailService.name);
   private resend: Resend | null = null;
   private readonly senderEmail: string;
+  private readonly replyToEmail: string;
   private readonly appUrl: string;
   private readonly apiUrl: string;
 
@@ -35,6 +36,7 @@ export class NewsletterEmailService {
     }
 
     this.senderEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || process.env.RESEND_FROM_EMAIL || 'SEYVEN Sanctuary <onboarding@resend.dev>';
+    this.replyToEmail = this.configService.get<string>('RESEND_REPLY_TO') || process.env.RESEND_REPLY_TO || process.env.RESEND_EMAIL || 'officialseyven@gmail.com';
     this.appUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     this.apiUrl = process.env.BACKEND_URL || 'http://localhost:5000/api/v1';
   }
@@ -176,6 +178,7 @@ export class NewsletterEmailService {
         const response = await this.resend.emails.send({
           from: this.senderEmail,
           to: options.toEmail,
+          replyTo: this.replyToEmail,
           subject: options.subject,
           html,
         });

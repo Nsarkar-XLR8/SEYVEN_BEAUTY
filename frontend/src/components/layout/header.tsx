@@ -3,10 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, Search, User, ShoppingBag, X, Globe, LogOut, Sparkles, Package } from 'lucide-react';
+import { Menu, Search, User, ShoppingBag, X, LogOut, Sparkles, Package } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { useAuth } from '@/context/auth-context';
-import { useLanguage } from '@/context/language-context';
 import { GUEST_NAV_LINKS, AUTH_NAV_LINKS, BRAND } from '@/lib/constants';
 
 interface HeaderProps {
@@ -16,7 +15,6 @@ interface HeaderProps {
 export function Header({ onOpenSearch }: HeaderProps) {
   const { itemCount, openBag } = useCart();
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
-  const { lang, toggleLang, t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -69,7 +67,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                   href={link.href}
                   className="text-[11px] uppercase tracking-[0.22em] font-medium text-[#1C1917]/80 hover:text-[#1C1917] transition-colors duration-300 relative py-1 group"
                 >
-                  {lang === 'bn' ? link.labelBn : link.labelEn}
+                  {link.labelEn}
                   <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-[#C7A97B] transition-all duration-300 group-hover:w-full" />
                 </Link>
               ))}
@@ -100,22 +98,9 @@ export function Header({ onOpenSearch }: HeaderProps) {
 
           {/* ========================================================================= */}
           {/* RIGHT SECTION */}
-          {/* Action Icons: Language Toggle, Search, User Profile, Sanctuary Bag */}
+          {/* Action Icons: Search, User Profile, Sanctuary Bag */}
           {/* ========================================================================= */}
           <div className="flex items-center space-x-3 sm:space-x-5 text-[#1C1917]">
-            {/* Desktop Language Switcher (Subtle Haute Editorial Toggle, hidden on mobile) */}
-            <button
-              type="button"
-              onClick={toggleLang}
-              className="hidden lg:flex items-center space-x-1.5 text-[11px] uppercase tracking-[0.2em] font-medium text-[#1C1917]/70 hover:text-[#1C1917] transition-colors py-1 group mr-1"
-              title="Switch Language / ভাষা পরিবর্তন"
-            >
-              <Globe className="w-3.5 h-3.5 text-[#C7A97B] group-hover:rotate-12 transition-transform duration-300" />
-              <span className={lang === 'en' ? 'text-[#1C1917] font-semibold' : 'text-[#1C1917]/40'}>EN</span>
-              <span className="text-[#C7A97B]/50 text-[10px]">/</span>
-              <span className={lang === 'bn' ? 'text-[#1C1917] font-semibold font-bangla' : 'text-[#1C1917]/40 font-bangla'}>বাং</span>
-            </button>
-
             {/* Search Trigger */}
             <button
               type="button"
@@ -147,7 +132,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                   {/* Header info */}
                   <div className="px-4 py-3 border-b border-[#E6DFD5] bg-[#F9F6F0]/60">
                     <p className="text-xs font-serif font-medium text-[#1C1917] truncate">
-                      {user?.fullName || t('Sanctuary Client', 'সম্মানিত ক্লায়েন্ট')}
+                      {user?.fullName || 'Sanctuary Client'}
                     </p>
                     <p className="text-[10px] font-mono text-[#78716C] truncate mt-0.5">
                       {user?.phone || user?.email || 'VIP Member'}
@@ -165,7 +150,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                       className="flex items-center space-x-2.5 px-4 py-2 text-[#1C1917] hover:bg-[#F9F6F0] transition-colors tracking-wide"
                     >
                       <User className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>{t('Client Vault & Orders', 'প্রোফাইল ও অর্ডার হিস্ট্রি')}</span>
+                      <span>Client Vault & Orders</span>
                     </Link>
 
                     <Link
@@ -174,7 +159,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                       className="flex items-center space-x-2.5 px-4 py-2 text-[#1C1917] hover:bg-[#F9F6F0] transition-colors tracking-wide"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>{t('Sanctuary VIP Privileges', 'ভিআইপি মেম্বারশিপ ও সুবিধা')}</span>
+                      <span>Sanctuary VIP Privileges</span>
                     </Link>
 
                     <Link
@@ -183,7 +168,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                       className="flex items-center space-x-2.5 px-4 py-2 text-[#1C1917] hover:bg-[#F9F6F0] transition-colors tracking-wide"
                     >
                       <Package className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>{t('Track Parcel Live', 'পার্সেল লাইভ ট্র্যাকিং')}</span>
+                      <span>Track Parcel Live</span>
                     </Link>
                   </div>
 
@@ -198,7 +183,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                       className="w-full flex items-center space-x-2.5 px-4 py-2.5 text-xs uppercase tracking-[0.15em] font-medium text-red-700 hover:bg-red-50 transition-colors text-left"
                     >
                       <LogOut className="w-3.5 h-3.5 text-red-600" />
-                      <span>{t('SIGN OUT OF SEYVEN', 'লগআউট করুন')}</span>
+                      <span>SIGN OUT OF SEYVEN</span>
                     </button>
                   </div>
                 </div>
@@ -277,7 +262,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-xs uppercase tracking-[0.25em] font-medium text-[#1C1917] hover:text-[#C7A97B] transition-colors"
                   >
-                    {lang === 'bn' ? link.labelBn : link.labelEn}
+                    {link.labelEn}
                   </Link>
                 ))}
               </nav>
@@ -298,7 +283,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                       </div>
                       <div>
                         <span className="block text-xs font-serif font-medium text-[#1C1917]">
-                          {user?.fullName || t('Sanctuary Client', 'সম্মানিত ক্লায়েন্ট')}
+                          {user?.fullName || 'Sanctuary Client'}
                         </span>
                         <span className="block text-[9px] uppercase tracking-wider text-[#C7A97B] font-mono">
                           {user?.phone || 'Sanctuary VIP Privilege'}
@@ -306,7 +291,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                       </div>
                     </div>
                     <span className="text-[10px] text-[#C7A97B] font-medium tracking-wider">
-                      {t('VAULT', 'ভল্ট')} &rarr;
+                      VAULT &rarr;
                     </span>
                   </Link>
 
@@ -320,7 +305,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
                   >
                     <span className="flex items-center space-x-2">
                       <LogOut className="w-3.5 h-3.5 text-red-600" />
-                      <span>{t('SIGN OUT OF SEYVEN', 'লগআউট করুন')}</span>
+                      <span>SIGN OUT OF SEYVEN</span>
                     </span>
                     <span className="text-[10px] text-red-400">&rarr;</span>
                   </button>
@@ -335,31 +320,23 @@ export function Header({ onOpenSearch }: HeaderProps) {
                   className="w-full py-3 px-4 rounded bg-[#1C1917] hover:bg-[#C7A97B] text-white transition-colors text-center text-xs uppercase tracking-[0.2em] font-medium flex items-center justify-center space-x-2"
                 >
                   <User className="w-3.5 h-3.5 text-[#C7A97B]" />
-                  <span>{t('SIGN IN / REGISTER', 'লগইন / রেজিস্টার')}</span>
+                  <span>SIGN IN / REGISTER</span>
                 </button>
               )}
             </div>
 
-            {/* Bottom info in drawer with discreet luxury locale switch */}
+            {/* Bottom info in drawer */}
             <div className="pt-4 text-[10px] text-[#1C1917]/70 space-y-3">
-              {/* Subtle Haute Locale Switcher (Subordinate to brand) */}
               <div className="flex items-center justify-between pb-1">
-                <button
-                  type="button"
-                  onClick={toggleLang}
-                  className="flex items-center space-x-1.5 text-[10px] uppercase tracking-[0.2em] font-medium text-[#1C1917]/60 hover:text-[#1C1917] transition-colors py-0.5 group"
-                >
-                  <Globe className="w-3 h-3 text-[#C7A97B] group-hover:rotate-12 transition-transform duration-300" />
-                  <span className={lang === 'en' ? 'text-[#1C1917] font-semibold underline underline-offset-4 decoration-[#C7A97B]' : 'text-[#1C1917]/40'}>ENGLISH</span>
-                  <span className="text-[#C7A97B]/40">·</span>
-                  <span className={lang === 'bn' ? 'text-[#1C1917] font-semibold underline underline-offset-4 decoration-[#C7A97B] font-bangla' : 'text-[#1C1917]/40 font-bangla'}>বাংলা</span>
-                </button>
-                <span className="text-[9px] uppercase tracking-wider text-[#1C1917]/40 font-mono">BD · BDT ৳</span>
+                <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#1C1917]/60">
+                  INTERNATIONAL CURATION
+                </span>
+                <span className="text-[9px] uppercase tracking-wider text-[#1C1917]/40 font-mono">BANGLADESH · BDT ৳</span>
               </div>
 
               <div className="space-y-1 text-[9px] text-[#1C1917]/50 pt-1 border-t border-[#E6DFD5]/40">
                 <p className="uppercase tracking-[0.15em] text-[#C7A97B] font-medium">
-                  {t('DIRECT CLIENT CARE', 'কাস্টমার কেয়ার')} · {BRAND.supportPhone}
+                  DIRECT CLIENT CARE · {BRAND.supportPhone}
                 </p>
                 <p className="tracking-[0.05em]">
                   {BRAND.corporate.vatBin}

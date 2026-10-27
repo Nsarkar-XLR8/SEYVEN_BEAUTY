@@ -8,7 +8,7 @@ import { useLanguage } from '@/context/language-context';
 import { useCart } from '@/context/cart-context';
 
 export function Footer() {
-  const { lang, toggleLang, t } = useLanguage();
+  const { lang, t } = useLanguage();
   const { settings } = useCart();
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -262,6 +262,14 @@ export function Footer() {
                   <span>Messenger: m.me/seyvenofficial ↗</span>
                 </a>
                 <a
+                  href={facebookLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#8E8B85] hover:text-white hover:underline flex items-center gap-1.5"
+                >
+                  <span>Facebook: /seyvenofficial ↗</span>
+                </a>
+                <a
                   href={instagramLink}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -279,22 +287,15 @@ export function Footer() {
         {/* ========================================================================= */}
         <div className="space-y-8 pt-4">
           
-          {/* COUNTRY/REGION & Language Selector (Matches Gucci Screenshot) */}
+          {/* COUNTRY/REGION (Matches Gucci Luxury Aesthetics) */}
           <div className="space-y-2">
             <span className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-[#8E8B85] font-medium block">
-              {t('COUNTRY/REGION', 'দেশ / অঞ্চল')}
+              COUNTRY/REGION
             </span>
             <div className="flex items-center space-x-6">
               <span className="text-xs sm:text-sm text-white underline underline-offset-4 decoration-white font-normal cursor-default">
-                Bangladesh
+                Bangladesh (English)
               </span>
-              <button
-                type="button"
-                onClick={toggleLang}
-                className="text-xs text-[#8E8B85] hover:text-white transition-colors underline underline-offset-4 font-normal"
-              >
-                {lang === 'en' ? 'বাংলা' : 'English'}
-              </button>
             </div>
           </div>
 

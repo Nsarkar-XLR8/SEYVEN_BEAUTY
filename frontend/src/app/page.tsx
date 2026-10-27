@@ -19,6 +19,14 @@ function InstagramIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
   );
 }
 
+function FacebookIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
+
 export default function HomePage() {
   const { lang, t } = useLanguage();
   const { settings } = useCart();
@@ -182,16 +190,26 @@ export default function HomePage() {
             </p>
 
             {/* Dynamic Concierge Action Hub */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 flex-wrap">
               <a
                 href={settings?.supportMessenger || 'https://m.me/seyvenofficial'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-8 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2.5 rounded-none"
+                className="w-full sm:w-auto px-7 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2.5 rounded-none"
               >
                 <MessageCircle className="w-4 h-4 text-[#C7A97B]" />
-                <span>{t('CONNECT ON MESSENGER', 'মেসেঞ্জারে চ্যাট করুন')}</span>
+                <span>{t('SKINCARE CONSULTATION (MESSENGER)', 'মেসেঞ্জারে স্কিন কনসালটেন্সি')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+
+              <a
+                href={settings?.supportFacebook || 'https://www.facebook.com/seyvenofficial'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto px-6 py-3.5 bg-transparent hover:bg-[#1C1917]/5 border border-[#1C1917]/30 hover:border-[#1C1917] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none"
+              >
+                <FacebookIcon className="w-3.5 h-3.5 text-[#1C1917]/70" />
+                <span>{t('FACEBOOK PAGE', 'ফেসবুক পেইজ')}</span>
               </a>
 
               <a

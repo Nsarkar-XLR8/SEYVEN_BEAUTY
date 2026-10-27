@@ -8,7 +8,7 @@ interface LanguageContextType {
   lang: Language;
   setLang: (lang: Language) => void;
   toggleLang: () => void;
-  t: (enText: string, bnText: string) => string;
+  t: (enText: string, bnText?: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -19,30 +19,19 @@ const LanguageContext = createContext<LanguageContextType>({
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Language>('en');
-
   useEffect(() => {
-    const saved = localStorage.getItem('seyven_lang') as Language;
-    if (saved === 'bn' || saved === 'en') {
-      setLangState(saved);
+    // Clear legacy Bengali language preference if stored
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('seyven_lang');
     }
   }, []);
 
-  const setLang = (newLang: Language) => {
-    setLangState(newLang);
-    localStorage.setItem('seyven_lang', newLang);
-  };
-
-  const toggleLang = () => {
-    setLang(lang === 'en' ? 'bn' : 'en');
-  };
-
-  const t = (enText: string, bnText: string): string => {
-    return lang === 'bn' ? bnText : enText;
-  };
+  const setLang = () => {};
+  const toggleLang = () => {};
+  const t = (enText: string): string => enText;
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, toggleLang, t }}>
+    <LanguageContext.Provider value={{ lang: 'en', setLang, toggleLang, t }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -51,3 +40,4 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 export function useLanguage() {
   return useContext(LanguageContext);
 }
+

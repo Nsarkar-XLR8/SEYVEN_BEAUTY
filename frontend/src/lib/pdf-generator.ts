@@ -241,7 +241,7 @@ export function generateAndDownloadSeyvenReceipt(orderData: OrderReceiptData) {
   doc.setFontSize(7);
   doc.setTextColor(muted.r, muted.g, muted.b);
   doc.text('Customer Care: care@seyven.com.bd • +880 1700 000000', rightX, footerY + 5, { align: 'right' });
-  doc.text('Gulshan-1, Dhaka-1212, Bangladesh • www.seyven.com.bd', rightX, footerY + 9, { align: 'right' });
+  doc.text('K.B. Saha Road, Amlapara, Chashara, Narayanganj - 1400 • www.theseyven.com', rightX, footerY + 9, { align: 'right' });
 
   // 6. Direct Instant Download
   doc.save(`SEYVEN_Receipt_${orderData.orderId}.pdf`);

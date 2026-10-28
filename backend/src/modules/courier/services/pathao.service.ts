@@ -45,13 +45,9 @@ export class PathaoService {
     dto: BookPathaoConsignmentDto,
     staffUserId?: string,
   ): Promise<PathaoCreateOrderResponse> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dto.orderId);
     const order = await this.prisma.order.findFirst({
-      where: {
-        OR: [
-          { id: dto.orderId },
-          { orderNumber: dto.orderId },
-        ],
-      },
+      where: isUuid ? { id: dto.orderId } : { orderNumber: dto.orderId },
       include: { items: true },
     });
 

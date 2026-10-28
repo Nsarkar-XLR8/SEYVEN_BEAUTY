@@ -44,10 +44,9 @@ export class RmaService {
     authUserRole?: UserRole,
   ) {
     // 1. Locate Order by UUID or Order Number
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dto.orderId);
     const order = await this.prisma.order.findFirst({
-      where: {
-        OR: [{ id: dto.orderId }, { orderNumber: dto.orderId }],
-      },
+      where: isUuid ? { id: dto.orderId } : { orderNumber: dto.orderId },
       include: {
         items: true,
       },

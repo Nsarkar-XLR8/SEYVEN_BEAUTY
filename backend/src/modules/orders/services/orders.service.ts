@@ -35,43 +35,6 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
-  private ordersStoragePath = path.resolve(process.cwd(), 'data', 'local-orders.json');
-  private fallbackOrders: any[] = [
-    {
-      id: 'SYV-202610-0921',
-      orderNumber: 'SYV-202610-0921',
-      referenceNo: 'ORD-9921',
-      customerName: 'Nusrat Jahan',
-      guestName: 'Nusrat Jahan',
-      customerPhone: '01712-345678',
-      guestPhone: '01712-345678',
-      customerEmail: 'nusrat.jahan@gmail.com',
-      shippingAddress: 'House 42, Road 11, Banani, Dhaka',
-      zone: 'Dhaka North',
-      district: 'Dhaka',
-      items: [
-        {
-          id: 'it-01',
-          sku: 'SYV-TO-HA30ML',
-          title: 'Hyaluronic Acid 2% + B5 (30ml)',
-          brand: 'The Ordinary',
-          variant: '30ml Dropper',
-          quantity: 1,
-          unitPrice: 2450,
-          totalPrice: 2450,
-        },
-      ],
-      subtotal: 2450,
-      deliveryFee: 70,
-      discount: 0,
-      totalAmount: 2520,
-      paymentMethod: 'COD',
-      status: 'PLACED',
-      codVerification: 'PENDING',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ];
 
   constructor(
     private readonly prisma: PrismaService,
@@ -79,41 +42,7 @@ export class OrdersService {
     private readonly geoZoneService: GeoZoneService,
     @Optional() private readonly resendEmailService?: ResendEmailService,
     @Optional() private readonly telegramNotificationService?: TelegramNotificationService,
-  ) {
-    this.initLocalStorage();
-  }
-
-  private initLocalStorage() {
-    try {
-      const dir = path.dirname(this.ordersStoragePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      if (fs.existsSync(this.ordersStoragePath)) {
-        const raw = fs.readFileSync(this.ordersStoragePath, 'utf8');
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          this.fallbackOrders = parsed;
-        }
-      } else {
-        this.persistLocalStorage();
-      }
-    } catch {
-      // safe fallback
-    }
-  }
-
-  private persistLocalStorage() {
-    try {
-      const dir = path.dirname(this.ordersStoragePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      fs.writeFileSync(this.ordersStoragePath, JSON.stringify(this.fallbackOrders, null, 2), 'utf8');
-    } catch {
-      // safe fallback
-    }
-  }
+  ) {}
 
   async createDirectOrder(dto: any) {
     const orderId =
@@ -233,10 +162,7 @@ export class OrdersService {
       this.logger.error(`[Supabase Order Persist Error] Failed to persist order ${orderId} to PostgreSQL: ${err.message}`);
     }
 
-    // 2. Also keep in fallback cache & disk
-    this.fallbackOrders.unshift(newOrder);
-    this.persistLocalStorage();
-    this.logger.log(`[Direct Order] Created live order ${orderId} (${newOrder.customerName})`);
+    this.logger.log(`[Direct Order] Processed live order ${orderId} (${newOrder.customerName})`);
 
     // 3. Dispatch Email Notification to Admin Gmail (configured in backend .env)
     if (this.resendEmailService) {
@@ -640,24 +566,11 @@ export class OrdersService {
           };
         });
       }
+      throw new NotFoundException(`Order with ID '${orderId}' not found`);
     } catch (err) {
-      if (err instanceof BadRequestException) throw err;
-      // Continue to offline fallback
+      if (err instanceof BadRequestException || err instanceof NotFoundException) throw err;
+      throw new BadRequestException(`Failed to update order status: ${(err as any)?.message}`);
     }
-
-    const match = this.fallbackOrders.find((o) => o.id === orderId || o.orderNumber === orderId);
-    if (match) {
-      match.status = dto.status;
-      if (dto.trackingCode) {
-        match.trackingCode = dto.trackingCode;
-        match.consignmentId = dto.trackingCode;
-      }
-      match.updatedAt = new Date().toISOString();
-      this.persistLocalStorage();
-      return match;
-    }
-
-    throw new NotFoundException(`Order with ID '${orderId}' not found`);
   }
 
   /**
@@ -665,114 +578,95 @@ export class OrdersService {
    */
   async logCallVerification(orderId: string, dto: LogCallVerificationDto, staffUserId?: string) {
     try {
-      const order = await this.prisma.order.findUnique({
-        where: { id: orderId },
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+      const order = await this.prisma.order.findFirst({
+        where: isUuid ? { id: orderId } : { orderNumber: orderId },
       });
 
-      if (order) {
-        const previousAttemptCount = await this.prisma.orderCallVerification.count({
-          where: { orderId },
-        });
-        const attemptNumber = previousAttemptCount + 1;
+      if (!order) {
+        throw new NotFoundException(`Order with ID '${orderId}' not found`);
+      }
 
-        return await this.prisma.$transaction(async (tx) => {
-          const callEntry = await tx.orderCallVerification.create({
-            data: {
-              id: uuidv4(),
-              orderId,
-              staffUserId: staffUserId || null,
-              callOutcome: dto.callOutcome,
+      const previousAttemptCount = await this.prisma.orderCallVerification.count({
+        where: { orderId: order.id },
+      });
+      const attemptNumber = previousAttemptCount + 1;
+
+      return await this.prisma.$transaction(async (tx) => {
+        const callEntry = await tx.orderCallVerification.create({
+          data: {
+            id: uuidv4(),
+            orderId: order.id,
+            staffUserId: staffUserId || null,
+            callOutcome: dto.callOutcome,
+            attemptNumber,
+            notes: dto.notes || null,
+            nextFollowUpAt: dto.nextFollowUpAt ? new Date(dto.nextFollowUpAt) : null,
+          },
+        });
+
+        await tx.orderAuditLog.create({
+          data: {
+            id: uuidv4(),
+            orderId: order.id,
+            staffUserId: staffUserId || null,
+            action: 'CALL_VERIFICATION',
+            previousStatus: order.status,
+            newStatus: order.status,
+            reason: `COD Phone Verification attempt #${attemptNumber}: ${dto.callOutcome}${
+              dto.notes ? ` - ${dto.notes}` : ''
+            }`,
+            metadata: {
               attemptNumber,
-              notes: dto.notes || null,
-              nextFollowUpAt: dto.nextFollowUpAt ? new Date(dto.nextFollowUpAt) : null,
+              callOutcome: dto.callOutcome,
+              nextFollowUpAt: dto.nextFollowUpAt || null,
             },
-          });
-
-          await tx.orderAuditLog.create({
-            data: {
-              id: uuidv4(),
-              orderId,
-              staffUserId: staffUserId || null,
-              action: 'CALL_VERIFICATION',
-              previousStatus: order.status,
-              newStatus: order.status,
-              reason: `COD Phone Verification attempt #${attemptNumber}: ${dto.callOutcome}${
-                dto.notes ? ` - ${dto.notes}` : ''
-              }`,
-              metadata: {
-                attemptNumber,
-                callOutcome: dto.callOutcome,
-                nextFollowUpAt: dto.nextFollowUpAt || null,
-              },
-            },
-          });
-
-          let currentStatus = order.status;
-
-          if (
-            dto.callOutcome === CallVerificationOutcome.CONFIRMED &&
-            order.status === OrderStatus.PLACED
-          ) {
-            await tx.order.update({
-              where: { id: orderId },
-              data: { status: OrderStatus.CONFIRMED },
-            });
-            currentStatus = OrderStatus.CONFIRMED;
-          } else if (
-            dto.callOutcome === CallVerificationOutcome.CANCELLED &&
-            !OrderStateMachine.isTerminal(order.status)
-          ) {
-            await tx.order.update({
-              where: { id: orderId },
-              data: { status: OrderStatus.CANCELLED },
-            });
-            currentStatus = OrderStatus.CANCELLED;
-          }
-
-          return {
-            orderId,
-            orderNumber: order.orderNumber,
-            currentStatus,
-            verificationRecord: callEntry,
-            allowedNextStatuses: OrderStateMachine.getAllowedNextStates(currentStatus),
-          };
+          },
         });
-      }
-    } catch {
-      // Gracefully continue to persistent local storage fallback
-    }
 
-    const match = this.fallbackOrders.find((o) => o.id === orderId || o.orderNumber === orderId);
-    if (match) {
-      if (dto.callOutcome === CallVerificationOutcome.CONFIRMED) {
-        match.status = 'CONFIRMED';
-        match.codVerification = 'VERIFIED';
-      } else if (dto.callOutcome === CallVerificationOutcome.CANCELLED) {
-        match.status = 'CANCELLED';
-        match.codVerification = 'FAILED';
-      }
-      match.agentNotes =
-        (match.agentNotes ? match.agentNotes + ' | ' : '') +
-        `Call ${dto.callOutcome}: ${dto.notes || 'Status updated via Phone Verification Desk'}`;
-      match.updatedAt = new Date().toISOString();
-      this.persistLocalStorage();
-      return {
-        orderId: match.id,
-        orderNumber: match.orderNumber,
-        currentStatus: match.status,
-        allowedNextStatuses: ['CONFIRMED', 'PACKED', 'SHIPPED', 'CANCELLED'],
-      };
-    }
+        let currentStatus = order.status;
 
-    throw new NotFoundException(`Order with ID '${orderId}' not found`);
+        if (
+          dto.callOutcome === CallVerificationOutcome.CONFIRMED &&
+          order.status === OrderStatus.PLACED
+        ) {
+          await tx.order.update({
+            where: { id: order.id },
+            data: { status: OrderStatus.CONFIRMED },
+          });
+          currentStatus = OrderStatus.CONFIRMED;
+        } else if (
+          dto.callOutcome === CallVerificationOutcome.CANCELLED &&
+          !OrderStateMachine.isTerminal(order.status)
+        ) {
+          await tx.order.update({
+            where: { id: order.id },
+            data: { status: OrderStatus.CANCELLED },
+          });
+          currentStatus = OrderStatus.CANCELLED;
+        }
+
+        return {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          currentStatus,
+          verificationRecord: callEntry,
+          allowedNextStatuses: OrderStateMachine.getAllowedNextStates(currentStatus),
+        };
+      });
+    } catch (err) {
+      if (err instanceof BadRequestException || err instanceof NotFoundException) throw err;
+      throw new BadRequestException(`Failed to log call verification: ${(err as any)?.message}`);
+    }
   }
 
   /**
    * Fetch complete order details including audit timeline, items, and next allowed transitions
    */
   async getOrderById(orderId: string, requestingUser?: AuthUser) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+    const order = await this.prisma.order.findFirst({
+      where: isUuid ? { id: orderId } : { orderNumber: orderId },
       include: {
         items: true,
         auditLogs: {
@@ -923,59 +817,21 @@ export class OrdersService {
         };
       });
 
-      // Merge with fallback orders not yet present in DB so admin sees all storefront orders
-      const dbIds = new Set(formattedDbOrders.map((o) => o.id));
-      const localOnly = this.fallbackOrders
-        .filter((o) => !dbIds.has(o.id))
-        .map((o) => ({
-          ...o,
-          paymentMethod: 'COD',
-          items: (o.items || []).map((it: any, idx: number) => ({
-            id: it.id || `it-${idx}`,
-            sku: it.sku || 'SKU-001',
-            title: it.title || 'Formulation',
-            brand: it.brand || 'SEYVEN',
-            variant: it.variant || 'Standard',
-            quantity: it.quantity || 1,
-            unitPrice: Number(it.unitPrice || 0),
-            totalPrice: Number(it.totalPrice || (it.unitPrice || 0) * (it.quantity || 1)),
-          })),
-        }));
-
-      const combined = [...formattedDbOrders, ...localOnly];
-
       return {
-        items: combined,
-        total: combined.length,
+        items: formattedDbOrders,
+        total,
         page,
         limit: take,
-        totalPages: Math.ceil(combined.length / take) || 1,
+        totalPages: Math.ceil(total / take) || 1,
       };
-    } catch {
-      let filtered = [...this.fallbackOrders].map((o) => ({
-        ...o,
-        paymentMethod: 'COD',
-        items: (o.items || []).map((it: any, idx: number) => ({
-          id: it.id || `it-${idx}`,
-          sku: it.sku || 'SKU-001',
-          title: it.title || 'Formulation',
-          brand: it.brand || 'SEYVEN',
-          variant: it.variant || 'Standard',
-          quantity: it.quantity || 1,
-          unitPrice: Number(it.unitPrice || 0),
-          totalPrice: Number(it.totalPrice || (it.unitPrice || 0) * (it.quantity || 1)),
-        })),
-      }));
-
-      if (query.status) {
-        filtered = filtered.filter((o) => o.status === query.status);
-      }
+    } catch (err: any) {
+      this.logger.error(`[List Orders DB Error] ${err?.message || err}`);
       return {
-        items: filtered,
-        total: filtered.length,
+        items: [],
+        total: 0,
         page: 1,
-        limit: 50,
-        totalPages: 1,
+        limit: 20,
+        totalPages: 0,
       };
     }
   }
@@ -1007,66 +863,44 @@ export class OrdersService {
 
     // 1. Check Phone First (Highest accuracy for Bangladesh mobile commerce)
     if (cleanPhone && cleanPhone.length >= 10) {
-      const matchedFallback = this.fallbackOrders.filter((o) => {
-        const orderPhone = this.normalizePhone(o.customerPhone || o.guestPhone);
-        return orderPhone && (orderPhone === cleanPhone || orderPhone.endsWith(cleanPhone) || cleanPhone.endsWith(orderPhone));
-      });
-
-      if (matchedFallback.length > 0) {
-        matchedBy = 'phone';
-        ordersCount = matchedFallback.length;
-        customerName = matchedFallback[0].customerName || matchedFallback[0].guestName || null;
-      } else {
-        try {
-          const dbOrders = await this.prisma.order.findMany({
-            where: {
-              OR: [
-                { guestPhone: { contains: cleanPhone } },
-                { user: { phone: { contains: cleanPhone } } },
-              ],
-            },
-            select: { guestName: true, user: { select: { fullName: true } } },
-            take: 10,
-          });
-          if (dbOrders.length > 0) {
-            matchedBy = 'phone';
-            ordersCount = dbOrders.length;
-            customerName = dbOrders[0].user?.fullName || dbOrders[0].guestName || null;
-          }
-        } catch {
-          // resilient fallback
+      try {
+        const dbOrders = await this.prisma.order.findMany({
+          where: {
+            OR: [
+              { guestPhone: { contains: cleanPhone } },
+              { user: { phone: { contains: cleanPhone } } },
+            ],
+          },
+          select: { guestName: true, user: { select: { fullName: true } } },
+          take: 10,
+        });
+        if (dbOrders.length > 0) {
+          matchedBy = 'phone';
+          ordersCount = dbOrders.length;
+          customerName = dbOrders[0].user?.fullName || dbOrders[0].guestName || null;
         }
+      } catch {
+        // resilient fallback
       }
     }
 
     // 2. If phone not found or not provided, systematically verify Email
     if (!matchedBy && cleanEmail && cleanEmail.includes('@')) {
-      const matchedEmailFallback = this.fallbackOrders.filter((o) => {
-        const orderEmail = (o.customerEmail || o.email || '').trim().toLowerCase();
-        return orderEmail && orderEmail === cleanEmail;
-      });
-
-      if (matchedEmailFallback.length > 0) {
-        matchedBy = 'email';
-        ordersCount = matchedEmailFallback.length;
-        customerName = matchedEmailFallback[0].customerName || matchedEmailFallback[0].guestName || null;
-      } else {
-        try {
-          const dbOrders = await this.prisma.order.findMany({
-            where: {
-              user: { email: { equals: cleanEmail, mode: 'insensitive' } },
-            },
-            select: { guestName: true, user: { select: { fullName: true } } },
-            take: 10,
-          });
-          if (dbOrders.length > 0) {
-            matchedBy = 'email';
-            ordersCount = dbOrders.length;
-            customerName = dbOrders[0].user?.fullName || dbOrders[0].guestName || null;
-          }
-        } catch {
-          // resilient fallback
+      try {
+        const dbOrders = await this.prisma.order.findMany({
+          where: {
+            user: { email: { equals: cleanEmail, mode: 'insensitive' } },
+          },
+          select: { guestName: true, user: { select: { fullName: true } } },
+          take: 10,
+        });
+        if (dbOrders.length > 0) {
+          matchedBy = 'email';
+          ordersCount = dbOrders.length;
+          customerName = dbOrders[0].user?.fullName || dbOrders[0].guestName || null;
         }
+      } catch {
+        // resilient fallback
       }
     }
 
@@ -1082,6 +916,60 @@ export class OrdersService {
       message: isReturningClient
         ? `Esteemed returning client recognized via ${matchedBy}. 5% courtesy privilege honored.`
         : 'Inaugural client. First curation unlocks lifetime 5% returning privilege.',
+    };
+  }
+
+  /**
+   * Permanently delete an order and associated records (Admin Desk)
+   */
+  async deleteOrder(orderId: string, requestingUser?: AuthUser) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+    const order = await this.prisma.order.findFirst({
+      where: isUuid ? { id: orderId } : { orderNumber: orderId },
+      include: {
+        splitLedger: true,
+        rmaRequests: { include: { items: true } },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order '${orderId}' not found in database.`);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Delete split payment entries & ledger
+      if (order.splitLedger) {
+        await tx.paymentLedgerEntry.deleteMany({ where: { ledgerId: order.splitLedger.id } });
+        await tx.splitPaymentLedger.delete({ where: { id: order.splitLedger.id } });
+      }
+
+      // 2. Delete RMA items & requests
+      for (const rma of order.rmaRequests || []) {
+        await tx.rmaItem.deleteMany({ where: { rmaRequestId: rma.id } });
+      }
+      await tx.rmaRequest.deleteMany({ where: { orderId: order.id } });
+
+      // 3. Delete financial / logistics / marketing / audit artifacts
+      await tx.rtoExpense.deleteMany({ where: { orderId: order.id } });
+      await tx.mushakCreditNote.deleteMany({ where: { orderId: order.id } });
+      await tx.mushakInvoice.deleteMany({ where: { orderId: order.id } });
+      await tx.loyaltyTransaction.deleteMany({ where: { orderId: order.id } });
+      await tx.marketingEvent.deleteMany({ where: { orderId: order.id } });
+      await tx.paymentTransaction.deleteMany({ where: { orderId: order.id } });
+      await tx.orderCallVerification.deleteMany({ where: { orderId: order.id } });
+      await tx.orderAuditLog.deleteMany({ where: { orderId: order.id } });
+      await tx.orderItem.deleteMany({ where: { orderId: order.id } });
+
+      // 4. Finally delete the order record
+      await tx.order.delete({ where: { id: order.id } });
+    });
+
+    this.logger.log(`[Order Delete] Order ${order.orderNumber} (${order.id}) permanently purged by ${requestingUser?.phone || requestingUser?.userId || 'admin'}`);
+
+    return {
+      success: true,
+      message: `Order ${order.orderNumber} permanently purged from system.`,
+      orderNumber: order.orderNumber,
     };
   }
 }

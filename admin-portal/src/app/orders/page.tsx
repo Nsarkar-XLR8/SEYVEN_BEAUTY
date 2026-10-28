@@ -22,6 +22,7 @@ import {
   MessageCircle,
   Send,
   ExternalLink,
+  Trash2,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 import { AdminOrder, OrderStatus, CODVerificationStatus } from '@/types/admin';
@@ -29,13 +30,15 @@ import { formatBdt } from '@/lib/formatters';
 import { ManualOrderModal } from '@/components/orders/manual-order-modal';
 
 export default function AdminOrdersDeskPage() {
-  const { orders, updateOrderStatus, updateCODVerification, assignCourier, refreshOrders, isSyncingOrders } = useAdmin();
+  const { orders, updateOrderStatus, updateCODVerification, assignCourier, deleteOrder, refreshOrders, isSyncingOrders } = useAdmin();
 
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [isManualOrderOpen, setIsManualOrderOpen] = useState(false);
   const [isBookingPathao, setIsBookingPathao] = useState(false);
+  const [confirmDeleteOrder, setConfirmDeleteOrder] = useState<AdminOrder | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // COD Phone Verification Modal State
   const [verifyingOrder, setVerifyingOrder] = useState<AdminOrder | null>(null);
@@ -45,6 +48,27 @@ export default function AdminOrdersDeskPage() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4500);
+  };
+
+  const handleDeleteOrder = async (order: AdminOrder) => {
+    setIsDeleting(true);
+    try {
+      const res = await deleteOrder(order.id);
+      if (res && res.success) {
+        showToast(`🗑️ ${res.message || 'Order permanently deleted'}`);
+        if (selectedOrder?.id === order.id) {
+          setSelectedOrder(null);
+        }
+        setConfirmDeleteOrder(null);
+        refreshOrders();
+      } else {
+        showToast(`⚠️ ${res?.message || 'Failed to delete order'}`);
+      }
+    } catch (err: any) {
+      showToast(`⚠️ Error: ${err?.message || 'Delete failed'}`);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleBookWithPathao = async (order: AdminOrder) => {
@@ -396,6 +420,14 @@ export default function AdminOrdersDeskPage() {
                   >
                     View
                   </button>
+                  <button
+                    type="button"
+                    title="Delete Order"
+                    onClick={() => setConfirmDeleteOrder(o)}
+                    className="p-1 text-stone-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded transition-colors inline-flex items-center"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -566,6 +598,21 @@ export default function AdminOrdersDeskPage() {
                 )}
               </div>
             </div>
+
+            {/* Danger Zone: Permanent Delete */}
+            <div className="pt-4 border-t border-rose-200 space-y-2">
+              <span className="text-[10px] uppercase font-mono text-rose-600 font-bold block tracking-wider">
+                Danger Zone
+              </span>
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteOrder(selectedOrder)}
+                className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded font-semibold text-xs flex items-center justify-center space-x-1.5 transition-colors font-mono"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Delete Order Permanently</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -624,6 +671,66 @@ export default function AdminOrdersDeskPage() {
                 className="py-2.5 bg-[#1C1917] text-[#F9F6F0] rounded font-bold uppercase tracking-wider"
               >
                 Confirm Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 5. CONFIRM DELETE PERMANENTLY MODAL                                       */}
+      {/* ========================================================================= */}
+      {confirmDeleteOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border border-rose-200 max-w-md w-full p-6 rounded-lg space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-2 border-b border-rose-100">
+              <div className="flex items-center space-x-2 text-rose-600">
+                <AlertCircle className="w-5 h-5 text-rose-600" />
+                <h3 className="font-serif text-base font-bold text-[#1C1917]">
+                  Delete Order Permanently
+                </h3>
+              </div>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setConfirmDeleteOrder(null)}
+                className="p-1 text-[#1C1917]/50 hover:text-[#1C1917]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-600 leading-relaxed font-sans">
+              Are you sure you want to permanently delete order{' '}
+              <strong className="text-stone-900 font-mono font-bold">
+                {confirmDeleteOrder.orderNumber || confirmDeleteOrder.id}
+              </strong>{' '}
+              ({confirmDeleteOrder.customerName})? This will purge the order and all related items from the database. This action <strong className="text-rose-600 font-semibold">cannot be undone</strong>.
+            </p>
+
+            <div className="p-3 bg-stone-50 border border-stone-200 rounded text-xs space-y-1 font-mono">
+              <div>Customer: <span className="font-semibold text-stone-800">{confirmDeleteOrder.customerName}</span></div>
+              <div>Phone: <span className="font-semibold text-stone-800">{confirmDeleteOrder.customerPhone}</span></div>
+              <div>Amount: <span className="font-semibold text-stone-800">{formatBdt(confirmDeleteOrder.totalAmount)}</span></div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setConfirmDeleteOrder(null)}
+                className="py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 rounded font-semibold transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => handleDeleteOrder(confirmDeleteOrder)}
+                className="py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeleting ? 'Deleting...' : 'Delete Permanently'}</span>
               </button>
             </div>
           </div>

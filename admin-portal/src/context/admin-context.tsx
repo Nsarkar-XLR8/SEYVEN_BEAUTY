@@ -66,6 +66,7 @@ interface AdminContextType {
   }) => Promise<AdminOrder>;
   refreshOrders: () => Promise<void>;
   isSyncingOrders: boolean;
+  deleteOrder: (orderId: string) => Promise<{ success: boolean; message?: string }>;
 
   // Categories & Products (Zero-loss sync)
   categories: AdminCategory[];
@@ -808,6 +809,37 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     return newOrder;
   };
 
+  const deleteOrder = async (orderId: string): Promise<{ success: boolean; message?: string }> => {
+    const apiUrl = API_BASE_URL;
+    try {
+      const res = await adminFetch(
+        `${apiUrl}/orders/${orderId}`,
+        { method: 'DELETE' },
+        handleUnauthorized,
+      );
+
+      if (res.ok) {
+        setOrders((prev) => {
+          const updated = prev.filter((o) => o.id !== orderId && o.orderNumber !== orderId);
+          safeStorageSet(STORAGE_KEYS.ORDERS, JSON.stringify(updated));
+          return updated;
+        });
+        return { success: true, message: `Order ${orderId} permanently deleted` };
+      }
+
+      const errData = await res.json().catch(() => ({}));
+      return {
+        success: false,
+        message: errData.message || 'Failed to delete order from server',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || 'Network error deleting order',
+      };
+    }
+  };
+
   // Categories & Products
   const addCategory = async (cat: Omit<AdminCategory, 'id' | 'productCount'>) => {
     const apiUrl = API_BASE_URL;
@@ -1140,6 +1172,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         addManualOrder,
         refreshOrders,
         isSyncingOrders,
+        deleteOrder,
         categories,
         addCategory,
         deleteCategory,

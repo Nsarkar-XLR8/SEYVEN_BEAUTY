@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -89,6 +90,24 @@ export class OrdersController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.ordersService.getOrderById(id, user);
+  }
+
+  @Delete('orders/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CATALOG_MANAGER, UserRole.SUPPORT_AGENT)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Permanently delete an order and associated records (Admin Desk)',
+    description: 'Permanently removes an order and cascading relations from PostgreSQL database.',
+  })
+  @ApiParam({ name: 'id', description: 'Order UUID or Order Number' })
+  @ApiResponse({ status: 200, description: 'Order permanently deleted' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async deleteOrder(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.ordersService.deleteOrder(id, user);
   }
 
   @Post('orders/direct')

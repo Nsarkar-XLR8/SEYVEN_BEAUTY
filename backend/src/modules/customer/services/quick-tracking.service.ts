@@ -80,29 +80,6 @@ export class QuickTrackingService {
       this.logger.warn(`[Prisma Order Track Warning] ${dbErr?.message}`);
     }
 
-    // Fallback: Check local orders storage if database did not return order
-    if (!order) {
-      try {
-        const localPath = path.resolve(process.cwd(), 'local-orders.json');
-        if (fs.existsSync(localPath)) {
-          const raw = fs.readFileSync(localPath, 'utf8');
-          const localList = JSON.parse(raw);
-          if (Array.isArray(localList)) {
-            const found = localList.find((o: any) =>
-              o.orderNumber === cleanOrderNumber ||
-              o.id === cleanOrderNumber ||
-              o.referenceNo === cleanOrderNumber
-            );
-            if (found) {
-              return this.mapLocalOrderToResult(found);
-            }
-          }
-        }
-      } catch (err: any) {
-        this.logger.warn(`[Local Order Track Warning] ${err?.message}`);
-      }
-    }
-
     if (!order) {
       throw new NotFoundException(
         'No order found matching the provided order number and phone credentials.',

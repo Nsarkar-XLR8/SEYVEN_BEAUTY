@@ -38,6 +38,7 @@ export interface OrderItem {
 
 export interface AdminOrder {
   id: string;
+  orderNumber?: string;
   referenceNo: string;
   customerName: string;
   customerPhone: string;

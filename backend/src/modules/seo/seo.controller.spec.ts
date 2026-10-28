@@ -16,7 +16,7 @@ describe('SeoController', () => {
   const mockTokenService = {
     verifyAccessToken: jest.fn().mockResolvedValue({
       sub: 'usr-admin-1',
-      phone: '+8801700000000',
+      phone: '',
       role: UserRole.SUPER_ADMIN,
       jti: 'jti-1',
     }),

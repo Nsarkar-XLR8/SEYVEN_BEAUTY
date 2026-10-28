@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   StaffUser,
   StaffRole,
@@ -173,10 +173,109 @@ function safeStorageSet(key: string, value: string): boolean {
   }
 }
 
+function isJwtExpired(token: string | null, bufferSeconds = 60): boolean {
+  if (!token) return true;
+  if (token.startsWith('admin_jwt_')) return false;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const parsed = JSON.parse(jsonPayload);
+    if (!parsed.exp) return false;
+    return Date.now() >= (parsed.exp - bufferSeconds) * 1000;
+  } catch {
+    return false;
+  }
+}
+
+let activeRefreshPromise: Promise<string | null> | null = null;
+
+async function refreshAdminToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  if (!refreshToken) return null;
+
+  if (activeRefreshPromise) return activeRefreshPromise;
+
+  activeRefreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (res.ok) {
+        const tokens = await res.json();
+        if (tokens?.accessToken) {
+          safeStorageSet(STORAGE_KEYS.TOKEN, tokens.accessToken);
+          if (tokens.refreshToken) {
+            safeStorageSet(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+          }
+          return tokens.accessToken as string;
+        }
+      }
+    } catch (err) {
+      console.warn('[AdminContext] Token refresh failed:', err);
+    } finally {
+      activeRefreshPromise = null;
+    }
+    return null;
+  })();
+
+  return activeRefreshPromise;
+}
+
 function getAdminAuthHeader(): string {
   if (typeof window === 'undefined') return 'Bearer admin_jwt_demo';
   const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   return token ? `Bearer ${token}` : 'Bearer admin_jwt_demo';
+}
+
+async function adminFetch(
+  input: string,
+  init: RequestInit = {},
+  onUnauthorized?: () => void
+): Promise<Response> {
+  let token = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.TOKEN) : null;
+
+  // 1. Proactively refresh if access token is expired
+  if (token && isJwtExpired(token)) {
+    const freshToken = await refreshAdminToken();
+    if (freshToken) {
+      token = freshToken;
+    } else {
+      if (onUnauthorized) onUnauthorized();
+    }
+  }
+
+  const headers = new Headers(init.headers || {});
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  } else {
+    headers.set('Authorization', 'Bearer admin_jwt_demo');
+  }
+
+  let res = await fetch(input, { ...init, headers });
+
+  // 2. Reactive retry: if backend returns 401, refresh token and retry request once
+  if (res.status === 401) {
+    const refreshedToken = await refreshAdminToken();
+    if (refreshedToken) {
+      headers.set('Authorization', `Bearer ${refreshedToken}`);
+      res = await fetch(input, { ...init, headers });
+    } else {
+      if (onUnauthorized) onUnauthorized();
+    }
+  }
+
+  return res;
 }
 
 function sanitizeProductsForStorage(prods: AdminProduct[]): AdminProduct[] {
@@ -208,15 +307,25 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [lastPurgedAt, setLastPurgedAt] = useState<string | null>(null);
   const [isSyncingOrders, setIsSyncingOrders] = useState(false);
 
+  const logout = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEYS.STAFF);
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    }
+    setStaffUser(null);
+  }, []);
+
+  const handleUnauthorized = useCallback(() => {
+    console.warn('[AdminContext] Session expired or invalid. Logging out.');
+    logout();
+  }, [logout]);
+
   const refreshOrders = async () => {
     const apiUrl = API_BASE_URL;
     setIsSyncingOrders(true);
     try {
-      const res = await fetch(`${apiUrl}/orders`, {
-        headers: {
-          Authorization: getAdminAuthHeader(),
-        },
-      });
+      const res = await adminFetch(`${apiUrl}/orders`, {}, handleUnauthorized);
       if (res.ok) {
         const data = await res.json();
         const list = data?.items || (Array.isArray(data) ? data : null);
@@ -241,7 +350,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     const apiUrl = API_BASE_URL;
     try {
       // 1. Fetch real products directly from backend (including DRAFTs for admin desk)
-      const pRes = await fetch(`${apiUrl}/catalog/products?includeDrafts=true`, { cache: 'no-store' });
+      const pRes = await adminFetch(`${apiUrl}/catalog/products?includeDrafts=true`, { cache: 'no-store' }, handleUnauthorized);
       if (pRes.ok) {
         const pData = await pRes.json();
         if (Array.isArray(pData)) {
@@ -254,7 +363,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 2. Fetch real categories directly from backend
-      const cRes = await fetch(`${apiUrl}/catalog/categories`, { cache: 'no-store' });
+      const cRes = await adminFetch(`${apiUrl}/catalog/categories`, { cache: 'no-store' }, handleUnauthorized);
       if (cRes.ok) {
         const cData = await cRes.json();
         if (Array.isArray(cData)) {
@@ -278,91 +387,90 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    try {
-      // Clean up legacy ghost caches from previous versions
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('seyven_admin_products_v2');
-        localStorage.removeItem('seyven_admin_categories_v2');
-        localStorage.removeItem('seyven_admin_orders_v2');
-        localStorage.removeItem('seyven_admin_products');
-        localStorage.removeItem('seyven_admin_categories');
-      }
+    let orderPollInterval: NodeJS.Timeout | null = null;
 
-      const savedStaff = localStorage.getItem(STORAGE_KEYS.STAFF);
-      const savedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
-      if (savedStaff && savedToken) {
-        try {
-          setStaffUser(JSON.parse(savedStaff));
-        } catch {
-          setStaffUser(null);
+    const initAuthAndData = async () => {
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('seyven_admin_products_v2');
+          localStorage.removeItem('seyven_admin_categories_v2');
+          localStorage.removeItem('seyven_admin_orders_v2');
+          localStorage.removeItem('seyven_admin_products');
+          localStorage.removeItem('seyven_admin_categories');
         }
-      } else {
-        setStaffUser(null);
-      }
 
-      const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
+        const savedStaff = localStorage.getItem(STORAGE_KEYS.STAFF);
+        const savedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
+        const savedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
 
-      const savedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-      if (savedCategories) setCategories(JSON.parse(savedCategories));
-
-      const savedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      if (savedProducts) {
-        try {
-          const parsed = JSON.parse(savedProducts);
-          if (Array.isArray(parsed)) {
-            const cleaned = parsed
-              .filter((p) => p && !p.id?.startsWith('formulation-') && !p.id?.startsWith('dummy-'))
-              .map(normalizeProduct);
-            setProducts(cleaned);
+        // Security Guard: if staff or both tokens are missing, clean up and redirect to login
+        if (!savedStaff || (!savedToken && !savedRefreshToken)) {
+          logout();
+        } else {
+          // If access token is expired, attempt immediate silent background refresh using refresh token
+          if (isJwtExpired(savedToken)) {
+            const fresh = await refreshAdminToken();
+            if (fresh) {
+              try {
+                setStaffUser(JSON.parse(savedStaff));
+              } catch {
+                logout();
+              }
+            } else {
+              // Both access token and refresh token are invalid or expired!
+              console.warn('[AdminContext] Session expired on start. Redirecting to login.');
+              logout();
+            }
+          } else {
+            try {
+              setStaffUser(JSON.parse(savedStaff));
+            } catch {
+              logout();
+            }
           }
-        } catch {}
-      }
-
-      // Initial live sync directly from PostgreSQL database
-      refreshCatalog();
-      refreshOrders();
-
-      const orderPollInterval = setInterval(() => {
-        refreshOrders();
-      }, 12000);
-
-      const savedTiers = localStorage.getItem(STORAGE_KEYS.TIERS);
-      if (savedTiers) setTiers(JSON.parse(savedTiers));
-    } catch {
-      // Fallback to initial constants
-    } finally {
-      setIsReady(true);
-    }
-  }, []);
-
-  const refreshAdminToken = async (): Promise<string | null> => {
-    if (typeof window === 'undefined') return null;
-    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    if (!refreshToken) return null;
-
-    const apiUrl = API_BASE_URL;
-    try {
-      const res = await fetch(`${apiUrl}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      });
-      if (res.ok) {
-        const tokens = await res.json();
-        if (tokens?.accessToken) {
-          safeStorageSet(STORAGE_KEYS.TOKEN, tokens.accessToken);
-          if (tokens.refreshToken) {
-            safeStorageSet(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
-          }
-          return tokens.accessToken;
         }
+
+        const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
+        if (savedOrders) setOrders(JSON.parse(savedOrders));
+
+        const savedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+        if (savedCategories) setCategories(JSON.parse(savedCategories));
+
+        const savedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+        if (savedProducts) {
+          try {
+            const parsed = JSON.parse(savedProducts);
+            if (Array.isArray(parsed)) {
+              const cleaned = parsed
+                .filter((p) => p && !p.id?.startsWith('formulation-') && !p.id?.startsWith('dummy-'))
+                .map(normalizeProduct);
+              setProducts(cleaned);
+            }
+          } catch {}
+        }
+
+        const savedTiers = localStorage.getItem(STORAGE_KEYS.TIERS);
+        if (savedTiers) setTiers(JSON.parse(savedTiers));
+
+        // Initial live sync directly from PostgreSQL database
+        await Promise.allSettled([refreshCatalog(), refreshOrders()]);
+
+        orderPollInterval = setInterval(() => {
+          refreshOrders();
+        }, 12000);
+      } catch (err) {
+        console.error('[AdminContext] Initialization error:', err);
+      } finally {
+        setIsReady(true);
       }
-    } catch {
-      // Network or invalid token
-    }
-    return null;
-  };
+    };
+
+    initAuthAndData();
+
+    return () => {
+      if (orderPollInterval) clearInterval(orderPollInterval);
+    };
+  }, [logout]);
 
   const login = async (identifier: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     const apiUrl = API_BASE_URL;
@@ -452,12 +560,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem(STORAGE_KEYS.STAFF);
-    localStorage.removeItem(STORAGE_KEYS.TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    setStaffUser(null);
-  };
 
   const switchRole = (role: StaffRole) => {
     if (!staffUser) return;
@@ -480,14 +582,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   // Orders
   const updateOrderStatus = (orderId: string, nextStatus: OrderStatus, notes?: string) => {
     const apiUrl = API_BASE_URL;
-    fetch(`${apiUrl}/admin/orders/${orderId}/status`, {
+    adminFetch(`${apiUrl}/admin/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: getAdminAuthHeader(),
       },
       body: JSON.stringify({ status: nextStatus, notes }),
-    }).catch(() => {});
+    }, handleUnauthorized).catch(() => {});
 
     setOrders((prev) => {
       const updated = prev.map((o) =>
@@ -534,14 +635,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
     if (courier === 'Pathao' && !consignmentId) {
       try {
-        const res = await fetch(`${apiUrl}/courier/pathao/book`, {
+        const res = await adminFetch(`${apiUrl}/courier/pathao/book`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: getAdminAuthHeader(),
           },
           body: JSON.stringify({ orderId }),
-        });
+        }, handleUnauthorized);
 
         const data = await res.json();
         if (res.ok && data?.data?.consignment_id) {
@@ -557,14 +657,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       }
     } else if (courier === 'Steadfast' && !consignmentId) {
       try {
-        const res = await fetch(`${apiUrl}/courier/steadfast/book`, {
+        const res = await adminFetch(`${apiUrl}/courier/steadfast/book`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: getAdminAuthHeader(),
           },
           body: JSON.stringify({ orderId }),
-        });
+        }, handleUnauthorized);
         const data = await res.json();
         if (res.ok && data?.consignment_id) {
           finalConsignmentId = data.consignment_id;
@@ -580,14 +679,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       trackingUrl = `https://${courier.toLowerCase()}.com/track/${finalConsignmentId}`;
     }
 
-    fetch(`${apiUrl}/admin/orders/${orderId}/status`, {
+    adminFetch(`${apiUrl}/admin/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: getAdminAuthHeader(),
       },
       body: JSON.stringify({ status: 'SHIPPED', trackingCode: finalConsignmentId }),
-    }).catch(() => {});
+    }, handleUnauthorized).catch(() => {});
 
     setOrders((prev) => {
       const updated = prev.map((o) =>
@@ -666,7 +764,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     });
 
     const apiUrl = API_BASE_URL;
-    fetch(`${apiUrl}/orders/direct`, {
+    adminFetch(`${apiUrl}/orders/direct`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -695,7 +793,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         advancePaid: newOrder.advancePaid,
         agentNotes: newOrder.agentNotes,
       }),
-    }).catch(() => {});
+    }, handleUnauthorized).catch(() => {});
 
     return newOrder;
   };
@@ -704,11 +802,10 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const addCategory = async (cat: Omit<AdminCategory, 'id' | 'productCount'>) => {
     const apiUrl = API_BASE_URL;
     try {
-      const res = await fetch(`${apiUrl}/catalog/categories`, {
+      const res = await adminFetch(`${apiUrl}/catalog/categories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify({
           nameEn: cat.nameEn,
@@ -716,7 +813,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           slug: cat.slug,
           description: cat.nameEn,
         }),
-      });
+      }, handleUnauthorized);
 
       if (res.ok) {
         const saved = await res.json();
@@ -757,12 +854,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const deleteCategory = async (categoryId: string): Promise<boolean> => {
     try {
       const apiUrl = API_BASE_URL;
-      const res = await fetch(`${apiUrl}/catalog/categories/${categoryId}`, {
+      const res = await adminFetch(`${apiUrl}/catalog/categories/${categoryId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: getAdminAuthHeader(),
-        },
-      });
+      }, handleUnauthorized);
 
       if (res.ok) {
         setCategories((prev) => {
@@ -787,14 +881,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const addProduct = async (prod: Omit<AdminProduct, 'id' | 'createdAt'>) => {
     const apiUrl = API_BASE_URL;
     try {
-      const res = await fetch(`${apiUrl}/catalog/products`, {
+      const res = await adminFetch(`${apiUrl}/catalog/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify(prod),
-      });
+      }, handleUnauthorized);
 
       if (res.ok) {
         const saved = await res.json();
@@ -825,12 +918,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const deleteProduct = async (productId: string): Promise<boolean> => {
     try {
       const apiUrl = API_BASE_URL;
-      const res = await fetch(`${apiUrl}/catalog/products/${productId}`, {
+      const res = await adminFetch(`${apiUrl}/catalog/products/${productId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: getAdminAuthHeader(),
-        },
-      });
+      }, handleUnauthorized);
 
       if (res.ok) {
         setProducts((prev) => {
@@ -872,14 +962,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     // 2. Direct backend API call to persist in Supabase PostgreSQL & Redis
     try {
       const apiUrl = API_BASE_URL;
-      const res = await fetch(`${apiUrl}/catalog/products/${productId}/state`, {
+      const res = await adminFetch(`${apiUrl}/catalog/products/${productId}/state`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify({ state }),
-      });
+      }, handleUnauthorized);
 
       if (res.ok) {
         return true;
@@ -911,17 +1000,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const apiUrl = API_BASE_URL;
-      const res = await fetch(`${apiUrl}/catalog/products/${productId}/pricing`, {
+      const res = await adminFetch(`${apiUrl}/catalog/products/${productId}/pricing`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify({
           priceBdt: newPriceBdt,
           compareAtPriceBdt,
         }),
-      });
+      }, handleUnauthorized);
       return res.ok;
     } catch {
       return false;
@@ -945,14 +1033,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const apiUrl = API_BASE_URL;
-      const res = await fetch(`${apiUrl}/catalog/products/${productIdOrSlug}`, {
+      const res = await adminFetch(`${apiUrl}/catalog/products/${productIdOrSlug}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: getAdminAuthHeader(),
         },
         body: JSON.stringify(updatedFields),
-      });
+      }, handleUnauthorized);
       return res.ok;
     } catch {
       return false;

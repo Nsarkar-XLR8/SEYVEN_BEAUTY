@@ -330,8 +330,18 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         const list = data?.items || (Array.isArray(data) ? data : null);
         if (Array.isArray(list)) {
-          setOrders(list);
-          safeStorageSet(STORAGE_KEYS.ORDERS, JSON.stringify(list));
+          const normalized = list.map((o: any) => ({
+            ...o,
+            id: o.orderNumber || o.id,
+            consignmentId: o.consignmentId || o.courierBookingId || o.trackingCode,
+            courierTrackingUrl:
+              o.courierTrackingUrl ||
+              (o.courierBookingId
+                ? `https://merchant.pathao.com/tracking?consignment_id=${o.courierBookingId}`
+                : undefined),
+          }));
+          setOrders(normalized);
+          safeStorageSet(STORAGE_KEYS.ORDERS, JSON.stringify(normalized));
         }
       }
     } catch {

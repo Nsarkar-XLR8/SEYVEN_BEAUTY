@@ -185,7 +185,7 @@ export default function AdminDispatchDeskPage() {
                     <div>
                       <span className="font-mono font-bold text-[#1C1917]">{order.id}</span>
                       <div className="text-[10px] text-[#C7A97B] font-mono">
-                        Consignment: {order.consignmentId || 'PT-9921'} ({order.courier || 'Pathao'})
+                        Consignment: {order.consignmentId || (order as any).courierBookingId || (order as any).trackingCode || 'N/A'} ({order.courier || 'Pathao'})
                       </div>
                     </div>
                     <span className="px-2 py-0.5 bg-purple-100 text-purple-900 border border-purple-300 text-[10px] font-mono font-bold rounded">
@@ -200,7 +200,7 @@ export default function AdminDispatchDeskPage() {
 
                   <div className="pt-2 flex items-center justify-between border-t border-[#E6DFD5]">
                     <a
-                      href={order.courierTrackingUrl || 'https://pathao.com'}
+                      href={order.courierTrackingUrl || `https://merchant.pathao.com/tracking?consignment_id=${order.consignmentId || (order as any).courierBookingId || (order as any).trackingCode || ''}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[11px] text-[#C7A97B] font-mono hover:underline flex items-center space-x-1"

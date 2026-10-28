@@ -6,8 +6,6 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { OutboxPublisher } from '../../../common/database/outbox/outbox.service';
 import { GeoZoneService } from '../../checkout/services/geo-zone.service';

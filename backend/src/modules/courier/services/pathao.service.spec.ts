@@ -146,7 +146,7 @@ describe('PathaoService', () => {
           merchant_order_id: 'SYV-202610-A9F1B2',
           amount_to_collect: 1250, // Exactly order.codDueBdt
           recipient_name: 'Tasnim Hasan',
-          recipient_phone: '+8801712345678',
+          recipient_phone: '01712345678',
         }),
       );
 

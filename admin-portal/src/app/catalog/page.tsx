@@ -277,10 +277,27 @@ export default function AdminCatalogDeskPage() {
   const generateSlug = (brand: string, title: string): string => {
     const cleanBrand = (brand || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const cleanTitle = (title || 'formulation').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (cleanBrand && cleanTitle.startsWith(cleanBrand)) {
+      return cleanTitle;
+    }
     if (cleanBrand) {
       return `${cleanBrand}-${cleanTitle}`;
     }
     return cleanTitle;
+  };
+
+  const generateSmartSku = (brand: string, title: string, volume: string): string => {
+    const cleanBrand = (brand || 'SYV').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || 'SYV';
+    const words = (title || '')
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter((w) => w.length > 0 && w.toUpperCase() !== cleanBrand);
+    const titleInitials = words.length >= 2
+      ? words.slice(0, 4).map((w) => w[0]).join('').toUpperCase()
+      : (words[0] || 'PRD').slice(0, 4).toUpperCase();
+    const cleanVol = (volume || 'STD').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `SYV-${cleanBrand}-${titleInitials}-${cleanVol}-${rand}`;
   };
 
   const getSuggestedPurpose = (category: string): string => {
@@ -583,7 +600,7 @@ export default function AdminCatalogDeskPage() {
         id: v.id || `var-${finalSlug}-${idx}`,
         volume: v.volume,
         priceBdt: Number(v.priceBdt) || minVariantPrice,
-        sku: v.sku || `SYV-${finalSlug.toUpperCase().slice(0, 8)}-${v.volume.replace(/\s+/g, '')}`,
+        sku: v.sku || generateSmartSku(finalBrand, prodTitleEn, v.volume),
         inStock: true,
         stockCount: 50,
       })),
@@ -601,14 +618,23 @@ export default function AdminCatalogDeskPage() {
     };
 
     if (editingFullProduct) {
-      await updateProduct(editingFullProduct.slug || editingFullProduct.id, productPayload);
-      setIsProductModalOpen(false);
-      setEditingFullProduct(null);
-      showToast(`✓ Updated "${prodTitleEn.trim()}" with dynamic sizes & clinical data!`);
+      const ok = await updateProduct(editingFullProduct.slug || editingFullProduct.id, productPayload);
+      if (ok) {
+        setIsProductModalOpen(false);
+        setEditingFullProduct(null);
+        showToast(`✓ Updated "${prodTitleEn.trim()}" in PostgreSQL database!`);
+      } else {
+        showToast(`❌ Failed to update "${prodTitleEn.trim()}" in database.`);
+      }
     } else {
-      addProduct(productPayload);
+      const res = await addProduct(productPayload);
+      if (!res.success) {
+        showToast(`❌ ${res.error || 'Failed to save product in database'}`);
+        return;
+      }
+
       if (keepOpen) {
-        showToast(`✓ Published "${prodTitleEn.trim()}"! Ready for next ${finalBrand} formulation.`);
+        showToast(`✅ Saved to database! Ready for next ${finalBrand} product.`);
         setProdTitleEn('');
         setProdTitleBn('');
         setProdSlug('');
@@ -620,7 +646,7 @@ export default function AdminCatalogDeskPage() {
       } else {
         setIsProductModalOpen(false);
         setActiveTab('PRODUCTS');
-        showToast(`✓ Product "${prodTitleEn.trim()}" published to storefront with images!`);
+        showToast(`✅ "${prodTitleEn.trim()}" saved to database and live on website!`);
         setProdTitleEn('');
         setProdTitleBn('');
         setProdBrand('');
@@ -1493,36 +1519,24 @@ export default function AdminCatalogDeskPage() {
                     )}
                   </div>
 
-                  {/* Title EN & BN */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[#1C1917]/70 uppercase font-semibold">Product Title (English) *</label>
-                      <input
-                        type="text"
-                        required
-                        value={prodTitleEn}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setProdTitleEn(val);
-                          if (!isSlugTouched) {
-                            setProdSlug(generateSlug(prodBrand, val));
-                          }
-                        }}
-                        placeholder="e.g. Strawberry Dew Tinted Sunscreen SPF 50+"
-                        className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[#1C1917]/70 uppercase font-semibold">Product Title (বাংলা)</label>
-                      <input
-                        type="text"
-                        value={prodTitleBn}
-                        onChange={(e) => setProdTitleBn(e.target.value)}
-                        placeholder="e.g. স্ট্রবেরি ডিউ টিন্টেড সানস্ক্রিন"
-                        className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none font-bangla"
-                      />
-                    </div>
+                  {/* Product Title */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-[#1C1917]/70 uppercase font-semibold">Product Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={prodTitleEn}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setProdTitleEn(val);
+                        setProdTitleBn(val);
+                        if (!isSlugTouched) {
+                          setProdSlug(generateSlug(prodBrand, val));
+                        }
+                      }}
+                      placeholder="e.g. Strawberry Dew Tinted Sunscreen SPF 50+"
+                      className="w-full p-2.5 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none text-xs"
+                    />
                   </div>
 
                   {/* Brand & Category */}
@@ -1668,19 +1682,6 @@ export default function AdminCatalogDeskPage() {
                         </button>
                       )}
                     </div>
-                  </div>
-
-                  {/* BSTI */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-[#1C1917]/70 uppercase font-semibold">BSTI Regulatory Status</label>
-                    <select
-                      value={prodBsti ? 'YES' : 'NO'}
-                      onChange={(e) => setProdBsti(e.target.value === 'YES')}
-                      className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none text-xs"
-                    >
-                      <option value="YES">BSTI Approved (বাংলাদেশ স্ট্যান্ডার্ডস অ্যান্ড টেস্টিং ইনস্টিটিউশন)</option>
-                      <option value="NO">Under Review / Direct International Lot</option>
-                    </select>
                   </div>
                 </div>
               )}

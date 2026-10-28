@@ -252,6 +252,53 @@ export class CatalogService {
     return formattedDbProducts;
   }
 
+  private generateSmartSku(brand: string, titleEn: string, volume: string): string {
+    const cleanBrand = (brand || 'SYV').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || 'SYV';
+    const words = (titleEn || '')
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter((w) => w.length > 0 && w.toUpperCase() !== cleanBrand);
+    
+    let titleCode = '';
+    if (words.length >= 3) {
+      titleCode = words.slice(0, 4).map((w) => w[0]).join('').toUpperCase();
+    } else if (words.length > 0) {
+      titleCode = words.map((w) => w.slice(0, 3)).join('').toUpperCase().slice(0, 6);
+    } else {
+      titleCode = 'PROD';
+    }
+
+    const cleanVol = (volume || 'STD').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `SYV-${cleanBrand}-${titleCode}-${cleanVol}-${randPart}`;
+  }
+
+  private async ensureUniqueSku(baseSku: string, excludeVariantId?: string): Promise<string> {
+    let candidate = baseSku;
+    let attempt = 1;
+    while (true) {
+      try {
+        const match = await this.prisma.productVariant.findFirst({
+          where: {
+            sku: candidate,
+            ...(excludeVariantId ? { id: { not: excludeVariantId } } : {}),
+          },
+          select: { id: true },
+        });
+        if (!match) return candidate;
+      } catch {
+        return candidate;
+      }
+
+      const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      candidate = `${baseSku.slice(0, 80)}-${suffix}`;
+      attempt++;
+      if (attempt > 10) {
+        return `SYV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      }
+    }
+  }
+
   async createProduct(dto: any) {
     const rawCategory = dto.category;
     const categoryName =
@@ -270,6 +317,7 @@ export class CatalogService {
     };
 
     const resolvedPurpose = dto.purposeTagEn || getCategoryPurpose(categoryName);
+    const resolvedBrand = (dto.brand || '').trim() || 'Curated Formulation';
 
     // 1. Process and upload base64 images to Cloudinary CDN
     let uploadedImages: string[] = [];
@@ -301,33 +349,31 @@ export class CatalogService {
       }
     }
 
-    // 2. Multi-size variants mapping
-    let variants: any[] = [];
-    if (Array.isArray(dto.variants) && dto.variants.length > 0) {
-      variants = dto.variants.map((v: any, idx: number) => ({
+    // 2. Collision-Free Multi-size variants mapping
+    const rawVariants = Array.isArray(dto.variants) && dto.variants.length > 0
+      ? dto.variants
+      : [{ volume: dto.volume || '50 ML', priceBdt: Number(dto.priceBdt) || 2450 }];
+
+    const variants: any[] = [];
+    for (let idx = 0; idx < rawVariants.length; idx++) {
+      const v = rawVariants[idx];
+      const volStr = v.volume || dto.volume || '50 ML';
+      let candidateSku = v.sku;
+      if (!candidateSku || candidateSku.startsWith('SYV-PRD') || candidateSku.length < 5) {
+        candidateSku = this.generateSmartSku(resolvedBrand, dto.titleEn, volStr);
+      }
+      const uniqueSku = await this.ensureUniqueSku(candidateSku);
+
+      variants.push({
         id: v.id || `var-${Date.now()}-${idx}`,
-        sku: v.sku || `SYV-${(dto.slug || 'PRD').toUpperCase().slice(0, 8)}-${(v.volume || 'STD').replace(/\s+/g, '')}`,
-        titleEn: v.titleEn || `${v.volume || 'Standard'} Edition`,
-        titleBn: v.titleBn || `${v.volume || 'স্ট্যান্ডার্ড'} সংস্করণ`,
-        volume: v.volume || '50 ML',
+        sku: uniqueSku,
+        titleEn: v.titleEn || `${volStr} Edition`,
+        titleBn: v.titleBn || `${volStr} সংস্করণ`,
+        volume: volStr,
         priceBdt: Number(v.priceBdt) || 2450,
         inStock: v.inStock ?? true,
         stockCount: 50,
-      }));
-    } else {
-      const fallbackPrice = Number(dto.priceBdt) || 2450;
-      variants = [
-        {
-          id: `var-${Date.now()}`,
-          sku: dto.sku || `SYV-${(dto.slug || 'PRD').toUpperCase().slice(0, 10)}`,
-          titleEn: `${dto.volume || '50 ML'} Standard Bottle`,
-          titleBn: `${dto.volume || '50 ML'} বোতল`,
-          volume: dto.volume || '50 ML',
-          priceBdt: fallbackPrice,
-          inStock: true,
-          stockCount: 50,
-        },
-      ];
+      });
     }
 
     const prices = variants.map((v) => Number(v.priceBdt) || 2450);
@@ -340,7 +386,7 @@ export class CatalogService {
       slug: dto.slug || dto.titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       titleEn: dto.titleEn,
       titleBn: dto.titleBn || dto.titleEn,
-      brand: (dto.brand || '').trim() || 'Curated Formulation',
+      brand: resolvedBrand,
       category: categoryName,
       priceBdt: minPrice,
       priceRangeBdt,
@@ -404,44 +450,73 @@ export class CatalogService {
 
       const pubState = (dto.publicationState as PublicationState) || (dto.state as PublicationState) || PublicationState.PUBLISHED;
 
-      const createdPrismaProduct = await this.prisma.product.upsert({
+      // Check if product with this slug already exists
+      const existingProduct = await this.prisma.product.findUnique({
         where: { slug: newProduct.slug },
-        update: {
-          titleEn: newProduct.titleEn,
-          titleBn: newProduct.titleBn,
-          publicationState: pubState,
-          categoryId: catId,
-          dermalProtocolEn: metadataString,
-        },
-        create: {
-          slug: newProduct.slug,
-          categoryId: catId,
-          titleEn: newProduct.titleEn,
-          titleBn: newProduct.titleBn,
-          shortDescriptionEn: dto.shortDescriptionEn || newProduct.titleEn,
-          shortDescriptionBn: dto.shortDescriptionBn || newProduct.titleBn,
-          dermalProtocolEn: metadataString,
-          publicationState: pubState,
-          variants: {
-            create: variants.map((v) => ({
-              sku: v.sku,
-              volumeMlG: parseFloat(v.volume) || 50,
-              priceBdt: v.priceBdt,
-              cogsBdt: Math.round(Number(v.priceBdt || 2450) * 0.45),
-              isActive: true,
-            })),
-          },
-        },
-      }).catch((e: any) => {
-        this.logger.warn(`[Prisma Product Create Notice] ${e?.message || e}`);
+        include: { variants: true },
       });
+
+      let createdPrismaProduct: any;
+
+      if (existingProduct) {
+        // Update product metadata & sync variants
+        createdPrismaProduct = await this.prisma.product.update({
+          where: { id: existingProduct.id },
+          data: {
+            titleEn: newProduct.titleEn,
+            titleBn: newProduct.titleBn,
+            publicationState: pubState,
+            categoryId: catId,
+            dermalProtocolEn: metadataString,
+          },
+        });
+
+        // Sync variants
+        await this.prisma.productVariant.deleteMany({
+          where: { productId: existingProduct.id },
+        });
+
+        await this.prisma.productVariant.createMany({
+          data: variants.map((v) => ({
+            productId: existingProduct.id,
+            sku: v.sku,
+            volumeMlG: parseFloat(v.volume) || 50,
+            priceBdt: v.priceBdt,
+            cogsBdt: Math.round(Number(v.priceBdt || 2450) * 0.45),
+            isActive: true,
+          })),
+        });
+      } else {
+        createdPrismaProduct = await this.prisma.product.create({
+          data: {
+            slug: newProduct.slug,
+            categoryId: catId,
+            titleEn: newProduct.titleEn,
+            titleBn: newProduct.titleBn,
+            shortDescriptionEn: dto.shortDescriptionEn || newProduct.titleEn,
+            shortDescriptionBn: dto.shortDescriptionBn || newProduct.titleBn,
+            dermalProtocolEn: metadataString,
+            publicationState: pubState,
+            variants: {
+              create: variants.map((v) => ({
+                sku: v.sku,
+                volumeMlG: parseFloat(v.volume) || 50,
+                priceBdt: v.priceBdt,
+                cogsBdt: Math.round(Number(v.priceBdt || 2450) * 0.45),
+                isActive: true,
+              })),
+            },
+          },
+        });
+      }
 
       if (createdPrismaProduct) {
         newProduct.id = createdPrismaProduct.id;
         this.logger.log(`[Supabase PostgreSQL] Product "${newProduct.titleEn}" saved successfully with ID: ${newProduct.id}!`);
       }
     } catch (err: any) {
-      this.logger.warn(`[Prisma Product Sync Error] ${err?.message || err}`);
+      this.logger.error(`[Prisma Product Sync Error] ${err?.message || err}`);
+      throw new BadRequestException(`Failed to persist formulation in database: ${err?.message || 'Unique constraint error'}`);
     }
 
     // 4. Invalidate Redis distributed cache immediately for zero-downtime updates
@@ -495,18 +570,28 @@ export class CatalogService {
           where: { productId: existing.id },
         });
 
+        const updatedVariantsData: any[] = [];
+        for (let idx = 0; idx < dto.variants.length; idx++) {
+          const v = dto.variants[idx];
+          const volNum = parseFloat(v.volume) || parseFloat(v.volumeMlG) || null;
+          const volStr = v.volume || (volNum ? `${volNum} ML` : '50 ML');
+          let candSku = v.sku;
+          if (!candSku || candSku.startsWith('SYV-PRD') || candSku.length < 5) {
+            candSku = this.generateSmartSku(updatedMeta.brand, dto.titleEn || existing.titleEn, volStr);
+          }
+          const uniqueSku = await this.ensureUniqueSku(candSku);
+          updatedVariantsData.push({
+            productId: existing.id,
+            sku: uniqueSku,
+            volumeMlG: volNum,
+            priceBdt: Number(v.priceBdt) || 0,
+            cogsBdt: Math.round((Number(v.priceBdt) || 0) * 0.45),
+            isActive: true,
+          });
+        }
+
         await this.prisma.productVariant.createMany({
-          data: dto.variants.map((v: any, idx: number) => {
-            const volNum = parseFloat(v.volume) || parseFloat(v.volumeMlG) || null;
-            return {
-              productId: existing.id,
-              sku: v.sku || `SYV-${existing.slug.toUpperCase().slice(0, 8)}-${String(v.volume || idx).replace(/[^a-zA-Z0-9]/g, '')}`,
-              volumeMlG: volNum,
-              priceBdt: Number(v.priceBdt) || 0,
-              cogsBdt: Math.round((Number(v.priceBdt) || 0) * 0.45),
-              isActive: true,
-            };
-          }),
+          data: updatedVariantsData,
         });
       } catch (err: any) {
         this.logger.warn(`[updateProduct Variant Sync Error] ${err?.message || err}`);

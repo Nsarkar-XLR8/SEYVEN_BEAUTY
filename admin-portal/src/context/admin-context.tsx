@@ -73,7 +73,7 @@ interface AdminContextType {
   addCategory: (cat: Omit<AdminCategory, 'id' | 'productCount'>) => Promise<void>;
   deleteCategory: (categoryId: string) => Promise<boolean>;
   products: AdminProduct[];
-  addProduct: (prod: Omit<AdminProduct, 'id' | 'createdAt'>) => void;
+  addProduct: (prod: Omit<AdminProduct, 'id' | 'createdAt'>) => Promise<{ success: boolean; error?: string }>;
   addBulkProducts: (prods: AdminProduct[]) => void;
   updateProduct: (productIdOrSlug: string, updatedFields: Partial<AdminProduct>) => Promise<boolean>;
   updateProductState: (productId: string, state: AdminProduct['state']) => Promise<boolean>;
@@ -920,7 +920,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  const addProduct = async (prod: Omit<AdminProduct, 'id' | 'createdAt'>) => {
+  const addProduct = async (prod: Omit<AdminProduct, 'id' | 'createdAt'>): Promise<{ success: boolean; error?: string }> => {
     const apiUrl = API_BASE_URL;
     try {
       const res = await adminFetch(`${apiUrl}/catalog/products`, {
@@ -939,22 +939,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           safeStorageSet(STORAGE_KEYS.PRODUCTS, JSON.stringify(sanitizeProductsForStorage(updated)));
           return updated;
         });
-        return;
+        return { success: true };
       }
-    } catch (err) {
-      console.warn('[addProduct] Backend sync notice:', err);
-    }
 
-    const newProd: AdminProduct = {
-      ...prod,
-      id: `prod-${Date.now().toString(36)}`,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setProducts((prev) => {
-      const updated = [newProd, ...prev];
-      safeStorageSet(STORAGE_KEYS.PRODUCTS, JSON.stringify(sanitizeProductsForStorage(updated)));
-      return updated;
-    });
+      const errData = await res.json().catch(() => ({}));
+      const errorMsg = errData?.message || 'Failed to save formulation in database';
+      return { success: false, error: Array.isArray(errorMsg) ? errorMsg.join(', ') : String(errorMsg) };
+    } catch (err: any) {
+      console.warn('[addProduct] Backend sync notice:', err);
+      return { success: false, error: err?.message || 'Network error reaching backend' };
+    }
   };
 
   const deleteProduct = async (productId: string): Promise<boolean> => {

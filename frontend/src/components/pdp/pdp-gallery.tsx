@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Maximize2, ShieldCheck, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Maximize2, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface GalleryImage {
   url: string;
@@ -72,12 +72,6 @@ export function PdpGallery({ images, title, routineTag, originCountry }: PdpGall
               IMPORTED // {originCountry}
             </span>
           )}
-        </div>
-
-        {/* Authenticity Guarantee Micro-Pill */}
-        <div className="absolute bottom-4 left-4 z-10 flex items-center space-x-1.5 bg-[#F9F6F0]/90 backdrop-blur-md px-2.5 py-1 text-[8px] uppercase tracking-[0.18em] text-[#1C1917]/80 border border-[#E6DFD5]">
-          <ShieldCheck className="w-3 h-3 text-[#C7A97B]" />
-          <span>100% BSTI & SERIAL VERIFIED</span>
         </div>
 
         {/* Zoom Trigger Button */}

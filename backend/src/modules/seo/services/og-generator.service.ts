@@ -39,10 +39,7 @@ export class OgGeneratorService {
 
     const activeIngredients = ['Authentic Import', 'Clinical Grade', 'The Edit'];
 
-    const bstiText =
-      product.bstiLicenseNumber && product.bstiStatus === 'APPROVED'
-        ? `BSTI CERTIFIED: ${product.bstiLicenseNumber}`
-        : 'BSTI QUALITY TESTED';
+    const bstiText = '100% AUTHENTIC GUARANTEE';
 
     const categoryName = product.category?.nameEn || 'Clinical Dermal Skincare';
 

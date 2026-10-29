@@ -1115,7 +1115,6 @@ export default function AdminCatalogDeskPage() {
                   <th className="p-3.5">Category</th>
                   <th className="p-3.5">SKU Variants</th>
                   <th className="p-3.5">Price Range</th>
-                  <th className="p-3.5">BSTI Status</th>
                   <th className="p-3.5">State</th>
                   <th className="p-3.5 text-right">Actions</th>
                 </tr>
@@ -1144,11 +1143,6 @@ export default function AdminCatalogDeskPage() {
                     <td className="p-3.5 font-mono text-[11px] text-[#1C1917]/70">{getCategoryLabel(p.category)}</td>
                     <td className="p-3.5 font-mono">{p.variantsCount} active</td>
                     <td className="p-3.5 font-mono font-semibold">{p.priceRangeBdt}</td>
-                    <td className="p-3.5">
-                      <span className="text-[10px] font-mono text-emerald-800 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
-                        BSTI Approved
-                      </span>
-                    </td>
                     <td className="p-3.5">
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${

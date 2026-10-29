@@ -132,7 +132,7 @@ export default function AboutPage() {
               </p>
             </div>
             <span className="text-[9px] uppercase tracking-[0.22em] text-[#8C6D3B] font-mono pt-3 border-t border-[#E6DFD5]/70 block">
-              BSTI CERTIFIED COMPLIANCE
+              AUTHENTIC DIRECT IMPORT
             </span>
           </div>
 

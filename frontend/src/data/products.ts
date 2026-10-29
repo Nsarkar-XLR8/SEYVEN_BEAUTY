@@ -112,12 +112,29 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
     : String(raw.category || '');
   const catLower = categoryStr.toLowerCase();
 
-  // Multi-size variants mapping - strictly dynamic
+  // Multi-size variants mapping - strictly dynamic (Supporting both ML and G)
   let variants: ProductVariant[] = [];
   if (Array.isArray(raw.variants) && raw.variants.length > 0) {
     variants = raw.variants.map((v: any, idx: number) => {
-      const volNum = v.volumeMlG ? parseFloat(String(v.volumeMlG)) : null;
-      const volStr = v.volume || (volNum ? `${volNum} ML` : (v.volumeMl ? `${v.volumeMl} ML` : ''));
+      let volStr = v.volume;
+      if (!volStr) {
+        const volNum = v.volumeMlG ? parseFloat(String(v.volumeMlG)) : null;
+        // Check unit from raw.volume or SKU
+        const rawUnitMatch = vol ? String(vol).match(/\b(G|GM|GRAMS?|ML|L|OZ)\b/i) : null;
+        let detectedUnit = rawUnitMatch ? rawUnitMatch[0].toUpperCase() : null;
+        if (!detectedUnit && v.sku) {
+          const skuMatch = String(v.sku).match(/(?:-|_|\b)(\d+(?:\.\d+)?)\s*(G|GM|ML|OZ)(?:-|_|\b)/i);
+          if (skuMatch) detectedUnit = skuMatch[2].toUpperCase().startsWith('G') ? 'G' : skuMatch[2].toUpperCase();
+        }
+        if (!detectedUnit) {
+          const title = String(raw.titleEn || '').toLowerCase();
+          if (title.includes('stick') || title.includes('balm') || title.includes('bar ') || title.includes('powder')) {
+            detectedUnit = 'G';
+          }
+        }
+        if (!detectedUnit) detectedUnit = 'ML';
+        volStr = volNum ? `${volNum} ${detectedUnit}` : (v.volumeMl ? `${v.volumeMl} ML` : vol || '');
+      }
       const displayTitle = v.titleEn || volStr || (vol ? `${vol}` : `Edition ${idx + 1}`);
       return {
         id: v.id || `var-${raw.id || raw.slug}-${idx}`,
@@ -139,7 +156,7 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
         sku: raw.sku || `SYV-${(raw.slug || 'SKU').toUpperCase().slice(0, 10)}`,
         titleEn: fallbackVol,
         titleBn: fallbackVol,
-        volume: vol,
+        volume: vol || variants[0]?.volume || '',
         priceBdt: singlePrice,
         inStock: true,
         stockCount: 25,
@@ -324,7 +341,7 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
     purposeTagBn: raw.purposeTagBn || raw.purposeTagEn || 'ক্লিনিক্যাল ডার্মাল কেয়ার',
     subtitleEn: raw.shortDescriptionEn || raw.dermalStoryEn || `Certified genuine formulation by ${rawBrand}. Direct batch verification.`,
     subtitleBn: raw.shortDescriptionBn || raw.dermalStoryBn || `${rawBrand} এর আসল ও পরীক্ষিত ফর্মুলেশন। সরাসরি আমদানিকৃত।`,
-    volume: vol,
+    volume: vol || variants[0]?.volume || '',
     priceBdt: primaryPrice,
     stockStatus: 'IN_STOCK',
     availableStock: 35,

@@ -135,6 +135,62 @@ export class CatalogService {
     return { success: true, message: `Category "${category.nameEn}" successfully deleted.` };
   }
 
+  private resolveVariantVolume(
+    v: any,
+    idx: number,
+    meta: any,
+    productTitle?: string,
+  ): string {
+    // 1. If variant explicitly has a formatted volume string (e.g. "20 G" or "50 ML")
+    if (v.volume && typeof v.volume === 'string' && v.volume.trim()) {
+      return v.volume.trim();
+    }
+
+    // 2. Check meta.variants matching by SKU, ID, or index
+    if (Array.isArray(meta?.variants) && meta.variants.length > 0) {
+      const metaVar = meta.variants.find((mv: any) => mv && (mv.sku === v.sku || mv.id === v.id)) || meta.variants[idx];
+      if (metaVar?.volume && typeof metaVar.volume === 'string' && metaVar.volume.trim()) {
+        return metaVar.volume.trim();
+      }
+    }
+
+    // 3. Check SKU for explicit unit (e.g. SYV-SKIN10-SMCH-20G-USM9 -> 20 G)
+    const sku = String(v.sku || '');
+    const skuUnitMatch = sku.match(/(?:-|_|\b)(\d+(?:\.\d+)?)\s*(G|GM|GRAMS?|ML|L|OZ)(?:-|_|\b)/i);
+    if (skuUnitMatch) {
+      const unit = skuUnitMatch[2].toUpperCase().startsWith('G') ? 'G' : skuUnitMatch[2].toUpperCase();
+      return `${skuUnitMatch[1]} ${unit}`;
+    }
+
+    // 4. Extract numeric value from volumeMlG
+    const volNum = v.volumeMlG ? parseFloat(String(v.volumeMlG)) : null;
+
+    // 5. Detect unit from meta.volume (e.g. "20 G" -> "G")
+    if (meta?.volume && typeof meta.volume === 'string') {
+      const metaUnitMatch = meta.volume.match(/\b(G|GM|GRAMS?|ML|L|OZ)\b/i);
+      if (metaUnitMatch) {
+        const unit = metaUnitMatch[0].toUpperCase().startsWith('G') ? 'G' : metaUnitMatch[0].toUpperCase();
+        if (volNum) return `${volNum} ${unit}`;
+        return meta.volume;
+      }
+    }
+
+    // 6. Detect from product title (e.g. Sun Stick, Cleansing Bar, Powder, Cream, Balms often measured in G)
+    const title = `${productTitle || ''} ${v.titleEn || ''}`.toLowerCase();
+    const titleMatch = title.match(/(\d+(?:\.\d+)?)\s*(g|gm|grams?|ml)\b/i);
+    if (titleMatch) {
+      const unit = titleMatch[2].toUpperCase().startsWith('G') ? 'G' : 'ML';
+      return `${volNum || titleMatch[1]} ${unit}`;
+    }
+    if (title.includes('stick') || title.includes('balm') || title.includes('bar ') || title.includes('powder')) {
+      if (volNum) return `${volNum} G`;
+    }
+
+    // 7. Default to ML if numeric value exists, or fallback
+    if (volNum) return `${volNum} ML`;
+    return meta?.volume || '50 ML';
+  }
+
   // ---------------- Product Management ----------------
   async listProducts(includeDrafts: boolean = false) {
     const cacheKey = includeDrafts ? this.CACHE_PRODUCTS_ALL : this.CACHE_PRODUCTS_PUBLISHED;
@@ -185,12 +241,11 @@ export class CatalogService {
       const imageUrl = meta?.imageUrl || (Array.isArray(meta?.images) ? meta.images[0] : '') || '';
       const images = Array.isArray(meta?.images) && meta.images.length > 0 ? meta.images : (imageUrl ? [imageUrl] : []);
 
-      // Variants mapping: multi-size support (5ml, 15ml, 30ml, 50ml, etc.)
+      // Variants mapping: multi-size support (ML & G: 20 G, 30 ML, 50 ML, 50 G, 100 ML, etc.)
       let variants: any[] = [];
       if (Array.isArray(p.variants) && p.variants.length > 0) {
         variants = p.variants.map((v: any, idx: number) => {
-          const volNum = v.volumeMlG ? parseFloat(String(v.volumeMlG)) : null;
-          const volStr = v.volume || (volNum ? `${volNum} ML` : '50 ML');
+          const volStr = this.resolveVariantVolume(v, idx, meta, p.titleEn);
           return {
             id: v.id || `var-${p.slug}-${idx}`,
             sku: v.sku || `SYV-${p.slug.toUpperCase().slice(0, 8)}-${idx}`,
@@ -203,11 +258,12 @@ export class CatalogService {
           };
         });
       } else {
+        const fallbackVol = this.resolveVariantVolume(firstVariant || {}, 0, meta, p.titleEn);
         variants = [
           {
             id: `var-${p.id || p.slug}`,
             sku: `SYV-${p.slug.toUpperCase().slice(0, 10)}`,
-            volume: firstVariant?.volumeMlG ? `${firstVariant.volumeMlG} ML` : '50 ML',
+            volume: fallbackVol,
             priceBdt: firstVariant ? Number(firstVariant.priceBdt) : 2450,
             inStock: true,
             stockCount: 50,
@@ -218,6 +274,7 @@ export class CatalogService {
       const routineStep = meta?.routineStep || (categoryName.toLowerCase().includes('sun') ? 'Sun Defence' : 'Treat & Serum');
       const purposeTagEn = meta?.purposeTagEn || (categoryName.toLowerCase().includes('sun') ? 'SUN DEFENCE // BROAD SPECTRUM' : 'TARGETED SERUM // ACTIVE CARE');
       const purposeTagBn = meta?.purposeTagBn || (categoryName.toLowerCase().includes('sun') ? 'সান প্রোটেকশন ও ফ্লুইড শিল্ড' : 'টার্গেটেড অ্যাক্টিভ সিরাম');
+      const primaryVolume = meta?.volume || variants[0]?.volume || '50 ML';
 
       return {
         id: p.id,
@@ -230,7 +287,7 @@ export class CatalogService {
         priceRangeBdt: firstVariant ? `৳${Number(firstVariant.priceBdt).toLocaleString()}` : '৳2,450',
         imageUrl,
         images,
-        volume: variants[0]?.volume || (firstVariant?.volumeMlG ? `${firstVariant.volumeMlG} ML` : '50 ML'),
+        volume: primaryVolume,
         variants,
         variantsCount: variants.length,
         routineStep,
@@ -414,6 +471,15 @@ export class CatalogService {
     // Metadata payload stored in PostgreSQL dermalProtocolEn column
     const metadataString = JSON.stringify({
       brand: newProduct.brand,
+      volume: newProduct.volume,
+      variants: newProduct.variants.map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        volume: v.volume,
+        priceBdt: v.priceBdt,
+        titleEn: v.titleEn,
+        titleBn: v.titleBn,
+      })),
       imageUrl: newProduct.imageUrl,
       images: newProduct.images,
       routineStep: newProduct.routineStep,
@@ -547,12 +613,26 @@ export class CatalogService {
       } catch {}
     }
 
+    const finalVolume = dto.volume !== undefined
+      ? dto.volume
+      : (Array.isArray(dto.variants) && dto.variants[0]?.volume ? dto.variants[0].volume : existingMeta.volume || '');
+
     const updatedMeta = {
       ...existingMeta,
       brand: dto.brand !== undefined ? String(dto.brand).trim() : existingMeta.brand || 'Curated Formulation',
       imageUrl: dto.imageUrl !== undefined ? dto.imageUrl : existingMeta.imageUrl || '',
       images: Array.isArray(dto.images) && dto.images.length > 0 ? dto.images : existingMeta.images || [],
-      volume: dto.volume !== undefined ? dto.volume : existingMeta.volume || '',
+      volume: finalVolume,
+      variants: Array.isArray(dto.variants) && dto.variants.length > 0
+        ? dto.variants.map((v: any, idx: number) => ({
+            id: v.id || `var-${existing.slug}-${idx}`,
+            sku: v.sku,
+            volume: v.volume || finalVolume,
+            priceBdt: Number(v.priceBdt) || 0,
+            titleEn: v.titleEn || v.volume || finalVolume,
+            titleBn: v.titleBn || v.volume || finalVolume,
+          }))
+        : existingMeta.variants,
       routineStep: dto.routineStep !== undefined ? dto.routineStep : existingMeta.routineStep,
       routinePeriod: dto.routinePeriod !== undefined ? dto.routinePeriod : existingMeta.routinePeriod,
       originCountry: dto.originCountry !== undefined ? dto.originCountry : existingMeta.originCountry,
@@ -561,6 +641,9 @@ export class CatalogService {
       purposeTagBn: dto.purposeTagBn !== undefined ? dto.purposeTagBn : existingMeta.purposeTagBn,
       dermalStoryEn: dto.dermalStoryEn !== undefined ? dto.dermalStoryEn : existingMeta.dermalStoryEn,
       dermalStoryBn: dto.dermalStoryBn !== undefined ? dto.dermalStoryBn : existingMeta.dermalStoryBn,
+      keyActives: dto.keyActives !== undefined ? dto.keyActives : existingMeta.keyActives,
+      fullInci: dto.fullInci !== undefined ? dto.fullInci : existingMeta.fullInci,
+      usageSteps: dto.usageSteps !== undefined ? dto.usageSteps : existingMeta.usageSteps,
     };
 
     // 1. Sync variants in PostgreSQL if provided
@@ -574,7 +657,7 @@ export class CatalogService {
         for (let idx = 0; idx < dto.variants.length; idx++) {
           const v = dto.variants[idx];
           const volNum = parseFloat(v.volume) || parseFloat(v.volumeMlG) || null;
-          const volStr = v.volume || (volNum ? `${volNum} ML` : '50 ML');
+          const volStr = v.volume || this.resolveVariantVolume(v, idx, updatedMeta, dto.titleEn || existing.titleEn);
           let candSku = v.sku;
           if (!candSku || candSku.startsWith('SYV-PRD') || candSku.length < 5) {
             candSku = this.generateSmartSku(updatedMeta.brand, dto.titleEn || existing.titleEn, volStr);
@@ -791,8 +874,7 @@ export class CatalogService {
 
     const variantsWithStock = product.variants.map((v: any, idx: number) => {
       const stock = this.computeCalculatedStock(v);
-      const volNum = v.volumeMlG ? parseFloat(String(v.volumeMlG)) : null;
-      const volStr = v.volume || (volNum ? `${volNum} ML` : (meta?.volume || ''));
+      const volStr = this.resolveVariantVolume(v, idx, meta, product.titleEn);
       return {
         ...v,
         volume: volStr,
@@ -804,9 +886,12 @@ export class CatalogService {
       };
     });
 
+    const primaryVolume = meta?.volume || variantsWithStock[0]?.volume || '';
+
     const result = {
       ...product,
       brand,
+      volume: primaryVolume,
       imageUrl,
       images,
       keyActives: meta?.keyActives || [],

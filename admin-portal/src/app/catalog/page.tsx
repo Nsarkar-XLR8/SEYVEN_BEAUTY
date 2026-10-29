@@ -509,8 +509,13 @@ export default function AdminCatalogDeskPage() {
     setIsProductModalOpen(true);
   };
 
-  const addVariantRow = (volume = '100 ML', defaultPrice = 3500) => {
-    setProdVariants((prev) => [...prev, { volume, priceBdt: defaultPrice }]);
+  const addVariantRow = (volume?: string, defaultPrice = 3500) => {
+    let defaultVol = volume;
+    if (!defaultVol) {
+      const lastVariantVol = prodVariants[prodVariants.length - 1]?.volume || prodVolume || '';
+      defaultVol = lastVariantVol.toUpperCase().includes('G') ? '50 G' : '100 ML';
+    }
+    setProdVariants((prev) => [...prev, { volume: defaultVol, priceBdt: defaultPrice }]);
   };
 
   const removeVariantRow = (idx: number) => {
@@ -1699,23 +1704,38 @@ export default function AdminCatalogDeskPage() {
                           <span>Multi-Size Volume & Pricing Matrix</span>
                         </span>
                         <p className="text-[10px] text-[#1C1917]/60 font-mono mt-0.5">
-                          Add multiple volume editions (e.g. 30 ML, 50 ML, 100 ML) with separate BDT selling prices.
+                          Add multiple volume editions (e.g. 30 ML, 50 ML, 20 G, 50 G) with separate BDT selling prices.
                         </p>
                       </div>
 
                       {/* Quick Add Size Buttons */}
-                      <div className="flex flex-wrap items-center gap-1">
-                        <span className="text-[9px] text-[#1C1917]/60 font-mono uppercase">Quick Add:</span>
-                        {['30 ML', '50 ML', '60 ML', '100 ML', '150 ML', '200 ML'].map((size) => (
-                          <button
-                            key={size}
-                            type="button"
-                            onClick={() => addVariantRow(size, 2500)}
-                            className="px-2 py-0.5 bg-white border border-[#E6DFD5] hover:border-[#C7A97B] text-[#1C1917] text-[9px] font-mono rounded transition-colors cursor-pointer"
-                          >
-                            + {size}
-                          </button>
-                        ))}
+                      <div className="flex flex-col sm:items-end gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="text-[9px] text-[#C7A97B] font-mono font-bold uppercase">ML (Liquid):</span>
+                          {['30 ML', '50 ML', '60 ML', '100 ML', '150 ML', '200 ML'].map((size) => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => addVariantRow(size, 2500)}
+                              className="px-2 py-0.5 bg-white border border-[#E6DFD5] hover:border-[#C7A97B] text-[#1C1917] text-[9px] font-mono rounded transition-colors cursor-pointer"
+                            >
+                              + {size}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="text-[9px] text-amber-800 font-mono font-bold uppercase">G (Sticks/Creams):</span>
+                          {['15 G', '20 G', '30 G', '50 G', '75 G', '100 G'].map((size) => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => addVariantRow(size, 2500)}
+                              className="px-2 py-0.5 bg-amber-50/70 border border-amber-200 hover:border-[#C7A97B] text-amber-900 text-[9px] font-mono rounded transition-colors cursor-pointer font-medium"
+                            >
+                              + {size}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
@@ -1738,7 +1758,7 @@ export default function AdminCatalogDeskPage() {
                                 required
                                 value={v.volume}
                                 onChange={(e) => updateVariantRow(idx, 'volume', e.target.value)}
-                                placeholder="e.g. 50 ML"
+                                placeholder="e.g. 50 ML or 20 G"
                                 className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono text-[#1C1917] focus:border-[#C7A97B] focus:outline-none"
                               />
                             </div>
@@ -1779,7 +1799,7 @@ export default function AdminCatalogDeskPage() {
 
                     <button
                       type="button"
-                      onClick={() => addVariantRow('100 ML', 3500)}
+                      onClick={() => addVariantRow()}
                       className="w-full py-2 border-2 border-dashed border-[#C7A97B]/50 hover:border-[#C7A97B] text-[#8C6D3B] hover:text-[#1C1917] text-xs font-mono font-medium rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer bg-white"
                     >
                       <Plus className="w-4 h-4 text-[#C7A97B]" />

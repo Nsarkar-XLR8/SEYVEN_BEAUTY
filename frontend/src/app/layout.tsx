@@ -58,6 +58,42 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': 'https://theseyven.com/#website',
+      url: 'https://theseyven.com',
+      name: 'SEYVEN — The Sanctuary of Beauty',
+      description: 'Complimentary Skincare & Dermal Problem Consultation & 100% Authentic Imported Skincare in Bangladesh',
+      inLanguage: ['en-BD', 'bn-BD'],
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: 'https://theseyven.com/catalog?q={search_term_string}',
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': 'https://theseyven.com/#organization',
+      name: 'SEYVEN — The Sanctuary of Beauty',
+      url: 'https://theseyven.com',
+      logo: 'https://theseyven.com/apple-icon.png',
+      sameAs: [
+        'https://www.facebook.com/officialseyven',
+        'https://www.instagram.com/officialseyven',
+      ],
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'Customer Support & Dermal Consultation via Facebook Messenger',
+        areaServed: 'BD',
+        availableLanguage: ['English', 'Bengali'],
+      },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -71,6 +107,10 @@ export default function RootLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
       </head>
       <body className="min-h-screen flex flex-col bg-[#F9F6F0] text-[#1C1917]">

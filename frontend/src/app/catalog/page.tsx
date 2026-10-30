@@ -35,6 +35,15 @@ export default function CatalogPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // 0. Sync URL category parameter if present (?category=sunscreen)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get('category') || params.get('cat');
+      if (catParam) {
+        setSelectedFilter(catParam);
+      }
+    }
+
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
 
     // 1. Fetch Categories (resilient internal Next.js API route first, then backend fallback)
@@ -68,61 +77,72 @@ export default function CatalogPage() {
     return remoteProducts;
   }, [remoteProducts]);
 
-  // Dynamic luxury category navigation options
+  // 100% Dynamic luxury category navigation options (Derived strictly from Admin & Database)
   const filterOptions = useMemo(() => {
     const base = [{ id: 'ALL', labelEn: 'ALL FORMULATIONS', labelBn: 'সকল প্রোডাক্ট' }];
+    const seen = new Set<string>();
+
+    // 1. Primary: Use categories fetched from Admin DB
     if (remoteCategories.length > 0) {
       remoteCategories.forEach((c) => {
-        base.push({
-          id: c.slug || c.id,
-          labelEn: (c.nameEn || c.slug || '').toUpperCase(),
-          labelBn: c.nameBn || c.nameEn,
-        });
+        const id = c.slug || c.id;
+        if (id && !seen.has(id.toLowerCase())) {
+          seen.add(id.toLowerCase());
+          base.push({
+            id,
+            labelEn: (c.nameEn || c.slug || '').toUpperCase(),
+            labelBn: c.nameBn || c.nameEn,
+          });
+        }
       });
       return base;
     }
-    return [
-      { id: 'ALL', labelEn: 'ALL FORMULATIONS', labelBn: 'সকল প্রোডাক্ট' },
-      { id: 'sun-protection', labelEn: 'SUN DEFENCE (SPF50+)', labelBn: 'সানস্ক্রিন' },
-      { id: 'targeted-serums', labelEn: 'SERUMS & ESSENCES', labelBn: 'সিরাম ও এসেন্স' },
-      { id: 'calming-toners', labelEn: 'CALMING TONERS', labelBn: 'সুদিং টোনার' },
-      { id: 'barrier-creams', labelEn: 'BARRIER RECOVERY', labelBn: 'ব্যারিয়ার ক্রিম' },
-      { id: 'gentle-cleansers', labelEn: 'GENTLE CLEANSERS', labelBn: 'ক্লিনজার' },
-    ];
-  }, [remoteCategories]);
+
+    // 2. Secondary (Instant self-healing): If category API is delayed, auto-extract from loaded products
+    if (allProducts.length > 0) {
+      allProducts.forEach((p) => {
+        const rawCat = (p as any).category;
+        const catName = typeof rawCat === 'object' && rawCat ? (rawCat.nameEn || rawCat.slug) : String(rawCat || '');
+        const catSlug = typeof rawCat === 'object' && rawCat ? (rawCat.slug || rawCat.id) : catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        if (catName && catName !== 'Curated Formulation' && !seen.has(catSlug.toLowerCase())) {
+          seen.add(catSlug.toLowerCase());
+          base.push({
+            id: catSlug,
+            labelEn: catName.toUpperCase(),
+            labelBn: catName,
+          });
+        }
+      });
+      return base;
+    }
+
+    // 3. Fallback during initial load: Return ONLY 'ALL FORMULATIONS' (Zero static fake categories)
+    return base;
+  }, [remoteCategories, allProducts]);
 
   // High-performance search & category filtering
   const filteredProducts = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    const filterKey = selectedFilter.toLowerCase();
 
     return allProducts.filter((p) => {
-      // 1. Category Matching
+      // 1. Dynamic Category Matching (Strictly matches admin-assigned category)
       if (selectedFilter !== 'ALL') {
-        const step = (p.routineStep || '').toLowerCase();
-        const purpose = (p.purposeTagEn || '').toLowerCase();
-        const tag = (p.routineTag || '').toLowerCase();
-        const slug = (p.slug || '').toLowerCase();
-        const cat = (typeof (p as any).category === 'object'
-          ? (p as any).category?.nameEn || (p as any).category?.slug
-          : (p as any).category || '').toLowerCase();
-        const brand = (p.brand || '').toLowerCase();
-        const title = (p.titleEn || '').toLowerCase();
+        const filterKey = selectedFilter.toLowerCase();
+        const rawCat = (p as any).category;
+        const catName = (typeof rawCat === 'object' && rawCat
+          ? rawCat.nameEn || rawCat.slug || ''
+          : String(rawCat || '')).toLowerCase();
+        const catSlug = (typeof rawCat === 'object' && rawCat
+          ? rawCat.slug || rawCat.id || ''
+          : catName.replace(/[^a-z0-9]+/g, '-')).toLowerCase();
+        const catId = (typeof rawCat === 'object' && rawCat ? rawCat.id : '').toLowerCase();
 
         const matchesCategory =
-          step.includes(filterKey) ||
-          purpose.includes(filterKey) ||
-          tag.includes(filterKey) ||
-          slug.includes(filterKey) ||
-          cat.includes(filterKey) ||
-          brand.includes(filterKey) ||
-          title.includes(filterKey) ||
-          filterKey.includes(step) ||
-          (filterKey.includes('sun') && (cat.includes('sun') || step.includes('sun') || title.includes('sun') || title.includes('spf'))) ||
-          (filterKey.includes('serum') && (cat.includes('serum') || step.includes('serum') || step.includes('treat') || title.includes('serum'))) ||
-          ((filterKey.includes('barrier') || filterKey.includes('cream') || filterKey.includes('moistur')) && (cat.includes('barrier') || cat.includes('cream') || cat.includes('moistur') || step.includes('moistur'))) ||
-          (filterKey.includes('ton') && (cat.includes('ton') || step.includes('tone') || title.includes('toner') || title.includes('essence'))) ||
-          (filterKey.includes('cleanse') && (cat.includes('cleanse') || step.includes('cleanse') || title.includes('cleanse')));
+          catSlug === filterKey ||
+          catName === filterKey ||
+          (catId && catId === filterKey) ||
+          catName.includes(filterKey) ||
+          filterKey.includes(catName);
 
         if (!matchesCategory) return false;
       }
@@ -260,24 +280,32 @@ export default function CatalogPage() {
       <div className="space-y-4">
         <div className="border-b border-[#E6DFD5]/80">
           <div className="flex items-center sm:justify-center overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden space-x-6 sm:space-x-8 px-2 sm:px-0 scroll-smooth">
-            {filterOptions.map((filter) => {
-              const isActive = selectedFilter === filter.id;
-              return (
-                <button
-                  key={filter.id}
-                  type="button"
-                  onClick={() => handleFilterChange(filter.id)}
-                  className={`shrink-0 py-3 text-[10px] sm:text-[11px] uppercase tracking-[0.22em] sm:tracking-[0.25em] transition-all duration-300 relative ${
-                    isActive ? 'text-[#1C1917] font-semibold' : 'text-[#1C1917]/45 hover:text-[#1C1917] font-normal'
-                  }`}
-                >
-                  <span>{lang === 'bn' ? filter.labelBn : filter.labelEn}</span>
-                  {isActive && (
-                    <span className="absolute bottom-0 inset-x-0 h-[2px] bg-[#1C1917] rounded-full transition-all" />
-                  )}
-                </button>
-              );
-            })}
+            {isLoading && filterOptions.length <= 1 ? (
+              <div className="flex items-center sm:justify-center space-x-6 sm:space-x-8 py-3 animate-pulse">
+                <div className="h-3.5 w-28 bg-[#E6DFD5]/60" />
+                <div className="h-3.5 w-24 bg-[#E6DFD5]/40" />
+                <div className="h-3.5 w-32 bg-[#E6DFD5]/40" />
+              </div>
+            ) : (
+              filterOptions.map((filter) => {
+                const isActive = selectedFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => handleFilterChange(filter.id)}
+                    className={`shrink-0 py-3 text-[10px] sm:text-[11px] uppercase tracking-[0.22em] sm:tracking-[0.25em] transition-all duration-300 relative ${
+                      isActive ? 'text-[#1C1917] font-semibold' : 'text-[#1C1917]/45 hover:text-[#1C1917] font-normal'
+                    }`}
+                  >
+                    <span>{lang === 'bn' ? filter.labelBn : filter.labelEn}</span>
+                    {isActive && (
+                      <span className="absolute bottom-0 inset-x-0 h-[2px] bg-[#1C1917] rounded-full transition-all" />
+                    )}
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
 

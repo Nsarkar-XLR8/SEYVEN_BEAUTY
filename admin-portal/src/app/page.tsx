@@ -9,7 +9,6 @@ import {
   Truck,
   ArrowUpRight,
   PhoneCall,
-  Crown,
   PackageCheck,
   CheckCircle2,
   Clock,
@@ -121,20 +120,20 @@ export default function AdminOverviewPage() {
           <ArrowUpRight className="w-4 h-4 text-[#1C1917]/30 group-hover:text-[#C7A97B] absolute bottom-3 right-3 transition-colors" />
         </Link>
 
-        {/* KPI 4: Delivered Revenue & Tier Elevation */}
+        {/* KPI 4: Delivered Revenue & Settled Purchases */}
         <Link
-          href="/loyalty"
+          href="/orders"
           className="p-5 bg-white border border-[#E6DFD5] hover:border-[#C7A97B] transition-all rounded-lg space-y-2 group relative shadow-xs"
         >
           <div className="flex items-center justify-between text-xs text-[#1C1917]/60 font-mono">
             <span className="uppercase tracking-wider text-[10px]">Settled Net Purchases</span>
-            <Crown className="w-4 h-4 text-[#C7A97B] group-hover:scale-110 transition-transform" />
+            <CheckCircle2 className="w-4 h-4 text-[#C7A97B] group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-2xl font-sans font-bold text-[#1C1917] tabular-nums tracking-tight">
             {formatBdt(totalDeliveredRevenue > 0 ? totalDeliveredRevenue : 43750)}
           </div>
           <span className="text-[11px] text-emerald-800 font-mono block">
-            Active Tier Discounts Honored (5%/8%/10%)
+            Delivered & Paid Orders
           </span>
           <ArrowUpRight className="w-4 h-4 text-[#1C1917]/30 group-hover:text-[#C7A97B] absolute bottom-3 right-3 transition-colors" />
         </Link>

@@ -86,13 +86,6 @@ export class AuthService {
       },
     });
 
-    await this.prisma.loyaltyAccount.create({
-      data: {
-        userId: user.id,
-        tier: 'BRONZE',
-      },
-    });
-
     const tokens = await this.tokenService.generateTokens(user.id, user.phone, user.role);
 
     return {
@@ -195,14 +188,6 @@ export class AuthService {
           phone: normalizedPhone,
           role: UserRole.CUSTOMER,
           isPhoneVerified: true,
-        },
-      });
-
-      // Initialize loyalty account for new customer
-      await this.prisma.loyaltyAccount.create({
-        data: {
-          userId: user.id,
-          tier: 'BRONZE',
         },
       });
     } else if (!user.isPhoneVerified) {

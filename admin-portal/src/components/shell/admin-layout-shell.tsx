@@ -10,7 +10,6 @@ import {
   Sparkles,
   Printer,
   Truck,
-  Crown,
   LogOut,
   Mail,
   Menu,
@@ -70,12 +69,6 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
       href: '/dispatch',
       icon: Truck,
       allowedRoles: ['SUPER_ADMIN', 'FULFILLMENT_OPERATOR'],
-    },
-    {
-      name: 'Client Tiers & Loyalty',
-      href: '/loyalty',
-      icon: Crown,
-      allowedRoles: ['SUPER_ADMIN', 'CATALOG_MANAGER', 'FINANCE_OFFICER'],
     },
     {
       name: 'Campaigns & Newsletter',

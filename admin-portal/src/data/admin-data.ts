@@ -4,8 +4,6 @@ import {
   QRBatch,
   ScanAnomaly,
   RedirectRule,
-  TierConfig,
-  ClientSpendRecord,
   AdminCategory,
   AdminProduct,
 } from '../types/admin';
@@ -97,72 +95,5 @@ export const INITIAL_REDIRECTS: RedirectRule[] = [
     isActive: true,
     notes: 'Legacy SEO URL 301 redirect',
     createdAt: '2026-10-10',
-  },
-];
-
-export const INITIAL_TIERS: TierConfig[] = [
-  {
-    id: 'bronze',
-    name: 'Sanctuary Patron',
-    thresholdBdt: 0,
-    discountPercent: 0,
-    descriptionEn: 'Standard luxury concierge and guaranteed authentic international imports.',
-  },
-  {
-    id: 'silver',
-    name: 'Silver Privilege',
-    thresholdBdt: 5000,
-    discountPercent: 5,
-    descriptionEn: 'Automatic 5% courtesy discount on all future orders & priority warehouse packaging.',
-  },
-  {
-    id: 'gold',
-    name: 'Gold Privilege',
-    thresholdBdt: 10000,
-    discountPercent: 8,
-    descriptionEn: 'Automatic 8% courtesy discount, personal skincare advisory & WhatsApp concierge.',
-  },
-  {
-    id: 'noir',
-    name: 'Noir Atelier',
-    thresholdBdt: 20000,
-    discountPercent: 10,
-    descriptionEn: 'Automatic 10% maximum lifetime courtesy discount, bespoke skincare gifts & private collection previews.',
-  },
-];
-
-export const INITIAL_CLIENT_SPEND_RECORDS: ClientSpendRecord[] = [
-  {
-    id: 'cl-01',
-    name: 'Farah Rahman',
-    phone: '01712-345678',
-    email: 'farah.rahman@example.com',
-    deliveredOrdersCount: 6,
-    cumulativeSpendBdt: 24500,
-    currentTier: 'Noir Atelier',
-    discountPercent: 10,
-    lastMilestoneEmailAt: '2026-10-15 14:32 BST',
-  },
-  {
-    id: 'cl-02',
-    name: 'Nusrat Jahan',
-    phone: '01819-876543',
-    email: 'nusrat.jahan@gmail.com',
-    deliveredOrdersCount: 4,
-    cumulativeSpendBdt: 12450,
-    currentTier: 'Gold Privilege',
-    discountPercent: 8,
-    lastMilestoneEmailAt: '2026-10-12 11:20 BST',
-  },
-  {
-    id: 'cl-03',
-    name: 'Sadia Islam',
-    phone: '01911-223344',
-    email: 'sadia.islam@yahoo.com',
-    deliveredOrdersCount: 2,
-    cumulativeSpendBdt: 6800,
-    currentTier: 'Silver Privilege',
-    discountPercent: 5,
-    lastMilestoneEmailAt: '2026-09-28 17:45 BST',
   },
 ];

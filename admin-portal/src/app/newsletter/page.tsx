@@ -440,7 +440,7 @@ export default function AdminNewsletterPage() {
                     className="w-full text-xs p-2.5 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:outline-none focus:border-[#C7A97B]"
                   >
                     <option value="ALL_SUBSCRIBERS">All Active Newsletter Subscribers ({activeCount} recipients)</option>
-                    <option value="VIP_CUSTOMERS">Sanctuary VIP & Loyalty Members</option>
+                    <option value="VIP_CUSTOMERS">Sanctuary Returning & VIP Clients</option>
                     <option value="ALL_CUSTOMERS">All Registered Clients with Verified Email</option>
                   </select>
                 </div>

@@ -99,26 +99,6 @@ export interface RedirectRule {
   createdAt: string;
 }
 
-export interface TierConfig {
-  id: string;
-  name: string;
-  thresholdBdt: number;
-  discountPercent: number;
-  descriptionEn: string;
-}
-
-export interface ClientSpendRecord {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  deliveredOrdersCount: number;
-  cumulativeSpendBdt: number;
-  currentTier: string;
-  discountPercent: number;
-  lastMilestoneEmailAt: string | null;
-}
-
 export interface AdminCategory {
   id: string;
   nameEn: string;

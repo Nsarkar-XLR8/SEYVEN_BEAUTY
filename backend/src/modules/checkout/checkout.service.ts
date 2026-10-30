@@ -12,7 +12,6 @@ import { OutboxPublisher } from '../../common/database/outbox/outbox.service';
 import { PhoneUtils } from '../../common/utils/phone.utils';
 import { CartService } from '../cart/cart.service';
 import { PromotionsService } from '../promotions/promotions.service';
-import { InventoryReservationService } from '../inventory/services/inventory-reservation.service';
 import { GeoZoneService } from './services/geo-zone.service';
 import { ResendEmailService } from '../auth/services/resend-email.service';
 import { TelegramNotificationService } from '../notifications/services/telegram-notification.service';
@@ -39,7 +38,6 @@ export class CheckoutService {
     private readonly outboxPublisher: OutboxPublisher,
     private readonly cartService: CartService,
     private readonly promotionsService: PromotionsService,
-    private readonly inventoryReservationService: InventoryReservationService,
     private readonly geoZoneService: GeoZoneService,
     @Optional() private readonly resendEmailService?: ResendEmailService,
     @Optional() private readonly telegramNotificationService?: TelegramNotificationService,
@@ -358,22 +356,7 @@ export class CheckoutService {
         this.logger.warn(`Database transaction failed or offline during checkout commit: ${(dbErr as Error).message}`);
       }
 
-      // 8. Reserve Physical Inventory Lots
-      try {
-        await this.inventoryReservationService.reserve({
-          items: cart.items.map((i) => ({
-            variantId: i.variantId,
-            quantity: i.quantity,
-          })),
-          cartId: cart.cartId,
-          userId: userId || undefined,
-          ttlSeconds: 15 * 60, // 15 mins holding TTL
-        });
-      } catch (resErr) {
-        this.logger.warn(`Inventory reservation notice: ${(resErr as Error).message}`);
-      }
-
-      // 9. Clear Cart session
+      // 8. Clear Cart session
       await this.cartService.clearCart(userId, dto.guestToken);
 
       const commitResult: CheckoutCommitResult = {

@@ -10,8 +10,6 @@ import {
   QRBatch,
   ScanAnomaly,
   RedirectRule,
-  TierConfig,
-  ClientSpendRecord,
   AdminCategory,
   AdminProduct,
 } from '../types/admin';
@@ -23,8 +21,6 @@ import {
   INITIAL_QR_BATCHES,
   INITIAL_ANOMALIES,
   INITIAL_REDIRECTS,
-  INITIAL_TIERS,
-  INITIAL_CLIENT_SPEND_RECORDS,
 } from '../data/admin-data';
 import { API_BASE_URL } from '@/lib/api-config';
 
@@ -87,12 +83,6 @@ interface AdminContextType {
   anomalies: ScanAnomaly[];
   resolveAnomaly: (id: string, notes?: string) => void;
 
-  // Tiers & Loyalty
-  tiers: TierConfig[];
-  updateTier: (id: string, field: 'thresholdBdt' | 'discountPercent', value: number) => void;
-  clientSpendRecords: ClientSpendRecord[];
-  triggerMilestoneEmail: (clientId: string) => void;
-
   // Site Redirects & Edge Cache
   redirects: RedirectRule[];
   addRedirect: (source: string, dest: string, code: 301 | 302, notes: string) => void;
@@ -114,7 +104,6 @@ const STORAGE_KEYS = {
   QR_BATCHES: 'seyven_admin_qr_batches_v3',
   ANOMALIES: 'seyven_admin_anomalies_v3',
   REDIRECTS: 'seyven_admin_redirects_v3',
-  TIERS: 'seyven_admin_tiers_v3',
   PURGED: 'seyven_admin_cache_purged_v3',
 };
 
@@ -303,8 +292,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [qrBatches, setQrBatches] = useState<QRBatch[]>(INITIAL_QR_BATCHES);
   const [anomalies, setAnomalies] = useState<ScanAnomaly[]>(INITIAL_ANOMALIES);
   const [redirects, setRedirects] = useState<RedirectRule[]>(INITIAL_REDIRECTS);
-  const [tiers, setTiers] = useState<TierConfig[]>(INITIAL_TIERS);
-  const [clientSpendRecords, setClientSpendRecords] = useState<ClientSpendRecord[]>(INITIAL_CLIENT_SPEND_RECORDS);
   const [lastPurgedAt, setLastPurgedAt] = useState<string | null>(null);
   const [isSyncingOrders, setIsSyncingOrders] = useState(false);
 
@@ -459,9 +446,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
             }
           } catch {}
         }
-
-        const savedTiers = localStorage.getItem(STORAGE_KEYS.TIERS);
-        if (savedTiers) setTiers(JSON.parse(savedTiers));
 
         // Initial live sync directly from PostgreSQL database
         await Promise.allSettled([refreshCatalog(), refreshOrders()]);
@@ -1100,28 +1084,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  // Tiers & Loyalty
-  const updateTier = (id: string, field: 'thresholdBdt' | 'discountPercent', value: number) => {
-    setTiers((prev) => {
-      const updated = prev.map((t) => (t.id === id ? { ...t, [field]: value } : t));
-      safeStorageSet(STORAGE_KEYS.TIERS, JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  const triggerMilestoneEmail = (clientId: string) => {
-    setClientSpendRecords((prev) =>
-      prev.map((c) =>
-        c.id === clientId
-          ? {
-              ...c,
-              lastMilestoneEmailAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' BST',
-            }
-          : c
-      )
-    );
-  };
-
   // Site Redirects & Edge Cache
   const addRedirect = (source: string, dest: string, code: 301 | 302, notes: string) => {
     const newRule: RedirectRule = {
@@ -1182,10 +1144,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         generateQRBatch,
         anomalies,
         resolveAnomaly,
-        tiers,
-        updateTier,
-        clientSpendRecords,
-        triggerMilestoneEmail,
         redirects,
         addRedirect,
         toggleRedirect,

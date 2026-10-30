@@ -6,7 +6,6 @@ import { RedlockService } from '../../common/redis/redlock.service';
 import { OutboxPublisher } from '../../common/database/outbox/outbox.service';
 import { CartService } from '../cart/cart.service';
 import { PromotionsService } from '../promotions/promotions.service';
-import { InventoryReservationService } from '../inventory/services/inventory-reservation.service';
 import { GeoZoneService } from './services/geo-zone.service';
 import { BadRequestException } from '@nestjs/common';
 import { PaymentGatewayOption } from './dto/checkout.dto';
@@ -102,7 +101,6 @@ describe('CheckoutService', () => {
         { provide: OutboxPublisher, useValue: mockOutbox },
         { provide: CartService, useValue: mockCartService },
         { provide: PromotionsService, useValue: mockPromoService },
-        { provide: InventoryReservationService, useValue: mockInventoryRes },
       ],
     }).compile();
 
@@ -112,7 +110,6 @@ describe('CheckoutService', () => {
     redlock = module.get<RedlockService>(RedlockService);
     cartService = module.get<CartService>(CartService);
     promoService = module.get<PromotionsService>(PromotionsService);
-    inventoryResService = module.get<InventoryReservationService>(InventoryReservationService);
     jest.clearAllMocks();
   });
 

@@ -40,6 +40,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://theseyven.com',
   },
+  verification: {
+    google: 'AH5hXxhOmon4hXqP9yEqSM2gexxkxkT2thyXdFTmho4',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

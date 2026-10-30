@@ -326,11 +326,13 @@ export function Footer() {
           {/* Legal Disclosures & Compliance (Matches Gucci Screenshot Typography) */}
           <div className="space-y-1 text-xs text-[#8E8B85] font-normal leading-relaxed pt-2">
             <p>
-              © 2026 SEYVEN Beauty Sanctuary Ltd. - All rights reserved. DBID # {BRAND.corporate.dbid}
+              © 2026 SEYVEN Beauty Sanctuary Ltd. - All rights reserved.{BRAND.corporate.dbid ? ` DBID # ${BRAND.corporate.dbid}` : ''}
             </p>
-            <p className="text-[11px] text-[#6E6B65]">
-              TRADE LICENCE # {BRAND.corporate.tradeLicense} and VAT BIN # {BRAND.corporate.vatBin}
-            </p>
+            {BRAND.corporate.tradeLicense ? (
+              <p className="text-[11px] text-[#6E6B65]">
+                TRADE LICENCE # {BRAND.corporate.tradeLicense}{BRAND.corporate.vatBin ? ` and VAT BIN # ${BRAND.corporate.vatBin}` : ''}
+              </p>
+            ) : null}
           </div>
 
           {/* ========================================================================= */}

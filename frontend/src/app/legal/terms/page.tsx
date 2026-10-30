@@ -76,7 +76,10 @@ export default function TermsOfServicePage() {
             {t('4. Corporate Disclosures', '৪. কর্পোরেট পরিচিতি')}
           </h2>
           <p>
-            {BRAND.registeredAddress} • DBID: {BRAND.corporate.dbid} • Trade License: {BRAND.corporate.tradeLicense} • VAT BIN: {BRAND.corporate.vatBin}
+            {BRAND.registeredAddress}
+            {BRAND.corporate.dbid ? ` • DBID: ${BRAND.corporate.dbid}` : ''}
+            {BRAND.corporate.tradeLicense ? ` • Trade License: ${BRAND.corporate.tradeLicense}` : ''}
+            {BRAND.corporate.vatBin ? ` • VAT BIN: ${BRAND.corporate.vatBin}` : ''}
           </p>
         </section>
       </div>

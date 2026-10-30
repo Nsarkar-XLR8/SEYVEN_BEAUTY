@@ -16,10 +16,10 @@ export const BRAND = {
   officeHours: '9:00 AM – 9:00 PM BST (Saturday to Thursday)',
   registeredAddress: 'K.B. Saha Road, Amlapara, Chashara Commercial Area, Narayanganj - 1400, Bangladesh',
   corporate: {
-    dbid: 'DBID-982104-2026',
-    tradeLicense: 'TRAD/DSCC/019284/2026',
-    vatBin: '003918204-0101',
-    tin: '782910482910',
+    dbid: '',
+    tradeLicense: '',
+    vatBin: '',
+    tin: '',
   },
   thresholds: {
     freeDeliveryBdt: 3000,

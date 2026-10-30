@@ -340,9 +340,11 @@ export function Header({ onOpenSearch }: HeaderProps) {
                     DIRECT CLIENT CARE · {settings?.supportPhone || BRAND.supportPhone}
                   </p>
                 ) : null}
-                <p className="tracking-[0.05em]">
-                  {BRAND.corporate.vatBin}
-                </p>
+                {BRAND.corporate.vatBin ? (
+                  <p className="tracking-[0.05em]">
+                    {BRAND.corporate.vatBin}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>

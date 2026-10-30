@@ -235,7 +235,7 @@ export class CatalogService {
       const firstVariant = p.variants?.[0];
       const categoryName = p.category
         ? (p.category.nameEn || p.category.slug || 'Curated Formulation')
-        : 'Curated Formulation';
+        : (meta?.category && meta.category !== 'Curated Formulation' ? meta.category : 'Curated Formulation');
 
       const brand = meta?.brand || 'Curated Formulation';
       const imageUrl = meta?.imageUrl || (Array.isArray(meta?.images) ? meta.images[0] : '') || '';
@@ -644,7 +644,37 @@ export class CatalogService {
       keyActives: dto.keyActives !== undefined ? dto.keyActives : existingMeta.keyActives,
       fullInci: dto.fullInci !== undefined ? dto.fullInci : existingMeta.fullInci,
       usageSteps: dto.usageSteps !== undefined ? dto.usageSteps : existingMeta.usageSteps,
+      category: dto.category !== undefined ? dto.category : existingMeta.category,
     };
+
+    // 0. Resolve category relation in PostgreSQL if provided
+    let catIdToUpdate: string | undefined = undefined;
+    const catInput = dto.categoryId || dto.category;
+    if (catInput) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(catInput);
+      const matchingCat = await this.prisma.category.findFirst({
+        where: isUuid
+          ? {
+              OR: [
+                { id: catInput },
+                { nameEn: { equals: catInput, mode: 'insensitive' } },
+                { slug: { equals: catInput.toLowerCase(), mode: 'insensitive' } },
+              ],
+            }
+          : {
+              OR: [
+                { nameEn: { equals: catInput, mode: 'insensitive' } },
+                { slug: { equals: catInput.toLowerCase().replace(/[^a-z0-9]+/g, '-'), mode: 'insensitive' } },
+                { slug: { equals: catInput.toLowerCase(), mode: 'insensitive' } },
+              ],
+            },
+      }).catch(() => null);
+
+      if (matchingCat) {
+        catIdToUpdate = matchingCat.id;
+        updatedMeta.category = matchingCat.nameEn;
+      }
+    }
 
     // 1. Sync variants in PostgreSQL if provided
     if (Array.isArray(dto.variants) && dto.variants.length > 0) {
@@ -689,6 +719,7 @@ export class CatalogService {
         ...(dto.shortDescriptionEn ? { shortDescriptionEn: dto.shortDescriptionEn } : {}),
         ...(dto.shortDescriptionBn ? { shortDescriptionBn: dto.shortDescriptionBn } : {}),
         ...(dto.state ? { publicationState: dto.state } : {}),
+        ...(catIdToUpdate !== undefined ? { categoryId: catIdToUpdate } : {}),
         dermalProtocolEn: JSON.stringify(updatedMeta),
       },
       include: {

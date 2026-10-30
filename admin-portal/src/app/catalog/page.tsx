@@ -585,12 +585,17 @@ export default function AdminCatalogDeskPage() {
       ewgScore: 1,
     }));
 
+    const selectedCategoryObj = categories.find(
+      (c) => c.nameEn === prodCategory || c.id === prodCategory || c.slug === prodCategory
+    );
+
     const productPayload = {
       slug: finalSlug,
       titleEn: prodTitleEn.trim(),
       titleBn: prodTitleBn.trim() || prodTitleEn.trim(),
       brand: finalBrand,
       category: prodCategory,
+      categoryId: selectedCategoryObj?.id,
       purposeTagEn: finalPurpose,
       purposeTagBn: finalPurpose,
       state: 'PUBLISHED' as const,

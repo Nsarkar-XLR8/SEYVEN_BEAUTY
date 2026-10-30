@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../common/database/database.module';
 import { CheckoutModule } from '../checkout/checkout.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { SettingsModule } from '../settings/settings.module';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './services/orders.service';
 import { DispatchDocsService } from './services/dispatch-docs.service';
@@ -13,6 +14,7 @@ import { OrderStateMachine } from './state-machine/order-state-machine';
     DatabaseModule,
     CheckoutModule,
     NotificationsModule,
+    SettingsModule,
   ],
   controllers: [OrdersController],
   providers: [

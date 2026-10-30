@@ -76,13 +76,15 @@ export function RmaRequestView() {
             <span>{t(`CHAT ON ${concierge.shortLabel}`, 'মেসেজ পাঠান')}</span>
           </a>
 
-          <a
-            href={`tel:${supportPhone.replace(/\s+/g, '')}`}
-            className="w-full sm:w-auto px-8 py-3.5 border border-[#1C1917] hover:bg-[#1C1917] hover:text-[#F9F6F0] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all flex items-center justify-center space-x-2"
-          >
-            <Phone className="w-4 h-4 text-[#C7A97B]" />
-            <span>{supportPhone}</span>
-          </a>
+          {supportPhone ? (
+            <a
+              href={`tel:${supportPhone.replace(/\s+/g, '')}`}
+              className="w-full sm:w-auto px-8 py-3.5 border border-[#1C1917] hover:bg-[#1C1917] hover:text-[#F9F6F0] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all flex items-center justify-center space-x-2"
+            >
+              <Phone className="w-4 h-4 text-[#C7A97B]" />
+              <span>{supportPhone}</span>
+            </a>
+          ) : null}
         </div>
       </div>
 

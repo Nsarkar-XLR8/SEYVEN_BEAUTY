@@ -84,7 +84,12 @@ export function OrderTrackerView() {
           paymentMethod: res.paymentGateway === 'COD' ? 'Cash on Delivery (Doorstep)' : res.paymentGateway || 'Card / Mobile Banking',
           courierName: res.courierName || 'Pathao Courier',
           consignmentId: res.trackingCode || res.courierBookingId || 'Assigned on Dispatch',
-          courierTrackingUrl: res.trackingUrl || 'https://merchant.pathao.com/tracking',
+          courierTrackingUrl:
+            res.trackingCode || res.courierBookingId
+              ? (res.trackingUrl && !res.trackingUrl.includes('merchant.pathao.com')
+                  ? res.trackingUrl
+                  : `https://pathao.com/track/?consignment_id=${encodeURIComponent(res.trackingCode || res.courierBookingId)}`)
+              : '',
           currentState: (['PLACED', 'CONFIRMED', 'PACKED', 'DISPATCHED', 'DELIVERED'].includes(res.status)
             ? res.status
             : res.status === 'BOOKED' || res.status === 'SHIPPED'
@@ -144,9 +149,12 @@ export function OrderTrackerView() {
           district: match.district || match.zone || 'Dhaka',
           totalBdt: Number(match.totalAmount || match.totalBdt || 0),
           paymentMethod: match.paymentMethod === 'COD' ? 'Cash on Delivery (Doorstep)' : match.paymentMethod,
-          courierName: 'Pathao Courier Express',
+          courierName: match.courier || 'Pathao Courier Express',
           consignmentId: match.consignmentId || 'Assigned on Dispatch',
-          courierTrackingUrl: 'https://merchant.pathao.com/tracking',
+          courierTrackingUrl:
+            match.consignmentId && match.consignmentId !== 'Assigned on Dispatch'
+              ? (match.courierTrackingUrl || `https://pathao.com/track/?consignment_id=${encodeURIComponent(match.consignmentId)}`)
+              : '',
           currentState: (match.status as any) || 'PLACED',
           timeline: [
             {
@@ -331,18 +339,33 @@ export function OrderTrackerView() {
 
               {/* Courier link */}
               <div className="flex items-center space-x-2 text-xs">
-                <span className="text-[#1C1917]/70 font-medium">
-                  {trackingResult.courierName} ({trackingResult.consignmentId})
-                </span>
-                <a
-                  href={trackingResult.courierTrackingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-1 px-3 py-1 bg-[#1C1917] text-[#F9F6F0] text-[9px] uppercase tracking-wider hover:bg-[#C7A97B] transition-colors"
-                >
-                  <span>LIVE COURIER LINK</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+                {trackingResult.courierTrackingUrl &&
+                trackingResult.consignmentId &&
+                trackingResult.consignmentId !== 'Assigned on Dispatch' ? (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#1C1917]/70 font-medium font-mono text-[11px]">
+                      {trackingResult.courierName}: #{trackingResult.consignmentId}
+                    </span>
+                    <a
+                      href={trackingResult.courierTrackingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1 px-3 py-1 bg-[#1C1917] text-[#F9F6F0] text-[9px] uppercase tracking-wider hover:bg-[#C7A97B] transition-colors"
+                    >
+                      <span>LIVE COURIER LINK</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:items-end text-left sm:text-right">
+                    <span className="text-[#C7A97B] font-medium text-[10px] uppercase tracking-wider">
+                      {trackingResult.courierName} (DOORSTEP)
+                    </span>
+                    <span className="text-[9px] text-[#1C1917]/50 font-mono">
+                      Live tracking activates upon warehouse dispatch
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -488,18 +511,33 @@ export function OrderTrackerView() {
               ? `Hi SEYVEN Concierge! I have a tracking inquiry regarding Order #${trackingResult.orderId}.`
               : 'Hi SEYVEN Concierge! I have an inquiry about my parcel delivery.'
           );
+          if (rawPhone && inquiryUrl) {
+            return (
+              <p className="text-xs text-[#1C1917]/70 flex items-center justify-center space-x-1.5">
+                <Phone className="w-3.5 h-3.5 text-[#C7A97B]" />
+                <a
+                  href={inquiryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline hover:text-[#C7A97B] transition-colors"
+                >
+                  {t(
+                    `Urgent Delivery Inquiry? WhatsApp SEYVEN Concierge: ${rawPhone} ↗`,
+                    `জরুরি ডেলিভারি তথ্যের জন্য হোয়াটসঅ্যাপ কনসিয়ার্জ: ${rawPhone} ↗`
+                  )}
+                </a>
+              </p>
+            );
+          }
           return (
             <p className="text-xs text-[#1C1917]/70 flex items-center justify-center space-x-1.5">
-              <Phone className="w-3.5 h-3.5 text-[#C7A97B]" />
               <a
-                href={inquiryUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`mailto:${BRAND.supportEmail}`}
                 className="hover:underline hover:text-[#C7A97B] transition-colors"
               >
                 {t(
-                  `Urgent Delivery Inquiry? WhatsApp SEYVEN Concierge: ${rawPhone} ↗`,
-                  `জরুরি ডেলিভারি তথ্যের জন্য হোয়াটসঅ্যাপ কনসিয়ার্জ: ${rawPhone} ↗`
+                  `Urgent Delivery Inquiry? Contact SEYVEN Concierge: ${BRAND.supportEmail} ↗`,
+                  `জরুরি ডেলিভারি তথ্যের জন্য যোগাযোগ করুন: ${BRAND.supportEmail} ↗`
                 )}
               </a>
             </p>

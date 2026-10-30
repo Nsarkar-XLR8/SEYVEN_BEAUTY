@@ -207,7 +207,8 @@ export function OrderReceiptDocument({ orderData }: OrderReceiptDocumentProps) {
             SEYVEN
           </p>
           <p className="text-[8.5px]">
-            Customer Care: {BRAND.supportEmail} &bull; {orderData.supportWhatsApp || orderData.supportPhone || BRAND.supportWhatsApp}
+            Customer Care: {BRAND.supportEmail}
+            {(orderData.supportWhatsApp || orderData.supportPhone || BRAND.supportWhatsApp) ? ` • ${orderData.supportWhatsApp || orderData.supportPhone || BRAND.supportWhatsApp}` : ''}
           </p>
           <p className="text-[8px] text-[#1C1917]/50">
             {BRAND.registeredAddress} &bull; www.theseyven.com

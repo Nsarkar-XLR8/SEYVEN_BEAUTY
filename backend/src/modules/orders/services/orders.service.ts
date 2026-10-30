@@ -18,6 +18,7 @@ import { ListOrdersQueryDto } from '../dto/list-orders-query.dto';
 import { AuthUser } from '../../auth/decorators/current-user.decorator';
 import { ResendEmailService } from '../../auth/services/resend-email.service';
 import { TelegramNotificationService } from '../../notifications/services/telegram-notification.service';
+import { SettingsService } from '../../settings/settings.service';
 // Prisma Generated Entities & Enums
 import {
   CallVerificationOutcome,
@@ -40,9 +41,14 @@ export class OrdersService {
     private readonly geoZoneService: GeoZoneService,
     @Optional() private readonly resendEmailService?: ResendEmailService,
     @Optional() private readonly telegramNotificationService?: TelegramNotificationService,
+    @Optional() private readonly settingsService?: SettingsService,
   ) {}
 
   async createDirectOrder(dto: any) {
+    const platformSettings = this.settingsService?.getSettings();
+    const supportPhone = platformSettings?.supportPhone || '';
+    const supportWhatsApp = platformSettings?.supportWhatsApp || '';
+
     const orderId =
       dto.orderId ||
       `SYV-${new Date().toISOString().slice(0, 7).replace('-', '')}-${Math.floor(
@@ -61,6 +67,8 @@ export class OrdersService {
       shippingAddress: dto.address || dto.shippingAddress || 'Dhaka',
       zone: dto.districtName || dto.zone || 'Dhaka Metro',
       district: dto.districtName || dto.district || 'Dhaka',
+      supportPhone,
+      supportWhatsApp,
       items: Array.isArray(dto.items)
         ? dto.items.map((it: any, idx: number) => ({
             id: it.id || `it-${idx}`,
@@ -162,60 +170,67 @@ export class OrdersService {
 
     this.logger.log(`[Direct Order] Processed live order ${orderId} (${newOrder.customerName})`);
 
-    // 3. Dispatch Email Notification to Admin Gmail (configured in backend .env)
-    if (this.resendEmailService) {
-      try {
-        await this.resendEmailService.sendOrderNotificationEmail({
-          orderNumber: newOrder.orderNumber,
-          customerName: newOrder.customerName,
-          customerPhone: newOrder.customerPhone,
-          customerEmail: newOrder.customerEmail,
-          shippingAddress: newOrder.shippingAddress,
-          district: newOrder.district,
-          zone: newOrder.zone,
-          items: newOrder.items,
-          subtotal: newOrder.subtotal,
-          deliveryFee: newOrder.deliveryFee,
-          discount: newOrder.discount,
-          totalAmount: newOrder.totalAmount,
-          paymentMethod: 'COD',
-          status: newOrder.status,
-          createdAt: newOrder.createdAt,
-        });
-      } catch (emailErr: any) {
-        this.logger.warn(`[Order Notification Email Notice] ${emailErr?.message || emailErr}`);
+    // 3. Fast-Path High-Throughput Notification Dispatch (Non-Blocking Fire-and-Forget)
+    // Never block customer checkout HTTP response waiting for external network calls (Resend/Telegram).
+    // This allows Render single-threaded instance to smoothly process 50+ concurrent checkouts without timeouts.
+    setImmediate(async () => {
+      // 3a. Email Notification (Admin Alert & Luxury Customer Receipt)
+      if (this.resendEmailService) {
+        try {
+          await this.resendEmailService.sendOrderNotificationEmail({
+            orderNumber: newOrder.orderNumber,
+            customerName: newOrder.customerName,
+            customerPhone: newOrder.customerPhone,
+            customerEmail: newOrder.customerEmail,
+            shippingAddress: newOrder.shippingAddress,
+            district: newOrder.district,
+            zone: newOrder.zone,
+            items: newOrder.items,
+            subtotal: newOrder.subtotal,
+            deliveryFee: newOrder.deliveryFee,
+            discount: newOrder.discount,
+            totalAmount: newOrder.totalAmount,
+            paymentMethod: 'COD',
+            status: newOrder.status,
+            createdAt: newOrder.createdAt,
+            supportPhone: newOrder.supportPhone,
+            supportWhatsApp: newOrder.supportWhatsApp,
+          });
+        } catch (emailErr: any) {
+          this.logger.warn(`[Background Order Notification Email Notice] ${emailErr?.message || emailErr}`);
+        }
       }
-    }
 
-    // 4. Dispatch Telegram Order Alert
-    if (this.telegramNotificationService) {
-      try {
-        await this.telegramNotificationService.sendOrderAlert({
-          orderNumber: newOrder.orderNumber,
-          customerName: newOrder.customerName,
-          customerPhone: newOrder.customerPhone,
-          shippingAddress: newOrder.shippingAddress,
-          district: newOrder.district,
-          zone: newOrder.zone,
-          items: (newOrder.items || []).map((it: any) => ({
-            title: it.title,
-            quantity: it.quantity || 1,
-            unitPrice: Number(it.unitPrice || 0),
-            totalPrice: Number(it.totalPrice || it.unitPrice || 0),
-          })),
-          subtotal: newOrder.subtotal,
-          deliveryFee: newOrder.deliveryFee,
-          discount: newOrder.discount,
-          totalAmount: newOrder.totalAmount,
-          paymentMethod: newOrder.paymentMethod || 'COD',
-          source: (dto as any)?.source || 'STOREFRONT',
-          status: newOrder.status,
-          createdAt: newOrder.createdAt,
-        });
-      } catch (tgErr: any) {
-        this.logger.warn(`[Order Notification Telegram Notice] ${tgErr?.message || tgErr}`);
+      // 3b. Telegram Order Alert Dispatch
+      if (this.telegramNotificationService) {
+        try {
+          await this.telegramNotificationService.sendOrderAlert({
+            orderNumber: newOrder.orderNumber,
+            customerName: newOrder.customerName,
+            customerPhone: newOrder.customerPhone,
+            shippingAddress: newOrder.shippingAddress,
+            district: newOrder.district,
+            zone: newOrder.zone,
+            items: (newOrder.items || []).map((it: any) => ({
+              title: it.title,
+              quantity: it.quantity || 1,
+              unitPrice: Number(it.unitPrice || 0),
+              totalPrice: Number(it.totalPrice || it.unitPrice || 0),
+            })),
+            subtotal: newOrder.subtotal,
+            deliveryFee: newOrder.deliveryFee,
+            discount: newOrder.discount,
+            totalAmount: newOrder.totalAmount,
+            paymentMethod: newOrder.paymentMethod || 'COD',
+            source: (dto as any)?.source || 'STOREFRONT',
+            status: newOrder.status,
+            createdAt: newOrder.createdAt,
+          });
+        } catch (tgErr: any) {
+          this.logger.warn(`[Background Telegram Order Alert Notice] ${tgErr?.message || tgErr}`);
+        }
       }
-    }
+    });
 
     return newOrder;
   }

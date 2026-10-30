@@ -41,6 +41,34 @@ export default function CheckoutPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderSuccessData, setOrderSuccessData] = useState<any | null>(null);
 
+  // Guest order persistence against F5 refresh & smooth multi-order flow
+  useEffect(() => {
+    // If the bag contains items, user is checking out a new/second order -> clear previous success view
+    if (items.length > 0) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('seyven_active_order');
+      }
+      setOrderSuccessData(null);
+      return;
+    }
+
+    // If bag is empty, check if user placed an order in this browser session (< 4 hours)
+    if (typeof window !== 'undefined') {
+      try {
+        const rawSaved = sessionStorage.getItem('seyven_active_order') || localStorage.getItem('seyven_last_order');
+        if (rawSaved) {
+          const parsed = JSON.parse(rawSaved);
+          if (parsed && parsed.orderId && parsed.createdAt) {
+            const ageMs = Date.now() - new Date(parsed.createdAt).getTime();
+            if (ageMs < 4 * 60 * 60 * 1000) {
+              setOrderSuccessData(parsed);
+            }
+          }
+        }
+      } catch {}
+    }
+  }, [items.length]);
+
   // Auto-generate Idempotency Key per session
   const [idempotencyKey, setIdempotencyKey] = useState('');
   useEffect(() => {
@@ -67,7 +95,7 @@ export default function CheckoutPage() {
   const conciergeMessage = `Hi SEYVEN Concierge! I want to confirm my order:\n\n• Items: ${items.map((i) => `${i.titleEn} (x${i.quantity})`).join(', ')}\n• Total: ${formatBdt(netPayableBdt)}\n• Area: ${activeDistrictName}\n\nPlease take my address.`;
   const conciergeCheckoutUrl = isMessengerConcierge
     ? sanitizeMessengerUrl(settings?.supportMessenger || BRAND.supportMessenger)
-    : buildWhatsAppUrl(settings?.supportWhatsApp || BRAND.supportWhatsApp, conciergeMessage);
+    : (buildWhatsAppUrl(settings?.supportWhatsApp || BRAND.supportWhatsApp, conciergeMessage) || sanitizeMessengerUrl(settings?.supportMessenger || BRAND.supportMessenger));
 
   // Handle Order Placement
   const handleCommitOrder = async (e: React.FormEvent) => {
@@ -211,6 +239,14 @@ export default function CheckoutPage() {
         // ignore
       }
 
+      // Persist active order for guest user resilience against F5 refresh
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('seyven_active_order', JSON.stringify(successPayload));
+          localStorage.setItem('seyven_last_order', JSON.stringify(successPayload));
+        } catch {}
+      }
+
       setOrderSuccessData(successPayload);
       clearCart();
     } catch {
@@ -222,9 +258,17 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleOrderMore = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('seyven_active_order');
+    }
+    setOrderSuccessData(null);
+    router.push('/catalog');
+  };
+
   // Render Order Confirmation if placed
   if (orderSuccessData) {
-    return <CheckoutSuccessView orderData={orderSuccessData} />;
+    return <CheckoutSuccessView orderData={orderSuccessData} onOrderMore={handleOrderMore} />;
   }
 
   // Render Empty State if cart is empty

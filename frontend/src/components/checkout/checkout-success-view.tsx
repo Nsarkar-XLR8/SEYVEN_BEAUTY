@@ -12,9 +12,10 @@ import { generateAndDownloadSeyvenReceipt } from '@/lib/pdf-generator';
 
 interface CheckoutSuccessViewProps {
   orderData: OrderReceiptData;
+  onOrderMore?: () => void;
 }
 
-export function CheckoutSuccessView({ orderData }: CheckoutSuccessViewProps) {
+export function CheckoutSuccessView({ orderData, onOrderMore }: CheckoutSuccessViewProps) {
   const { lang, t } = useLanguage();
   const { settings } = useCart();
   const [copied, setCopied] = useState(false);
@@ -182,52 +183,87 @@ export function CheckoutSuccessView({ orderData }: CheckoutSuccessViewProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-2 pt-4">
+        <div className="space-y-3 pt-4">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href={`/track-order?id=${orderData.orderId}&phone=${encodeURIComponent(orderData.phone || '')}`}
-              className="w-full sm:w-auto px-8 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-colors flex items-center justify-center space-x-2"
+              className="w-full sm:w-auto px-7 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.22em] font-medium hover:bg-[#1C1917]/90 transition-colors flex items-center justify-center space-x-2 shadow-xs cursor-pointer"
             >
               <span>{t('TRACK PARCEL LIVE', 'অর্ডার ট্র্যাক করুন')}</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#C7A97B]" />
             </Link>
+
             <button
               type="button"
               onClick={handleDownloadPdf}
               disabled={isDownloading}
-              className="w-full sm:w-auto px-6 py-3.5 border border-[#1C1917] text-[#1C1917] text-xs uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917] hover:text-[#F9F6F0] transition-colors flex items-center justify-center space-x-2 group disabled:opacity-50"
+              className="w-full sm:w-auto px-6 py-3.5 border border-[#1C1917] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium hover:bg-[#1C1917] hover:text-[#F9F6F0] transition-colors flex items-center justify-center space-x-2 group disabled:opacity-50 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-[#C7A97B] group-hover:scale-110 transition-transform" />
               <span>
                 {isDownloading
-                  ? t('DOWNLOADING PDF...', 'ডাউনলোড হচ্ছে...')
-                  : t('DOWNLOAD ORDER RECEIPT (PDF)', 'ডাউনলোড অর্ডার রসিদ (PDF)')}
+                  ? t('DOWNLOADING...', 'ডাউনলোড হচ্ছে...')
+                  : t('DOWNLOAD RECEIPT', 'রসিদ ডাউনলোড (PDF)')}
               </span>
             </button>
+
+            {onOrderMore ? (
+              <button
+                type="button"
+                onClick={onOrderMore}
+                className="w-full sm:w-auto px-6 py-3.5 bg-[#C7A97B] hover:bg-[#B8986A] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-semibold transition-colors flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer"
+              >
+                <span>{t('ORDER MORE', 'আরও অর্ডার করুন')}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#1C1917]" />
+              </button>
+            ) : (
+              <Link
+                href="/catalog"
+                className="w-full sm:w-auto px-6 py-3.5 bg-[#C7A97B] hover:bg-[#B8986A] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-semibold transition-colors flex items-center justify-center space-x-1.5 shadow-xs"
+              >
+                <span>{t('ORDER MORE', 'আরও অর্ডার করুন')}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#1C1917]" />
+              </Link>
+            )}
           </div>
           <p className="text-[9px] uppercase tracking-[0.2em] text-[#1C1917]/50 text-center font-mono">
             {t('Direct 1-page receipt download', 'সহজ ১-পৃষ্ঠার রসিদ ডাউনলোড')}
           </p>
         </div>
 
-        {/* Direct WhatsApp Concierge Help */}
+        {/* Direct Concierge Help */}
         <div className="text-center pt-2">
           {(() => {
             const rawPhone = settings?.supportWhatsApp || BRAND.supportWhatsApp;
             const inquiryMsg = `Hi SEYVEN Concierge! I have an inquiry about my Order #${orderData.orderId}.`;
             const waUrl = buildWhatsAppUrl(rawPhone, inquiryMsg);
+            if (rawPhone && waUrl) {
+              return (
+                <p className="text-xs text-[#1C1917]/70 flex items-center justify-center space-x-1.5">
+                  <Phone className="w-3.5 h-3.5 text-[#C7A97B]" />
+                  <a
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline hover:text-[#C7A97B] transition-colors"
+                  >
+                    {t(
+                      `Questions regarding delivery? WhatsApp Concierge: ${rawPhone} ↗`,
+                      `ডেলিভারি সংক্রান্ত যেকোনো সহায়তায় হোয়াটসঅ্যাপ করুন: ${rawPhone} ↗`
+                    )}
+                  </a>
+                </p>
+              );
+            }
             return (
               <p className="text-xs text-[#1C1917]/70 flex items-center justify-center space-x-1.5">
-                <Phone className="w-3.5 h-3.5 text-[#C7A97B]" />
                 <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`mailto:${BRAND.supportEmail}?subject=Inquiry regarding Order #${orderData.orderId}`}
                   className="hover:underline hover:text-[#C7A97B] transition-colors"
                 >
                   {t(
-                    `Questions regarding delivery? WhatsApp Concierge: ${rawPhone} ↗`,
-                    `ডেলিভারি সংক্রান্ত যেকোনো সহায়তায় হোয়াটসঅ্যাপ করুন: ${rawPhone} ↗`
+                    `Questions regarding delivery? Contact Concierge: ${BRAND.supportEmail} ↗`,
+                    `ডেলিভারি সংক্রান্ত যেকোনো সহায়তায় যোগাযোগ করুন: ${BRAND.supportEmail} ↗`
                   )}
                 </a>
               </p>

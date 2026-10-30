@@ -277,7 +277,10 @@ export function generateAndDownloadSeyvenReceipt(orderData: OrderReceiptData) {
   // Right Footer Info
   const customerCareContact =
     orderData.supportWhatsApp || orderData.supportPhone || BRAND.supportWhatsApp;
-  doc.text(`Customer Care: ${BRAND.supportEmail} • ${customerCareContact}`, rightX, footerY + 4.5, {
+  const careText = customerCareContact
+    ? `Customer Care: ${BRAND.supportEmail} • ${customerCareContact}`
+    : `Customer Care: ${BRAND.supportEmail}`;
+  doc.text(careText, rightX, footerY + 4.5, {
     align: 'right',
   });
   doc.text('www.theseyven.com', rightX, footerY + 8.5, { align: 'right' });

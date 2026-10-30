@@ -68,8 +68,12 @@ export default function PrivacyPolicyPage() {
           </h2>
           <p>
             {t(
-              `If you wish to update your saved address or delete your order history, please contact our care concierge at ${BRAND.supportEmail} or via WhatsApp at ${supportWhatsApp}.`,
-              `আপনার সংরক্ষিত ঠিকানা আপডেট করতে বা কোনো তথ্য সম্পর্কে জানতে আমাদের কাস্টমার কেয়ারে যোগাযোগ করুন: ${BRAND.supportEmail} অথবা হোয়াটসঅ্যাপ: ${supportWhatsApp}।`
+              supportWhatsApp
+                ? `If you wish to update your saved address or delete your order history, please contact our care concierge at ${BRAND.supportEmail} or via WhatsApp at ${supportWhatsApp}.`
+                : `If you wish to update your saved address or delete your order history, please contact our care concierge at ${BRAND.supportEmail}.`,
+              supportWhatsApp
+                ? `আপনার সংরক্ষিত ঠিকানা আপডেট করতে বা কোনো তথ্য সম্পর্কে জানতে আমাদের কাস্টমার কেয়ারে যোগাযোগ করুন: ${BRAND.supportEmail} অথবা হোয়াটসঅ্যাপ: ${supportWhatsApp}।`
+                : `আপনার সংরক্ষিত ঠিকানা আপডেট করতে বা কোনো তথ্য সম্পর্কে জানতে আমাদের কাস্টমার কেয়ারে যোগাযোগ করুন: ${BRAND.supportEmail}।`
             )}
           </p>
         </section>

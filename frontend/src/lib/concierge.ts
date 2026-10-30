@@ -5,20 +5,23 @@ import { BRAND } from '@/lib/constants';
  * Normalizes any Bangladeshi phone number to international WhatsApp format:
  * e.g. "+880 1712 345678", "01712345678", "8801712345678" -> "8801712345678"
  */
-export function sanitizeWhatsAppNumber(rawPhone: string): string {
-  if (!rawPhone) return '8801700000000';
+export function sanitizeWhatsAppNumber(rawPhone?: string): string {
+  if (!rawPhone || !rawPhone.trim()) return '';
   const digits = rawPhone.replace(/\D/g, '');
+  if (!digits) return '';
   if (digits.startsWith('880')) return digits;
   if (digits.startsWith('0')) return `88${digits}`;
   if (digits.length === 10) return `880${digits}`;
-  return digits || '8801700000000';
+  return digits;
 }
 
 /**
  * Builds a direct 1-tap WhatsApp chat URL with pre-filled message.
  */
-export function buildWhatsAppUrl(phone: string, message?: string): string {
+export function buildWhatsAppUrl(phone?: string, message?: string): string {
+  if (!phone) return '';
   const cleanPhone = sanitizeWhatsAppNumber(phone);
+  if (!cleanPhone) return '';
   const base = `https://wa.me/${cleanPhone}`;
   if (!message) return base;
   return `${base}?text=${encodeURIComponent(message)}`;
@@ -92,8 +95,23 @@ export function getPrimaryConciergeAction(
   }
 
   // Channel: WHATSAPP
-  const rawPhone = settings?.supportWhatsApp || BRAND.supportWhatsApp;
+  const rawPhone = settings?.supportWhatsApp || BRAND.supportWhatsApp || '';
   const cleanPhone = sanitizeWhatsAppNumber(rawPhone);
+
+  // If WhatsApp number is not yet configured in Platform Settings, gracefully fallback to Messenger
+  if (!cleanPhone) {
+    const rawMessenger = settings?.supportMessenger || BRAND.supportMessenger || 'https://m.me/seyvenofficial';
+    const messengerUrl = sanitizeMessengerUrl(rawMessenger);
+    const handle = messengerUrl.replace(/^https?:\/\/m\.me\//, '');
+    return {
+      channel: 'MESSENGER',
+      labelEn: 'ORDER VIA MESSENGER CONCIERGE',
+      labelBn: 'মেসেঞ্জারে সরাসরি অর্ডার করুন',
+      shortLabel: 'MESSENGER',
+      url: messengerUrl,
+      displayValue: `m.me/${handle}`,
+    };
+  }
 
   let message: string | undefined;
   if (context) {

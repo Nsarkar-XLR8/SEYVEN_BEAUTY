@@ -255,24 +255,28 @@ export function Footer() {
               <p className="text-[11px]">
                 {BRAND.registeredAddress}
               </p>
-              <div className="pt-1">
-                <a href={`tel:${supportPhone}`} className="text-white hover:text-[#C7A97B] font-medium tracking-wider block">
-                  {supportPhone}
-                </a>
-                <span className="text-[10px] text-[#6E6B65] block mt-0.5">{BRAND.officeHours}</span>
-              </div>
+              {supportPhone ? (
+                <div className="pt-1">
+                  <a href={`tel:${supportPhone}`} className="text-white hover:text-[#C7A97B] font-medium tracking-wider block">
+                    {supportPhone}
+                  </a>
+                  <span className="text-[10px] text-[#6E6B65] block mt-0.5">{BRAND.officeHours}</span>
+                </div>
+              ) : null}
               <p className="text-[11px] pt-1 text-[#8E8B85]">
                 {BRAND.supportEmail}
               </p>
               <div className="pt-2 flex flex-col gap-1.5 text-[10px] font-mono">
-                <a
-                  href={whatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white hover:text-[#C7A97B] transition-colors flex items-center gap-1.5"
-                >
-                  <span>WhatsApp: {supportWhatsApp} ↗</span>
-                </a>
+                {supportWhatsApp && whatsAppUrl ? (
+                  <a
+                    href={whatsAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white hover:text-[#C7A97B] transition-colors flex items-center gap-1.5"
+                  >
+                    <span>WhatsApp: {supportWhatsApp} ↗</span>
+                  </a>
+                ) : null}
                 <a
                   href={messengerLink}
                   target="_blank"

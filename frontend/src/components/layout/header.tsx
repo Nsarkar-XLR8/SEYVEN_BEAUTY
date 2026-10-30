@@ -335,9 +335,11 @@ export function Header({ onOpenSearch }: HeaderProps) {
               </div>
 
               <div className="space-y-1 text-[9px] text-[#1C1917]/50 pt-1 border-t border-[#E6DFD5]/40">
-                <p className="uppercase tracking-[0.15em] text-[#C7A97B] font-medium">
-                  DIRECT CLIENT CARE · {settings?.supportPhone || BRAND.supportPhone}
-                </p>
+                {(settings?.supportPhone || BRAND.supportPhone) ? (
+                  <p className="uppercase tracking-[0.15em] text-[#C7A97B] font-medium">
+                    DIRECT CLIENT CARE · {settings?.supportPhone || BRAND.supportPhone}
+                  </p>
+                ) : null}
                 <p className="tracking-[0.05em]">
                   {BRAND.corporate.vatBin}
                 </p>

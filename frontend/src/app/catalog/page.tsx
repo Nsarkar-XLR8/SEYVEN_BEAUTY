@@ -127,22 +127,27 @@ export default function CatalogPage() {
     return allProducts.filter((p) => {
       // 1. Dynamic Category Matching (Strictly matches admin-assigned category)
       if (selectedFilter !== 'ALL') {
-        const filterKey = selectedFilter.toLowerCase();
+        const filterKey = selectedFilter.toLowerCase().trim();
         const rawCat = (p as any).category;
         const catName = (typeof rawCat === 'object' && rawCat
           ? rawCat.nameEn || rawCat.slug || ''
-          : String(rawCat || '')).toLowerCase();
+          : String(rawCat || '')).toLowerCase().trim();
         const catSlug = (typeof rawCat === 'object' && rawCat
           ? rawCat.slug || rawCat.id || ''
-          : catName.replace(/[^a-z0-9]+/g, '-')).toLowerCase();
-        const catId = (typeof rawCat === 'object' && rawCat ? rawCat.id : '').toLowerCase();
+          : catName.replace(/[^a-z0-9]+/g, '-')).toLowerCase().trim();
+        const catId = ((p as any).categoryId || (typeof rawCat === 'object' && rawCat ? rawCat.id : '') || '').toLowerCase().trim();
+
+        // Safety: If product has no category assigned, it cannot match any specific category tab
+        if (!catName && !catSlug && !catId) {
+          return false;
+        }
 
         const matchesCategory =
           catSlug === filterKey ||
           catName === filterKey ||
-          (catId && catId === filterKey) ||
-          catName.includes(filterKey) ||
-          filterKey.includes(catName);
+          (catId !== '' && catId === filterKey) ||
+          (catName !== '' && filterKey !== '' && (catName.includes(filterKey) || filterKey.includes(catName))) ||
+          (catSlug !== '' && filterKey !== '' && (catSlug.includes(filterKey) || filterKey.includes(catSlug)));
 
         if (!matchesCategory) return false;
       }

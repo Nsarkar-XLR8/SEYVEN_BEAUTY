@@ -77,6 +77,8 @@ export interface ProductDetail {
   patchTestGuideBn: string;
   storageGuidanceEn: string;
   storageGuidanceBn: string;
+  category?: string;
+  categoryId?: string;
   variants: ProductVariant[];
 }
 
@@ -366,6 +368,8 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
     patchTestGuideBn: raw.patchTestGuideBn || 'হাতের ওপরের অংশে বা কানের নিচে অল্প লাগিয়ে ২৪ ঘণ্টা পর্যবেক্ষণ করুন।',
     storageGuidanceEn: raw.storageGuidanceEn || 'Store in a cool, dry place away from direct sunlight.',
     storageGuidanceBn: raw.storageGuidanceBn || 'সরাসরি রোদ থেকে দূরে ঠান্ডা ও শুকনো জায়গায় সংরক্ষণ করুন।',
+    category: typeof raw.category === 'object' && raw.category ? (raw.category.nameEn || raw.category.slug || '') : String(raw.category || categoryStr || ''),
+    categoryId: raw.categoryId || (typeof raw.category === 'object' ? raw.category?.id : undefined),
     variants,
   };
 }

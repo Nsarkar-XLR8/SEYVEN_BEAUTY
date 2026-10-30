@@ -21,7 +21,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin/', '/checkout/success/', '/api/auth/'],
       },
     ],
-    sitemap: 'https://theseyven.com/sitemap.xml',
+    sitemap: 'https://www.theseyven.com/sitemap.xml',
   };
 }
 

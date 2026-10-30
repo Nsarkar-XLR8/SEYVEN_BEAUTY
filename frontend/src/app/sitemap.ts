@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getAllProducts } from '@/data/products';
 
-const BASE_URL = 'https://theseyven.com';
+const BASE_URL = 'https://www.theseyven.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const currentDate = new Date();

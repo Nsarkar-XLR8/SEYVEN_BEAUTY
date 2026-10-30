@@ -27,8 +27,8 @@ export class ResendEmailService {
       this.logger.warn('⚠️ RESEND_API_KEY not found in environment. Emails will be logged to console in dev mode.');
     }
 
-    // Default sender: either verified domain or Resend testing onboarding address
-    this.senderEmail = process.env.RESEND_FROM_EMAIL || 'SEYVEN <onboarding@resend.dev>';
+    // Default sender: verified domain or environment override
+    this.senderEmail = process.env.RESEND_FROM_EMAIL || 'SEYVEN <info@theseyven.com>';
     this.replyToEmail = process.env.RESEND_REPLY_TO || process.env.RESEND_EMAIL || 'officialseyven@gmail.com';
   }
 
@@ -133,7 +133,7 @@ export class ResendEmailService {
     }
 
     return {
-      success: true,
+      success: this.resend ? sentToAdmin : true,
       message: sentToAdmin
         ? `Notification email dispatched to ${adminEmail}`
         : `Order logged to server console (Dev Console Mode)`,

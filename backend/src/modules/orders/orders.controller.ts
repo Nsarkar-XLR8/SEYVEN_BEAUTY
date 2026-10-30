@@ -118,6 +118,39 @@ export class OrdersController {
     return this.ordersService.createDirectOrder(body);
   }
 
+  @Get('orders/direct-test-alert')
+  @ApiOperation({ summary: 'Diagnostic test probe for order notification queue and DLQ' })
+  async testDirectAlert() {
+    const testOrder = {
+      orderNumber: `TEST-${Math.floor(1000 + Math.random() * 9000)}`,
+      customerName: 'SEYVEN Production Test',
+      customerPhone: '+8801999181198',
+      customerEmail: 'officialseyven@gmail.com',
+      shippingAddress: 'Dhanmondi, Dhaka',
+      district: 'Inside Dhaka',
+      zone: 'Dhaka Metro',
+      items: [
+        {
+          id: 'test-item-1',
+          title: 'Advanced Dermal Curation Test',
+          titleEn: 'Advanced Dermal Curation Test',
+          quantity: 1,
+          unitPrice: 1500,
+          totalPrice: 1500,
+        },
+      ],
+      subtotal: 1500,
+      deliveryFee: 70,
+      discount: 0,
+      totalAmount: 1570,
+      paymentMethod: 'COD',
+      source: 'DIAGNOSTIC_PROBE',
+      status: 'TEST',
+      createdAt: new Date().toISOString(),
+    };
+    return this.ordersService.createDirectOrder(testOrder);
+  }
+
   @Post('admin/orders/manual')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.SUPPORT_AGENT, UserRole.CATALOG_MANAGER)

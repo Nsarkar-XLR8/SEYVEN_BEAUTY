@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppConfigModule } from './config/config.module';
 import { DatabaseModule } from './common/database/database.module';
 import { HealthModule } from './modules/health/health.module';
@@ -30,6 +32,40 @@ import { AppController } from './app.controller';
   controllers: [AppController],
   imports: [
     AppConfigModule,
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>('REDIS_URL') || process.env.REDIS_URL;
+        if (redisUrl && redisUrl.trim()) {
+          try {
+            const parsed = new URL(redisUrl);
+            const isTls = parsed.protocol === 'rediss:' || redisUrl.includes('upstash.io');
+            return {
+              connection: {
+                host: parsed.hostname,
+                port: Number(parsed.port) || 6379,
+                username: parsed.username || 'default',
+                password: parsed.password || undefined,
+                tls: isTls ? { rejectUnauthorized: false } : undefined,
+                maxRetriesPerRequest: null,
+                enableReadyCheck: false,
+              },
+            };
+          } catch {}
+        }
+        return {
+          connection: {
+            host: config.get<string>('REDIS_HOST', 'localhost'),
+            port: config.get<number>('REDIS_PORT', 6379),
+            password: config.get<string>('REDIS_PASSWORD') || undefined,
+            tls: config.get<string>('REDIS_TLS') === 'true' ? { rejectUnauthorized: false } : undefined,
+            maxRetriesPerRequest: null,
+            enableReadyCheck: false,
+          },
+        };
+      },
+    }),
     DatabaseModule,
     RedisModule,
     HealthModule,

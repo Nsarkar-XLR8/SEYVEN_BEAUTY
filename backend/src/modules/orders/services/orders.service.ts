@@ -19,6 +19,7 @@ import { AuthUser } from '../../auth/decorators/current-user.decorator';
 import { ResendEmailService } from '../../auth/services/resend-email.service';
 import { TelegramNotificationService } from '../../notifications/services/telegram-notification.service';
 import { SettingsService } from '../../settings/settings.service';
+import { NotificationQueueService } from '../../notifications/services/notification-queue.service';
 // Prisma Generated Entities & Enums
 import {
   CallVerificationOutcome,
@@ -42,6 +43,7 @@ export class OrdersService {
     @Optional() private readonly resendEmailService?: ResendEmailService,
     @Optional() private readonly telegramNotificationService?: TelegramNotificationService,
     @Optional() private readonly settingsService?: SettingsService,
+    @Optional() private readonly notificationQueueService?: NotificationQueueService,
   ) {}
 
   async createDirectOrder(dto: any) {
@@ -170,67 +172,40 @@ export class OrdersService {
 
     this.logger.log(`[Direct Order] Processed live order ${orderId} (${newOrder.customerName})`);
 
-    // 3. Fast-Path High-Throughput Notification Dispatch (Non-Blocking Fire-and-Forget)
-    // Never block customer checkout HTTP response waiting for external network calls (Resend/Telegram).
-    // This allows Render single-threaded instance to smoothly process 50+ concurrent checkouts without timeouts.
-    setImmediate(async () => {
-      // 3a. Email Notification (Admin Alert & Luxury Customer Receipt)
-      if (this.resendEmailService) {
-        try {
-          await this.resendEmailService.sendOrderNotificationEmail({
-            orderNumber: newOrder.orderNumber,
-            customerName: newOrder.customerName,
-            customerPhone: newOrder.customerPhone,
-            customerEmail: newOrder.customerEmail,
-            shippingAddress: newOrder.shippingAddress,
-            district: newOrder.district,
-            zone: newOrder.zone,
-            items: newOrder.items,
-            subtotal: newOrder.subtotal,
-            deliveryFee: newOrder.deliveryFee,
-            discount: newOrder.discount,
-            totalAmount: newOrder.totalAmount,
-            paymentMethod: 'COD',
-            status: newOrder.status,
-            createdAt: newOrder.createdAt,
-            supportPhone: newOrder.supportPhone,
-            supportWhatsApp: newOrder.supportWhatsApp,
-          });
-        } catch (emailErr: any) {
-          this.logger.warn(`[Background Order Notification Email Notice] ${emailErr?.message || emailErr}`);
-        }
+    // 3. Ultra-Fast High-Throughput Notification Dispatch (BullMQ Job Queue with DLQ)
+    // Enqueue time is under 10ms. Customer HTTP response returns immediately without blocking.
+    if (this.notificationQueueService) {
+      await this.notificationQueueService.enqueueOrderAlert({
+        orderNumber: newOrder.orderNumber,
+        customerName: newOrder.customerName,
+        customerPhone: newOrder.customerPhone,
+        customerEmail: newOrder.customerEmail,
+        shippingAddress: newOrder.shippingAddress,
+        district: newOrder.district,
+        zone: newOrder.zone,
+        items: newOrder.items,
+        subtotal: newOrder.subtotal,
+        deliveryFee: newOrder.deliveryFee,
+        discount: newOrder.discount,
+        totalAmount: newOrder.totalAmount,
+        paymentMethod: newOrder.paymentMethod,
+        source: (dto as any)?.source || 'STOREFRONT',
+        status: newOrder.status,
+        createdAt: newOrder.createdAt,
+        supportPhone: newOrder.supportPhone,
+        supportWhatsApp: newOrder.supportWhatsApp,
+      });
+    } else {
+      // Direct resilient fallback if queue service was not injected
+      try {
+        await Promise.allSettled([
+          this.resendEmailService?.sendOrderNotificationEmail(newOrder),
+          this.telegramNotificationService?.sendOrderAlert(newOrder as any),
+        ]);
+      } catch (err: any) {
+        this.logger.warn(`[Order Notification Fallback Notice] ${err?.message || err}`);
       }
-
-      // 3b. Telegram Order Alert Dispatch
-      if (this.telegramNotificationService) {
-        try {
-          await this.telegramNotificationService.sendOrderAlert({
-            orderNumber: newOrder.orderNumber,
-            customerName: newOrder.customerName,
-            customerPhone: newOrder.customerPhone,
-            shippingAddress: newOrder.shippingAddress,
-            district: newOrder.district,
-            zone: newOrder.zone,
-            items: (newOrder.items || []).map((it: any) => ({
-              title: it.title,
-              quantity: it.quantity || 1,
-              unitPrice: Number(it.unitPrice || 0),
-              totalPrice: Number(it.totalPrice || it.unitPrice || 0),
-            })),
-            subtotal: newOrder.subtotal,
-            deliveryFee: newOrder.deliveryFee,
-            discount: newOrder.discount,
-            totalAmount: newOrder.totalAmount,
-            paymentMethod: newOrder.paymentMethod || 'COD',
-            source: (dto as any)?.source || 'STOREFRONT',
-            status: newOrder.status,
-            createdAt: newOrder.createdAt,
-          });
-        } catch (tgErr: any) {
-          this.logger.warn(`[Background Telegram Order Alert Notice] ${tgErr?.message || tgErr}`);
-        }
-      }
-    });
+    }
 
     return newOrder;
   }

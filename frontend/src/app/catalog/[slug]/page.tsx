@@ -18,18 +18,54 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
     return {
-      title: `${cleanTitle} | SEYVEN`,
-      description: 'Authentic imported formulation curated by SEYVEN — The Sanctuary of Beauty.',
+      title: `${cleanTitle} Price in Bangladesh | 100% Authentic — SEYVEN`,
+      description: `Buy authentic ${cleanTitle} in Bangladesh with free Facebook Messenger consultation & Cash on Delivery at SEYVEN.`,
+      alternates: {
+        canonical: `https://theseyven.com/products/${slug}`,
+      },
     };
   }
 
+  const volumeStr = product.variants?.[0]?.volume ? ` (${product.variants[0].volume})` : '';
+  const priceFormatted = product.priceBdt ? `৳${product.priceBdt}` : '';
+  const pageTitle = `${product.brand} — ${product.titleEn}${volumeStr} Price in Bangladesh | 100% Authentic — SEYVEN`;
+  const pageDescription = `Buy original ${product.brand} ${product.titleEn} in Bangladesh${priceFormatted ? ` at ${priceFormatted}` : ''}. 100% genuine brand-sealed imported skincare with free Messenger skin consultation & express Cash on Delivery nationwide.`;
+
   return {
-    title: `${product.brand} — ${product.titleEn} | SEYVEN`,
-    description: product.shortDescriptionEn,
+    title: pageTitle,
+    description: pageDescription,
+    keywords: [
+      product.brand,
+      product.titleEn,
+      `${product.brand} ${product.titleEn}`,
+      `${product.titleEn} price in Bangladesh`,
+      `${product.brand} price in BD`,
+      `original ${product.brand} Bangladesh`,
+      `authentic ${product.titleEn} Dhaka`,
+      'authentic skincare Bangladesh',
+      'free Messenger skincare consultation',
+      'Cash on delivery BD',
+    ],
+    alternates: {
+      canonical: `https://theseyven.com/products/${slug}`,
+    },
     openGraph: {
-      title: `${product.brand} — ${product.titleEn}`,
-      description: product.shortDescriptionEn,
-      images: product.images[0]?.url ? [product.images[0].url] : [],
+      title: `${product.brand} — ${product.titleEn} | 100% Authentic SEYVEN`,
+      description: pageDescription,
+      url: `https://theseyven.com/products/${slug}`,
+      siteName: 'SEYVEN — The Sanctuary of Beauty',
+      locale: 'en_BD',
+      type: 'website',
+      images: product.images[0]?.url
+        ? [
+            {
+              url: product.images[0].url,
+              width: 800,
+              height: 800,
+              alt: `${product.brand} ${product.titleEn} Authentic Imported Skincare`,
+            },
+          ]
+        : [],
     },
   };
 }

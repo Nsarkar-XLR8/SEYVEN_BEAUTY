@@ -9,9 +9,35 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'SEYVEN — The Sanctuary of Beauty',
+  metadataBase: new URL('https://theseyven.com'),
+  title: {
+    default: 'SEYVEN — Free Skincare Consultation & 100% Authentic Imported Skincare in Bangladesh',
+    template: '%s | SEYVEN',
+  },
   description:
-    'Curated International Skincare for Bangladeshi Women. Authentic, brand-sealed skincare with express nationwide delivery.',
+    'Receive 100% free skin consultation for acne, pigmentation, barrier repair & dry skin via Facebook Messenger. Curating genuine, brand-sealed international imported skincare with express Cash on Delivery across Bangladesh.',
+  keywords: [
+    'free skincare consultation Bangladesh',
+    'authentic international skincare bd',
+    'original imported cosmetics Dhaka',
+    'Korean skincare Bangladesh',
+    'CeraVe Bangladesh',
+    'The Ordinary price in BD',
+    'COSRX Bangladesh',
+    'Cash on delivery skincare BD',
+    'skin problem advice Messenger',
+  ],
+  authors: [{ name: 'SEYVEN — The Sanctuary of Beauty', url: 'https://theseyven.com' }],
+  creator: 'SEYVEN',
+  publisher: 'SEYVEN',
+  formatDetection: {
+    email: false,
+    address: true,
+    telephone: true,
+  },
+  alternates: {
+    canonical: 'https://theseyven.com',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -23,9 +49,10 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
   },
   openGraph: {
-    title: 'SEYVEN — The Sanctuary of Beauty',
-    description: 'Curated International Skincare for Bangladeshi Women.',
-    siteName: 'SEYVEN',
+    title: 'SEYVEN — Free Skincare Consultation & 100% Authentic Imported Skincare in Bangladesh',
+    description: 'Receive 100% free skin consultation via Facebook Messenger. Curating only genuine, brand-sealed international imported formulations with Cash on Delivery across Bangladesh.',
+    url: 'https://theseyven.com',
+    siteName: 'SEYVEN — The Sanctuary of Beauty',
     locale: 'en_BD',
     type: 'website',
   },

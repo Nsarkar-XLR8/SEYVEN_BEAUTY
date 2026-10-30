@@ -43,8 +43,16 @@ export class TokenService {
 
     const accessExpiration =
       this.configService.get<string>('SEYVEN_JWT_ACCESS_EXPIRATION') || '1h';
-    const refreshExpiration =
+
+    const isAdmin = Boolean(role && role !== 'CUSTOMER');
+    const adminExpiration = this.configService.get<string>('SEYVEN_JWT_ADMIN_REFRESH_EXPIRATION');
+    const customerExpiration =
       this.configService.get<string>('SEYVEN_JWT_REFRESH_EXPIRATION') || '7d';
+
+    // Completely dynamic: uses SEYVEN_JWT_ADMIN_REFRESH_EXPIRATION if configured in environment for admin/staff
+    const refreshExpiration = isAdmin && adminExpiration
+      ? adminExpiration
+      : customerExpiration;
 
     const accessToken = this.jwtService.sign(
       { sub: userId, phone, role, jti: accessJti },

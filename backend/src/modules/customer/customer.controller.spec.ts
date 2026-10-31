@@ -29,7 +29,7 @@ describe('CustomerController', () => {
       getProfile: jest.fn().mockResolvedValue({
         user: { id: 'usr-auth-123', fullName: 'Shakib Al Hasan' },
         savedAddresses: [],
-        loyalty: { pointsBalance: 200, tier: 'SILVER' },
+        loyalty: { isRepeatClient: true, privilegeDiscountPercent: 5 },
       }),
       manageAddresses: jest.fn().mockResolvedValue({
         success: true,

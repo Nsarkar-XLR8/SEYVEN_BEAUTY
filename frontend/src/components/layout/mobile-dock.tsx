@@ -3,9 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Sparkles, ShoppingBag, Compass, User } from 'lucide-react';
+import { Home, MessageCircle, ShoppingBag, Compass, User } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { useAuth } from '@/context/auth-context';
+import { BRAND } from '@/lib/constants';
 
 export function MobileDock() {
   const pathname = usePathname();
@@ -69,18 +70,18 @@ export function MobileDock() {
           </span>
         </button>
 
-        {/* Tab 4: VIP Privilege */}
-        <Link
-          href="/customer/loyalty"
-          className={`flex flex-col items-center justify-center p-1 w-14 transition-colors ${
-            pathname.startsWith('/customer/loyalty') ? 'text-[#C7A97B]' : 'text-[#1C1917]/50 hover:text-[#C7A97B]'
-          }`}
+        {/* Tab 4: Complimentary Skincare Care & Advisory via Messenger */}
+        <a
+          href={BRAND.supportMessenger || 'https://m.me/seyvenofficial'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center justify-center p-1 w-14 transition-colors text-[#1C1917]/60 hover:text-[#C7A97B]"
         >
-          <Sparkles className="w-5 h-5 stroke-[1.25]" />
+          <MessageCircle className="w-5 h-5 stroke-[1.25]" />
           <span className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
-            VIP
+            CARE
           </span>
-        </Link>
+        </a>
 
         {/* Tab 5: Profile / Auth */}
         <button

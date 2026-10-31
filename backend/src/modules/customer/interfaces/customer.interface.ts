@@ -58,9 +58,11 @@ export interface CustomerProfileSummary {
   };
   savedAddresses: any[];
   loyalty: {
-    pointsBalance: number;
-    lifetimePoints: number;
-    tier: string;
+    isRepeatClient?: boolean;
+    privilegeDiscountPercent?: number;
+    pointsBalance?: number;
+    lifetimePoints?: number;
+    tier?: string;
   };
   ordersSummary: {
     totalOrdersCount: number;
@@ -94,9 +96,11 @@ export interface Customer360Dossier {
     rtoLossTotalBdt: number;
   };
   loyaltyStatus: {
-    pointsBalance: number;
-    lifetimePoints: number;
-    tier: string;
+    isRepeatClient?: boolean;
+    privilegeDiscountPercent?: number;
+    pointsBalance?: number;
+    lifetimePoints?: number;
+    tier?: string;
   };
   interactionTimeline: {
     orders: any[];

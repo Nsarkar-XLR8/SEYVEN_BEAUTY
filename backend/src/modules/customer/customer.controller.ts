@@ -53,7 +53,7 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Get authenticated customer profile & dermal history',
     description:
-      'Returns the authenticated customer profile, saved multi-address book, skin diagnostic profile, loyalty points balance, active orders, and active RMA tickets.',
+      'Returns the authenticated customer profile, saved multi-address book, skin diagnostic profile, client privilege status, active orders, and active RMA tickets.',
   })
   @ApiResponse({ status: 200, description: 'Customer profile details' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

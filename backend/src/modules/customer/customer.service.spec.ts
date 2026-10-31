@@ -166,8 +166,8 @@ describe('CustomerService', () => {
 
       expect(profile.user.id).toBe('user-srv-1');
       expect(profile.user.phone).toBe('+8801700000000');
-      expect(profile.loyalty.tier).toBe('SILVER');
-      expect(profile.loyalty.pointsBalance).toBe(150);
+      expect(profile.loyalty.isRepeatClient).toBe(true);
+      expect(profile.loyalty.privilegeDiscountPercent).toBe(5);
       expect(profile.savedAddresses).toHaveLength(1);
       expect(profile.ordersSummary.totalOrdersCount).toBe(2);
       expect(profile.ordersSummary.activeOrdersCount).toBe(1); // ord-1 (SHIPPED)

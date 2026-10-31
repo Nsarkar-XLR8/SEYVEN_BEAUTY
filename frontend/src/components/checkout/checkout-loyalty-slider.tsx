@@ -36,8 +36,7 @@ export function CheckoutLoyaltySlider({
       const hasPastOrders = Boolean(
         (user as any)?.ordersSummary?.deliveredOrdersCount > 0 ||
         (user as any)?.ordersCount > 0 ||
-        (user as any)?.loyalty?.isRepeatClient ||
-        (user as any)?.loyalty?.tier === 'REPEAT CLIENT PRIVILEGE'
+        (user as any)?.loyalty?.isRepeatClient
       );
       if (hasPastOrders) {
         setIsReturningClient(true);

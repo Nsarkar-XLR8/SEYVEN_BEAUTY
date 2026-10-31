@@ -217,8 +217,8 @@ describe('Customer360Service', () => {
     expect(dossier.financialMetrics.rtoLossTotalBdt).toBe(160);
 
     // Loyalty
-    expect(dossier.loyaltyStatus.tier).toBe('GOLD');
-    expect(dossier.loyaltyStatus.pointsBalance).toBe(450);
+    expect(dossier.loyaltyStatus.isRepeatClient).toBe(true);
+    expect(dossier.loyaltyStatus.privilegeDiscountPercent).toBe(5);
 
     // Interaction Timeline
     expect(dossier.interactionTimeline.orders).toHaveLength(3);

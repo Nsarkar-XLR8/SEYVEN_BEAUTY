@@ -247,12 +247,12 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
           </div>
         )}
 
-        {/* Loyalty Discount */}
+        {/* Returning Client Courtesy */}
         {loyaltyDiscountBdt > 0 && (
           <div className="flex justify-between items-center text-emerald-800">
             <span className="flex items-center gap-1.5 font-light">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
-              VIP Loyalty Points Redeemed
+              Returning Client Courtesy Privilege
             </span>
             <BdtPrice amount={loyaltyDiscountBdt} prefix="-" isDiscount />
           </div>

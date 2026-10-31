@@ -29,9 +29,9 @@ export class AntiStackingValidator {
       };
     }
 
-    // Rule 2: Non-stackable coupon cannot combine with Loyalty VIP Tier discounts
+    // Rule 2: Non-stackable courtesy cannot combine with Returning Client Courtesy
     if (!coupon.allowStacking && context.hasTierDiscount) {
-      const reason = `Coupon "${coupon.code}" cannot be stacked with active VIP Loyalty Tier discounts.`;
+      const reason = `Campaign "${coupon.code}" cannot be stacked with active Returning Client Courtesy.`;
       return {
         allowed: false,
         reason,

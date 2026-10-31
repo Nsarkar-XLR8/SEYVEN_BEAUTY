@@ -132,9 +132,8 @@ export class CustomerService {
         createdAt: a.createdAt.toISOString(),
       })),
       loyalty: {
-        pointsBalance: user.loyaltyAccount?.pointsBalance ?? 0,
-        lifetimePoints: user.loyaltyAccount?.lifetimePoints ?? 0,
-        tier: user.loyaltyAccount?.tier ?? 'BRONZE',
+        isRepeatClient: deliveredOrdersCount > 0 || orders.length > 0,
+        privilegeDiscountPercent: (deliveredOrdersCount > 0 || orders.length > 0) ? 5 : 0,
       },
       ordersSummary: {
         totalOrdersCount: orders.length,

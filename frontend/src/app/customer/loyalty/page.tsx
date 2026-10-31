@@ -29,10 +29,10 @@ export default function LoyaltyPage() {
       activeStatus: 'LIVE THIS SEASON',
     },
     {
-      title: 'Private WhatsApp Concierge',
-      desc: 'Direct 1-on-1 private messaging with our skincare advisory team for customized formulation selection.',
+      title: 'Complimentary Skincare Advisory',
+      desc: 'Direct 1-on-1 private messaging with our skincare advisors on Messenger for bespoke formulation selection. Always 100% complimentary.',
       icon: MessageCircle,
-      activeStatus: 'AVAILABLE 7 DAYS',
+      activeStatus: 'ALWAYS COMPLIMENTARY',
     },
     {
       title: '100% Guaranteed Authenticity',

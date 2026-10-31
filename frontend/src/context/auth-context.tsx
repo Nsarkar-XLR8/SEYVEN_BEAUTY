@@ -10,12 +10,9 @@ export interface UserProfile {
   email?: string | null;
   role: string;
   loyalty?: {
-    tier: string;
-    pointsBalance?: number;
-    lifetimePoints?: number;
+    isRepeatClient?: boolean;
     lifetimeSpendBdt?: number;
     privilegeDiscountPercent?: number;
-    isRepeatClient?: boolean;
   };
 }
 

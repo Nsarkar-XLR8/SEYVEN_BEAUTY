@@ -1,181 +1,170 @@
 'use client';
 
 import React from 'react';
-import { Crown, Sparkles, Award, ShieldCheck, ArrowUpRight } from 'lucide-react';
-import { useLanguage } from '@/context/language-context';
+import { Crown, Sparkles, Award, ShieldCheck, Gem } from 'lucide-react';
 import { formatBdt } from '@/lib/formatters';
 
-export type VipTierLevel = 'BRONZE' | 'SILVER' | 'GOLD' | 'NOIR';
+export type LoyaltyTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'NOIR';
 
-interface VipTierCardProps {
-  currentTier: VipTierLevel;
-  pointsBalance: number;
+export interface VipTierCardProps {
+  currentTier: LoyaltyTier;
+  availablePoints: number;
   lifetimePoints: number;
-  nextTier: VipTierLevel | null;
-  pointsNeededForNextTier: number;
-  progressPercent: number;
+  nextTierPoints?: number;
+  pointsNeededForNextTier?: number;
+  userName?: string;
+  memberId?: string;
 }
 
 export function VipTierCard({
   currentTier,
-  pointsBalance,
+  availablePoints,
   lifetimePoints,
-  nextTier,
+  nextTierPoints,
   pointsNeededForNextTier,
-  progressPercent,
+  userName = 'Valued Client',
+  memberId = 'SYV-VIP-7019',
 }: VipTierCardProps) {
-  const { lang, t } = useLanguage();
-
-  const tierStyles: Record<
-    VipTierLevel,
-    {
-      bgGradient: string;
-      borderColor: string;
-      textColor: string;
-      accentColor: string;
-      tierNameBn: string;
-      multiplier: string;
-    }
-  > = {
+  const tierConfigs = {
     BRONZE: {
-      bgGradient: 'bg-linear-to-br from-[#E6DFD5]/40 via-[#F9F6F0] to-[#E6DFD5]/60',
-      borderColor: 'border-[#E6DFD5]',
-      textColor: 'text-[#1C1917]',
-      accentColor: 'text-[#C7A97B]',
-      tierNameBn: 'ব্রোঞ্জ সুবিধা',
-      multiplier: '1.0x',
+      tierName: 'Bronze Tier',
+      gradient: 'from-[#1C1917] via-[#2A2421] to-[#1C1917]',
+      accentColor: '#CD7F32',
+      badgeBg: 'bg-[#CD7F32]/10 text-[#CD7F32] border-[#CD7F32]/40',
+      icon: Award,
+      perks: ['1 Point per ৳100 spent', 'Birthday Beauty Gift', 'Standard Concierge'],
+      nextTier: 'SILVER',
     },
     SILVER: {
-      bgGradient: 'bg-linear-to-br from-[#F0F2F5] via-[#F9F6F0] to-[#E2E6EA]',
-      borderColor: 'border-slate-300',
-      textColor: 'text-[#1C1917]',
-      accentColor: 'text-slate-600',
-      tierNameBn: 'সিলভার ভিআইপি',
-      multiplier: '1.25x',
+      tierName: 'Silver VIP',
+      gradient: 'from-[#1A1A1A] via-[#2D2D2D] to-[#141414]',
+      accentColor: '#E0E0E0',
+      badgeBg: 'bg-white/10 text-white border-white/30',
+      icon: ShieldCheck,
+      perks: ['1.2x Multiplier on Points', 'Complimentary Dhaka Delivery', 'Early Access Edits'],
+      nextTier: 'GOLD',
     },
     GOLD: {
-      bgGradient: 'bg-linear-to-br from-[#FDF9F0] via-[#F9F6F0] to-[#EBDCB9]/40',
-      borderColor: 'border-[#C7A97B]',
-      textColor: 'text-[#1C1917]',
-      accentColor: 'text-[#C7A97B]',
-      tierNameBn: 'গোল্ড স্যাঙ্কচুয়ারি',
-      multiplier: '1.5x',
+      tierName: 'Gold Sanctuary',
+      gradient: 'from-[#1E1912] via-[#3D311F] to-[#1E1912]',
+      accentColor: '#C7A97B',
+      badgeBg: 'bg-[#C7A97B]/20 text-[#C7A97B] border-[#C7A97B]/50',
+      icon: Crown,
+      perks: ['1.5x Multiplier on Points', 'Complimentary Nationwide Delivery', 'Dedicated WhatsApp Advisor'],
+      nextTier: 'NOIR',
     },
     NOIR: {
-      bgGradient: 'bg-linear-to-br from-[#1C1917] via-[#2A2624] to-[#12100E]',
-      borderColor: 'border-[#C7A97B]/70',
-      textColor: 'text-[#F9F6F0]',
-      accentColor: 'text-[#C7A97B]',
-      tierNameBn: 'নোয়ার প্রিভিলেজ (সর্বোচ্চ)',
-      multiplier: '2.0x',
+      tierName: 'Noir Sovereign',
+      gradient: 'from-[#0A0A0A] via-[#1F1712] to-[#050505]',
+      accentColor: '#E6C687',
+      badgeBg: 'bg-gradient-to-r from-[#E6C687]/20 to-[#C7A97B]/20 text-[#E6C687] border-[#E6C687]/60',
+      icon: Gem,
+      perks: ['2x Multiplier on Points', 'White-Glove Courier Always', 'Private Direct Imports Access'],
+      nextTier: null,
     },
   };
 
-  const style = tierStyles[currentTier] || tierStyles.GOLD;
-  const isNoir = currentTier === 'NOIR';
+  const currentConfig = tierConfigs[currentTier] || tierConfigs.BRONZE;
+  const TierIcon = currentConfig.icon;
+
+  const progressPercent = nextTierPoints
+    ? Math.min(100, Math.round((lifetimePoints / nextTierPoints) * 100))
+    : 100;
 
   return (
     <div
-      className={`relative p-6 sm:p-8 border overflow-hidden shadow-md transition-all duration-300 select-none ${style.bgGradient} ${style.borderColor}`}
+      className={`relative w-full rounded-xs overflow-hidden border border-[#C7A97B]/40 bg-gradient-to-br ${currentConfig.gradient} text-[#FAF8F5] p-6 sm:p-8 shadow-2xl space-y-6 select-none`}
     >
-      {/* Subtle Background Watermark Ring */}
-      <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full border border-[#C7A97B]/20 pointer-events-none" />
-      <div className="absolute -right-20 -bottom-20 w-64 h-64 rounded-full border border-[#C7A97B]/10 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-80 h-80 bg-[#C7A97B]/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header Row */}
       <div className="flex items-start justify-between relative z-10">
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
-            <Crown className={`w-4 h-4 ${style.accentColor}`} />
-            <span className="text-[10px] uppercase tracking-[0.28em] font-semibold text-[#C7A97B]">
-              SEYVEN SANCTUARY VIP
+            <span className="font-serif tracking-[0.2em] text-xs uppercase text-[#C7A97B] font-medium">
+              SEYVEN SANCTUARY
+            </span>
+            <span className="text-[#C7A97B]/40">•</span>
+            <span className="font-mono text-[10px] tracking-widest text-[#FAF8F5]/60 uppercase">
+              {memberId}
             </span>
           </div>
 
-          <h2
-            className={`text-2xl sm:text-3xl font-serif uppercase tracking-[0.2em] font-light ${style.textColor}`}
-          >
-            {currentTier} TIER
-          </h2>
-          <span className="text-[11px] opacity-75 font-light block">
-            {lang === 'bn' ? style.tierNameBn : `Tier Multiplier: ${style.multiplier} Reward Rate`}
+          <h3 className="font-serif text-xl sm:text-2xl tracking-[0.08em] font-light text-[#FAF8F5]">
+            {userName}
+          </h3>
+        </div>
+
+        {/* Tier Emblem Badge */}
+        <div
+          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border text-xs font-mono uppercase tracking-widest shadow-xs ${currentConfig.badgeBg}`}
+        >
+          <TierIcon className="w-3.5 h-3.5" />
+          <span>{currentConfig.tierName}</span>
+        </div>
+      </div>
+
+      {/* Points Ledger Metrics */}
+      <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/10 relative z-10">
+        <div className="space-y-1">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#FAF8F5]/60 block">
+            AVAILABLE POINTS
+          </span>
+          <div className="flex items-baseline space-x-2">
+            <span className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-[#FAF8F5]">
+              {availablePoints.toLocaleString()}
+            </span>
+            <span className="text-xs font-serif text-[#C7A97B] uppercase tracking-widest">
+              = {formatBdt(availablePoints)}
+            </span>
+          </div>
+          <span className="text-[9px] text-[#FAF8F5]/50 font-light block">
+            Redeemable at ৳1 per point at checkout
           </span>
         </div>
 
-        {/* Exclusive Tier Badge */}
-        <div className="px-3 py-1 bg-[#1C1917]/10 backdrop-blur-xs border border-[#C7A97B]/40 text-center">
-          <span className="text-[8px] uppercase tracking-[0.2em] font-mono font-semibold text-[#C7A97B]">
-            {currentTier} STATUS
+        <div className="space-y-1 border-l border-white/10 pl-4">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#FAF8F5]/60 block">
+            LIFETIME POINTS EARNED
+          </span>
+          <div className="flex items-baseline space-x-1">
+            <span className="font-mono text-2xl sm:text-3xl font-light tracking-tight text-[#FAF8F5]/90">
+              {lifetimePoints.toLocaleString()}
+            </span>
+            <span className="text-[10px] font-mono text-[#C7A97B] uppercase">PTS</span>
+          </div>
+          <span className="text-[9px] text-[#FAF8F5]/50 font-light block">
+            Determines continuous tier elevation
           </span>
         </div>
       </div>
 
-      {/* Middle Points Breakdown */}
-      <div className="pt-8 pb-6 grid grid-cols-2 gap-4 relative z-10">
-        <div>
-          <span className="text-[10px] uppercase tracking-[0.2em] opacity-65 block">
-            {t('AVAILABLE POINTS', 'বর্তমান ব্যালেন্স')}
-          </span>
-          <div className="flex items-baseline space-x-2 pt-1">
-            <span
-              className={`text-2xl sm:text-3xl font-sans font-semibold tracking-tight tabular-nums ${style.textColor}`}
-            >
-              {pointsBalance}
+      {/* Progress to Next Tier */}
+      {currentConfig.nextTier && nextTierPoints && (
+        <div className="space-y-2 pt-2 border-t border-white/10 relative z-10">
+          <div className="flex items-center justify-between text-xs font-mono">
+            <span className="text-[10px] uppercase tracking-wider text-[#FAF8F5]/70">
+              Progression toward {currentConfig.nextTier}
             </span>
-            <span className="text-[10px] font-mono text-[#C7A97B] font-medium">
-              = {formatBdt(pointsBalance)}
-            </span>
-          </div>
-          <span className="text-[9px] opacity-60 block pt-0.5">
-            {t('Redeemable at ৳1 per point at checkout', 'চেকআউটে ১ পয়েন্ট = ১ টাকা ছাড়')}
-          </span>
-        </div>
-
-        <div>
-          <span className="text-[10px] uppercase tracking-[0.2em] opacity-65 block">
-            {t('LIFETIME POINTS EARNED', 'মোট অর্জিত পয়েন্ট')}
-          </span>
-          <span
-            className={`text-xl sm:text-2xl font-sans font-medium tracking-tight pt-1 block tabular-nums ${style.textColor}`}
-          >
-            {lifetimePoints} PTS
-          </span>
-          <span className="text-[9px] opacity-60 block pt-0.5">
-            {t('Determines continuous tier elevation', 'যা আপনার পরবর্তী টায়ার নির্ধারণ করে')}
-          </span>
-        </div>
-      </div>
-
-      {/* Bottom Progress Meter (if not max tier) */}
-      {nextTier ? (
-        <div className="space-y-2 pt-4 border-t border-[#E6DFD5]/50 relative z-10">
-          <div className="flex items-center justify-between text-xs">
-            <span className={`text-[10px] uppercase tracking-wider font-light ${style.textColor}`}>
-              {t('Progression toward', 'পরবর্তী স্তর:')}{' '}
-              <strong className="text-[#C7A97B] uppercase">{nextTier}</strong>
-            </span>
-            <span className="font-mono text-[10px] text-[#C7A97B]">
-              {pointsNeededForNextTier} {t('PTS TO ELEVATE', 'পয়েন্ট বাকি')}
+            <span className="text-[10px] uppercase tracking-wider text-[#C7A97B] font-medium">
+              {pointsNeededForNextTier} PTS TO ELEVATE
             </span>
           </div>
 
-          {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-[#E6DFD5]/40 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/10">
             <div
-              className="h-full bg-[#C7A97B] transition-all duration-700 ease-out"
-              style={{ width: `${Math.min(100, Math.max(5, progressPercent))}%` }}
+              className="h-full bg-gradient-to-r from-[#C7A97B] to-[#FAF8F5] transition-all duration-500 rounded-full"
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
-      ) : (
-        <div className="pt-4 border-t border-[#C7A97B]/40 flex items-center justify-between text-xs relative z-10">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-[#C7A97B] font-semibold flex items-center space-x-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>PINNACLE NOIR STATUS UNLOCKED</span>
-          </span>
-          <span className="text-[9px] opacity-70">
-            {t('Lifetime Complimentary Courier & Concierge', 'আজীবন ফ্রি হোম ডেলিভারি ও পার্সোনাল কনসিয়ার্জ')}
-          </span>
+      )}
+
+      {/* Sovereign Tier Accomplished */}
+      {!currentConfig.nextTier && (
+        <div className="pt-2 border-t border-white/10 flex items-center space-x-2 text-xs font-serif tracking-wider text-[#E6C687] relative z-10">
+          <Sparkles className="w-3.5 h-3.5 text-[#E6C687]" />
+          <span>Lifetime Complimentary Courier & Concierge</span>
         </div>
       )}
     </div>

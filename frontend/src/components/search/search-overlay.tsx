@@ -130,10 +130,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={t(
-                  'SEARCH BRANDS, FORMULATIONS, VOLUME (E.G. ANUA, COSRX, 50ML)...',
-                  'ব্র্যান্ড, ফর্মুলেশন বা সাইজ খুঁজুন (যেমন: ANUA, COSRX, 50ML)...'
-                )}
+                placeholder={'SEARCH BRANDS, FORMULATIONS, VOLUME (E.G. ANUA, COSRX, 50ML)...'}
                 className="w-full bg-transparent text-sm sm:text-base font-serif tracking-[0.08em] placeholder:text-[#1C1917]/40 text-[#1C1917] focus:outline-none"
               />
               {isLoading && (
@@ -153,7 +150,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 onClick={onClose}
                 className="px-2.5 py-1 text-[11px] uppercase tracking-[0.2em] text-[#1C1917]/60 hover:text-[#1C1917] border border-[#E8E2D9] hover:border-[#1C1917] transition-colors rounded-sm ml-2"
               >
-                {t('ESC', 'বন্ধ')}
+                {'ESC'}
               </button>
             </div>
           </div>
@@ -165,7 +162,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
               <div className="space-y-6 py-2">
                 <div>
                   <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-[#C7A97B] block mb-3">
-                    {t('CURATED HOUSES & BRANDS', 'নির্বাচিত ব্র্যান্ড')}
+                    {'CURATED HOUSES & BRANDS'}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {['ANUA', 'COSRX', 'BEAUTY OF JOSEON', 'THE ORDINARY', 'SKIN1004', 'ROUND LAB'].map((brand) => (
@@ -183,7 +180,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
                 <div>
                   <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-[#C7A97B] block mb-3">
-                    {t('CLINICAL CONCERNS & FORMULATIONS', 'স্কিনকেয়ার সমাধান')}
+                    {'CLINICAL CONCERNS & FORMULATIONS'}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {[
@@ -214,7 +211,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 {categories.length > 0 && (
                   <div>
                     <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-[#C7A97B] block mb-2.5">
-                      {t('MATCHING CATEGORIES', 'ক্যাটাগরি')}
+                      {'MATCHING CATEGORIES'}
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {categories.map((cat) => (
@@ -224,7 +221,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                           onClick={onClose}
                           className="px-3 py-1 bg-white border border-[#E8E2D9] hover:border-[#C7A97B] text-[11px] uppercase tracking-[0.15em] text-[#1C1917] hover:text-[#C7A97B] transition-colors rounded-sm flex items-center space-x-1.5"
                         >
-                          <span>{lang === 'bn' ? cat.nameBn : cat.nameEn}</span>
+                          <span>{cat.nameEn}</span>
                           <ArrowRight className="w-3 h-3 text-[#C7A97B]" />
                         </Link>
                       ))}
@@ -236,7 +233,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 {products.length > 0 && (
                   <div>
                     <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-[#C7A97B] block mb-3">
-                      {t('CURATED FORMULATIONS', 'নির্বাচিত ফর্মুলেশন')} ({products.length})
+                      {'CURATED FORMULATIONS'} ({products.length})
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {products.map((p) => {
@@ -297,7 +294,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 {suggestions.length > 0 && (
                   <div>
                     <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-[#C7A97B] block mb-2">
-                      {t('RELATED SEARCH TERMS', 'সম্পর্কিত অনুসন্ধান')}
+                      {'RELATED SEARCH TERMS'}
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {suggestions.map((term, idx) => (
@@ -321,7 +318,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     onClick={onClose}
                     className="inline-flex items-center space-x-2 text-xs uppercase tracking-[0.2em] font-medium text-[#C7A97B] hover:text-[#1C1917] transition-colors"
                   >
-                    <span>{t('VIEW ALL RESULTS IN THE EDIT', 'ক্যাটালগে সবগুলো ফলাফল দেখুন')}</span>
+                    <span>{'VIEW ALL RESULTS IN THE EDIT'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -331,16 +328,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
               /* Luxury Zero Results State */
               <div className="py-12 text-center space-y-4">
                 <p className="font-serif text-sm text-[#1C1917]/80 uppercase tracking-[0.12em]">
-                  {t(
-                    `No formulations in our curated archives matched "${query}".`,
-                    `আমাদের আর্কাইভে "${query}" সম্পর্কিত কোনো ফর্মুলেশন পাওয়া যায়নি।`
-                  )}
+                  {`No formulations in our curated archives matched "${query}".`}
                 </p>
                 <p className="text-xs text-[#1C1917]/50 tracking-wider max-w-md mx-auto">
-                  {t(
-                    'Our curations feature strictly authentic international formulations. If you need bespoke sourcing or routine guidance, connect directly with our Private Concierge.',
-                    'আমাদের সংগ্রহে কেবল ১০০% আসল আন্তর্জাতিক ফর্মুলেশন সংরক্ষিত। যেকোনো বিশেষ ফর্মুলেশনের জন্য আমাদের কনসিয়ার্জের সাথে যোগাযোগ করুন।'
-                  )}
+                  {'Our curations feature strictly authentic international formulations. If you need bespoke sourcing or routine guidance, connect directly with our Private Concierge.'}
                 </p>
                 <div className="pt-2 flex justify-center space-x-4">
                   <Link
@@ -348,7 +339,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     onClick={onClose}
                     className="px-4 py-2 border border-[#1C1917] text-[10px] uppercase tracking-[0.2em] text-[#1C1917] hover:bg-[#1C1917] hover:text-white transition-colors rounded-sm"
                   >
-                    {t('EXPLORE THE EDIT', 'ক্যাটালগ দেখুন')}
+                    {'EXPLORE THE EDIT'}
                   </Link>
                   <a
                     href={concierge.url}

@@ -73,22 +73,22 @@ describe('CatalogService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should create a category with bilingual titles', async () => {
+  it('should create a category with validated titles', async () => {
     const category = await service.createCategory({
       slug: 'serums',
       nameEn: 'Dermal Serums',
-      nameBn: 'ডার্মাল সিরাম',
+      nameBn: 'Dermal Serums',
     });
 
     expect(category.id).toBe('cat-1');
-    expect(category.nameBn).toBe('ডার্মাল সিরাম');
+    expect(category.nameBn).toBe('Dermal Serums');
   });
 
   it('should create a product in DRAFT state', async () => {
     const product = await service.createProduct({
       slug: 'barrier-repair-serum',
       titleEn: 'Barrier Repair Serum',
-      titleBn: 'ব্যারিয়ার রিপেয়ার সিরাম',
+      titleBn: 'Barrier Repair Serum',
       publicationState: PublicationState.DRAFT,
     });
 

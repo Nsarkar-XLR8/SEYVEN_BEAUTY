@@ -111,31 +111,31 @@ export class PdpService {
     const faqs = [
       {
         questionEn: `How do I incorporate ${product.titleEn} into my daily skincare regimen?`,
-        questionBn: `দৈনন্দিন ত্বকের যত্নে ${product.titleBn} কীভাবে ব্যবহার করবেন?`,
+        questionBn: `How do I incorporate ${product.titleEn} into my daily skincare regimen?`,
         answerEn: product.dermalProtocolEn || 'Apply evenly to cleansed skin morning and evening.',
-        answerBn: product.dermalProtocolBn || 'সকাল ও রাতে পরিষ্কার ত্বকে সমপরিমাণে ব্যবহার করুন।',
+        answerBn: product.dermalProtocolEn || 'Apply evenly to cleansed skin morning and evening.',
       },
       {
         questionEn: 'How should I perform a patch test before first use?',
-        questionBn: 'প্রথম ব্যবহারের আগে কীভাবে প্যাচ টেস্ট করবেন?',
+        questionBn: 'How should I perform a patch test before first use?',
         answerEn: product.patchTestGuideEn || 'Apply a small dime-sized amount behind the ear or inner forearm for 24 hours.',
-        answerBn: product.patchTestGuideBn || 'কানের পেছনে বা হাতের ভেতরের অংশে ২৪ ঘণ্টার জন্য অল্প পরিমাণে লাগিয়ে পরীক্ষা করুন।',
+        answerBn: product.patchTestGuideEn || 'Apply a small dime-sized amount behind the ear or inner forearm for 24 hours.',
       },
       {
         questionEn: 'Is this formula safe during pregnancy and nursing?',
-        questionBn: 'গর্ভাবস্থায় বা স্তন্যদানকালে এটি কি নিরাপদ?',
+        questionBn: 'Is this formula safe during pregnancy and nursing?',
         answerEn: product.isPregnancySafe
           ? 'Yes, this dermal formulation is free of contraindicated retinoids and safe for pregnancy.'
           : 'Please consult your obstetrician before use as active concentrations may not be recommended during pregnancy.',
         answerBn: product.isPregnancySafe
-          ? 'হ্যাঁ, এই ফর্মুলাটি গর্ভাবস্থায় ব্যবহারের জন্য নিরাপদ।'
-          : 'গর্ভাবস্থায় ব্যবহারের পূর্বে বিশেষজ্ঞ চিকিৎসকের পরামর্শ নিন।',
+          ? 'Yes, this dermal formulation is free of contraindicated retinoids and safe for pregnancy.'
+          : 'Please consult your obstetrician before use as active concentrations may not be recommended during pregnancy.',
       },
       {
         questionEn: 'What is the recommended storage guidance and shelf life?',
-        questionBn: 'সংরক্ষণ পদ্ধতি ও ব্যবহারের মেয়াদ কত দিন?',
+        questionBn: 'What is the recommended storage guidance and shelf life?',
         answerEn: `${product.storageGuidanceEn || 'Store in a cool, dry place away from direct sunlight.'} Use within ${product.paoMonths || 12} months after opening.`,
-        answerBn: `${product.storageGuidanceBn || 'সরাসরি সূর্যের আলো থেকে দূরে শীতল ও শুষ্ক স্থানে সংরক্ষণ করুন।'} খোলার পর ${product.paoMonths || 12} মাসের মধ্যে ব্যবহার করুন।`,
+        answerBn: `${product.storageGuidanceEn || 'Store in a cool, dry place away from direct sunlight.'} Use within ${product.paoMonths || 12} months after opening.`,
       },
     ];
 

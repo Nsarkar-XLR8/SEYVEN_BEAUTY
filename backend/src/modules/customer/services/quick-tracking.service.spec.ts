@@ -83,7 +83,7 @@ describe('QuickTrackingService', () => {
     expect(result.orderNumber).toBe('SYV-202610-001');
     expect(result.status).toBe(OrderStatus.SHIPPED);
     expect(result.statusLabel).toBe('Out for Delivery');
-    expect(result.statusLabelBn).toBe('ডেলিভারির জন্য বের হয়েছে');
+    expect(result.statusLabelBn).toBe('Out for Delivery');
     expect(result.courierName).toBe('Steadfast Courier');
     expect(result.courierBookingId).toBe('STEADFAST-109923');
     expect(result.trackingCode).toBe('SF-TRK-9901');

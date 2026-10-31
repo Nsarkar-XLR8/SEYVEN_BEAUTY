@@ -112,7 +112,7 @@ export class RmaController {
   @ApiOperation({
     summary: 'Disburse refund & issue statutory NBR Mushak-6.7 Credit Note',
     description:
-      'Executes customer refund disbursement to original MFS wallet (bKash/Nagad/SSLCommerz) or store credit. Automatically generates an immutable NBR Form Mushak-6.7 Credit Note (কর ক্রেডিট নোট) for fiscal VAT reconciliation.',
+      'Executes customer refund disbursement to original MFS wallet (bKash/Nagad/SSLCommerz) or store credit. Automatically generates an immutable NBR Form Mushak-6.7 Credit Note for fiscal VAT reconciliation.',
   })
   @ApiParam({ name: 'id', description: 'RMA UUID' })
   @ApiResponse({ status: 200, description: 'Refund disbursed and Mushak-6.7 issued' })

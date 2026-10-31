@@ -124,7 +124,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
           className="flex items-center space-x-2 text-left group cursor-pointer"
         >
           <span className="text-xs font-serif uppercase tracking-[0.2em] font-medium text-[#1C1917] group-hover:text-[#C7A97B] transition-colors">
-            {t('SANCTUARY BAG SUMMARY', 'ব্যাগ-এর বিবরণ')} ({items.length})
+            SANCTUARY BAG SUMMARY ({items.length})
           </span>
           <ChevronDown
             className={`w-3.5 h-3.5 text-[#1C1917]/60 transition-transform duration-200 ${
@@ -152,7 +152,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
 
             <div className="flex-1 min-w-0 space-y-0.5">
               <p className="font-serif uppercase tracking-wider text-[#1C1917] font-medium truncate">
-                {lang === 'bn' ? item.titleBn : item.titleEn}
+                {item.titleEn}
               </p>
               <p className="text-[10px] text-[#1C1917]/60 tracking-wider">
                 {item.volume} • QTY: {item.quantity}
@@ -170,7 +170,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
           <div className="p-2.5 bg-[#C7A97B]/10 border border-[#C7A97B]/40 flex items-center space-x-2 text-[10px] text-[#1C1917]">
             <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
             <span className="font-medium tracking-wide">
-              {t('[ COMPLIMENTARY LUXURY MINIATURE INCLUDED ]', '[ কমপ্লিমেন্টারি মিনি সাইজ গিফট অন্তর্ভুক্ত ]')}
+              [ COMPLIMENTARY LUXURY MINIATURE INCLUDED ]
             </span>
           </div>
         )}
@@ -184,7 +184,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
               <div className="flex items-center space-x-2">
                 <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
                 <span className="font-serif tracking-wider text-[11px] uppercase">
-                  {t('PRIVILEGE HONORED:', 'প্রিভিলেজ সক্রিয়:')}{' '}
+                  PRIVILEGE HONORED:{' '}
                   <strong className="font-mono text-[#C7A97B] font-semibold">{privilegeCode}</strong>
                 </span>
               </div>
@@ -193,7 +193,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
                 onClick={removePrivilege}
                 className="text-[10px] text-[#FAF8F5]/60 hover:text-white underline cursor-pointer tracking-wider transition-colors"
               >
-                {t('REMOVE', 'মুছুন')}
+                REMOVE
               </button>
             </div>
           ) : (
@@ -206,7 +206,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
                     setInputCode(e.target.value.toUpperCase());
                     setApplyError(null);
                   }}
-                  placeholder={t('Privilege Code (e.g. EID7)', 'প্রিভিলেজ কোড (যেমন: EID7)')}
+                  placeholder="Privilege Code (e.g. EID7)"
                   className="flex-1 bg-white border border-[#E6DFD5] px-3 py-2 text-xs uppercase tracking-wider text-[#1C1917] placeholder:text-[#1C1917]/40 focus:outline-hidden focus:border-[#C7A97B]"
                 />
                 <button
@@ -215,7 +215,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
                   disabled={isApplying || !inputCode.trim()}
                   className="px-4 py-2 bg-[#1C1917] hover:bg-[#1C1917]/90 disabled:opacity-40 text-[#F9F6F0] text-[11px] uppercase tracking-wider font-medium cursor-pointer transition-colors"
                 >
-                  {isApplying ? '...' : t('APPLY', 'প্রয়োগ')}
+                  {isApplying ? '...' : 'APPLY'}
                 </button>
               </div>
               {applyError && (
@@ -230,7 +230,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
       <div className="space-y-2.5 pt-1 text-xs">
         {/* Subtotal */}
         <div className="flex justify-between items-center text-[#1C1917]/80">
-          <span className="font-light">{t('Subtotal (Formulations)', 'প্রোডাক্টের মোট মূল্য')}</span>
+          <span className="font-light">Subtotal (Formulations)</span>
           <BdtPrice amount={subtotalBdt} />
         </div>
 
@@ -240,7 +240,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
             <span className="flex items-center gap-1.5 font-light">
               <Sparkles className="w-3.5 h-3.5 text-[#C7A97B]" />
               <span className="font-serif">
-                {activePrivilegeLabel || t('Sanctuary Client Privilege', 'স্যাকচুয়ারি ক্লায়েন্ট প্রিভিলেজ')}
+                {activePrivilegeLabel || 'Sanctuary Client Privilege'}
               </span>
             </span>
             <BdtPrice amount={discountBdt} prefix="-" isDiscount />
@@ -252,7 +252,7 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
           <div className="flex justify-between items-center text-emerald-800">
             <span className="flex items-center gap-1.5 font-light">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block" />
-              {t('VIP Loyalty Points Redeemed', 'লয়্যালটি পয়েন্টস ছাড়')}
+              VIP Loyalty Points Redeemed
             </span>
             <BdtPrice amount={loyaltyDiscountBdt} prefix="-" isDiscount />
           </div>
@@ -260,24 +260,21 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
 
         {/* Delivery Fee */}
         <div className="flex justify-between items-center text-[#1C1917]/80">
-          <span className="font-light">{t('Delivery Protocol Fee', 'ডেলিভারি চার্জ')}</span>
+          <span className="font-light">Delivery Protocol Fee</span>
           {deliveryFeeBdt === 0 ? (
             <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-xs">
-              {t('COMPLIMENTARY', 'ফ্রি ডেলিভারি')}
+              COMPLIMENTARY
             </span>
           ) : (
             <BdtPrice amount={deliveryFeeBdt} />
           )}
         </div>
 
-        {/* Government VAT notice (Strictly hidden when turned OFF by Admin) */}
+        {/* Government VAT notice */}
         {settings?.isVatEnabled && vatBdt > 0 && (
           <div className="flex justify-between items-center text-[#1C1917]/60 text-[11px] pt-0.5">
             <span className="font-light">
-              {t(
-                `Government VAT (${settings.vatRatePercent}% Inclusive)`,
-                `সরকারি ভ্যাট (${settings.vatRatePercent}% অন্তর্ভুক্ত)`
-              )}
+              Government VAT ({settings.vatRatePercent}% Inclusive)
             </span>
             <BdtPrice amount={vatBdt} size="xs" className="text-[#1C1917]/60" />
           </div>
@@ -287,12 +284,12 @@ export function CheckoutOrderSummary({ deliveryFeeBdt, loyaltyDiscountBdt }: Che
         <div className="mt-3.5 pt-3.5 pb-3 px-3.5 bg-[#E6DFD5]/25 border border-[#E6DFD5] flex justify-between items-baseline">
           <div className="space-y-0.5">
             <span className="text-xs uppercase tracking-[0.2em] font-medium text-[#1C1917] block">
-              {t('NET PAYABLE TOTAL', 'সর্বমোট প্রদেয়')}
+              NET PAYABLE TOTAL
             </span>
             <span className="text-[9px] uppercase tracking-wider text-[#C7A97B] font-medium block">
               {settings?.isVatEnabled && vatBdt > 0
                 ? 'OFFICIAL NBR TAX INVOICE INCLUDED'
-                : t('DIRECT FORMULATION IMPORT', 'সরাসরি আমদানিকৃত পণ্য')}
+                : 'DIRECT FORMULATION IMPORT'}
             </span>
           </div>
           <BdtPrice amount={netTotal} size="xl" isHighlight />

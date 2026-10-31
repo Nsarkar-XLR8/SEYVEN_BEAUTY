@@ -26,14 +26,14 @@ interface TrackingResult {
   timeline: {
     state: string;
     labelEn: string;
-    labelBn: string;
+    labelBn?: string;
     timestamp: string;
     completed: boolean;
     current: boolean;
   }[];
   items: {
     titleEn: string;
-    titleBn: string;
+    titleBn?: string;
     volume: string;
     quantity: number;
     priceBdt: number;
@@ -114,7 +114,6 @@ export function OrderTrackerView() {
           items: Array.isArray(res.items)
             ? res.items.map((it: any) => ({
                 titleEn: it.title || it.titleEn || 'Bespoke Formulation',
-                titleBn: it.titleBn || it.title || 'ফর্মুলেশন',
                 volume: it.variant || it.volume || 'Standard',
                 quantity: it.quantity || 1,
                 priceBdt: Number(it.unitPriceBdt || it.priceBdt || 0),
@@ -160,7 +159,6 @@ export function OrderTrackerView() {
             {
               state: 'PLACED',
               labelEn: 'Order Received & Digitally Logged',
-              labelBn: 'অর্ডার গৃহীত হয়েছে',
               timestamp: match.createdAt
                 ? new Date(match.createdAt).toLocaleDateString('en-US', {
                     month: 'short',
@@ -176,7 +174,6 @@ export function OrderTrackerView() {
             {
               state: 'CONFIRMED',
               labelEn: 'Clinical Authenticity & Lot Verified',
-              labelBn: 'ক্লিনিক্যাল ব্যাচ ও লট ভেরিফাইড',
               timestamp: match.status === 'CONFIRMED' ? 'Completed' : 'Pending',
               completed: match.status === 'CONFIRMED' || match.status === 'PACKED' || match.status === 'DISPATCHED' || match.status === 'DELIVERED',
               current: match.status === 'CONFIRMED',
@@ -184,7 +181,6 @@ export function OrderTrackerView() {
             {
               state: 'PACKED',
               labelEn: 'Sanctuary Sealed with Tamper-Proof Tape',
-              labelBn: 'প্যাকেজিং সম্পন্ন',
               timestamp: match.status === 'PACKED' ? 'Completed' : 'Pending',
               completed: match.status === 'PACKED' || match.status === 'DISPATCHED' || match.status === 'DELIVERED',
               current: match.status === 'PACKED',
@@ -192,7 +188,6 @@ export function OrderTrackerView() {
             {
               state: 'DISPATCHED',
               labelEn: 'Handed Over to Courier Hub',
-              labelBn: 'কুরিয়ার হাব-এ হস্তান্তর সম্পন্ন',
               timestamp: match.status === 'DISPATCHED' ? 'Completed' : 'Pending',
               completed: match.status === 'DISPATCHED' || match.status === 'DELIVERED',
               current: match.status === 'DISPATCHED',
@@ -200,7 +195,6 @@ export function OrderTrackerView() {
             {
               state: 'DELIVERED',
               labelEn: 'Out for Doorstep Delivery & Handover',
-              labelBn: 'ডেলিভারির জন্য বের হয়েছে',
               timestamp: 'Pending',
               completed: match.status === 'DELIVERED',
               current: match.status === 'DELIVERED',
@@ -209,7 +203,6 @@ export function OrderTrackerView() {
           items: Array.isArray(match.items)
             ? match.items.map((it: any) => ({
                 titleEn: it.title || it.titleEn || 'Bespoke Formulation',
-                titleBn: it.titleBn || it.title || 'ফর্মুলেশন',
                 volume: it.variant || it.volume || 'Standard',
                 quantity: it.quantity || 1,
                 priceBdt: Number(it.unitPrice || it.priceBdt || 0),
@@ -224,10 +217,7 @@ export function OrderTrackerView() {
 
     // If order was not found anywhere, show error message instead of fake mock data
     setErrorMessage(
-      t(
-        'No order found matching this tracking ID. Please verify your order ID or contact concierge.',
-        'এই ট্র্যাকিং আইডির কোনো অর্ডার পাওয়া যায়নি। অনুগ্রহ করে সঠিক অর্ডার আইডি লিখুন।'
-      )
+      'No order found matching this tracking ID. Please verify your order ID or contact concierge.'
     );
     setTrackingResult(null);
     setIsSearching(false);
@@ -236,7 +226,7 @@ export function OrderTrackerView() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderIdInput.trim()) {
-      setErrorMessage(t('Please enter your SEYVEN Order Tracking ID.', 'অনুগ্রহ করে অর্ডার ট্র্যাকিং আইডি দিন।'));
+      setErrorMessage('Please enter your SEYVEN Order Tracking ID.');
       return;
     }
     performSearch(orderIdInput, phoneInput);
@@ -248,18 +238,15 @@ export function OrderTrackerView() {
       <div className="text-center space-y-3 max-w-xl mx-auto">
         <div className="inline-flex items-center space-x-2 px-3 py-1 bg-[#E6DFD5]/40 border border-[#E6DFD5] text-[9px] uppercase tracking-[0.3em] font-medium text-[#C7A97B]">
           <Truck className="w-3.5 h-3.5" />
-          <span>{t('LIVE ORDER TRACKING', 'অর্ডার ট্র্যাকিং')}</span>
+          <span>{'LIVE ORDER TRACKING'}</span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif uppercase tracking-[0.18em] font-light text-[#1C1917]">
-          {t('TRACK YOUR SANCTUARY PARCEL', 'আপনার অর্ডারের বর্তমান অবস্থা')}
+          {'TRACK YOUR SANCTUARY PARCEL'}
         </h1>
 
         <p className="text-xs sm:text-sm text-[#1C1917]/70 font-light leading-relaxed">
-          {t(
-            'Enter your Order ID (from your confirmation SMS/Email) to monitor fulfillment and live courier transit.',
-            'আপনার অর্ডার আইডি লিখে সার্চ করে জেনে নিন পার্সেলটি কোথায় আছে এবং সম্ভাব্য পৌঁছানোর সময়।'
-          )}
+          {'Enter your Order ID (from your confirmation SMS/Email) to monitor fulfillment and live courier transit.'}
         </p>
       </div>
 
@@ -269,7 +256,7 @@ export function OrderTrackerView() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label htmlFor="search-order-id" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block font-medium">
-                {t('ORDER TRACKING ID (REQUIRED)', 'অর্ডার আইডি (বাধ্যতামূলক)')}
+                {'ORDER TRACKING ID (REQUIRED)'}
               </label>
               <input
                 id="search-order-id"
@@ -287,7 +274,7 @@ export function OrderTrackerView() {
 
             <div className="space-y-1">
               <label htmlFor="search-phone" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block font-medium">
-                {t('MOBILE PHONE NUMBER (OPTIONAL)', 'মোবাইল নম্বর (ঐচ্ছিক)')}
+                {'MOBILE PHONE NUMBER (OPTIONAL)'}
               </label>
               <input
                 id="search-phone"
@@ -315,7 +302,7 @@ export function OrderTrackerView() {
               className="w-full sm:w-auto px-8 py-3 bg-[#1C1917] hover:bg-[#1C1917]/90 disabled:opacity-50 text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium transition-colors flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
             >
               <Search className="w-3.5 h-3.5 text-[#C7A97B]" />
-              <span>{isSearching ? t('LOCATING PARCEL...', 'খোঁজা হচ্ছে...') : t('LOCATE PARCEL', 'ট্র্যাক করুন')}</span>
+              <span>{isSearching ? 'LOCATING PARCEL...' : 'LOCATE PARCEL'}</span>
             </button>
           </div>
         </form>
@@ -372,7 +359,7 @@ export function OrderTrackerView() {
             {/* Visual Timeline Rail */}
             <div className="space-y-4 pt-2">
               <h3 className="text-xs font-serif uppercase tracking-[0.2em] text-[#1C1917] font-medium">
-                {t('CHAIN OF CUSTODY TIMELINE', 'ডেলিভারির পর্যায়সমূহ')}
+                {'CHAIN OF CUSTODY TIMELINE'}
               </h3>
 
               <div className="relative border-l-2 border-[#E6DFD5] ml-3 sm:ml-4 pl-6 space-y-6">
@@ -396,7 +383,7 @@ export function OrderTrackerView() {
                             step.completed || step.current ? 'text-[#1C1917]' : 'text-[#1C1917]/40'
                           }`}
                         >
-                          {lang === 'bn' ? step.labelBn : step.labelEn}
+                          {step.labelEn}
                         </h4>
                         {step.current && (
                           <span className="text-[8px] uppercase tracking-widest text-amber-800 bg-amber-50 px-1.5 py-0.2 border border-amber-200">
@@ -421,7 +408,7 @@ export function OrderTrackerView() {
             <div className="p-4 sm:p-5 bg-[#F9F6F0] border border-[#E6DFD5] space-y-2 text-xs">
               <div className="flex items-center space-x-1.5 text-[10px] uppercase tracking-[0.2em] text-[#C7A97B] font-semibold">
                 <Truck className="w-3.5 h-3.5" />
-                <span>{t('DELIVERY DESTINATION', 'ডেলিভারির গন্তব্য')}</span>
+                <span>{'DELIVERY DESTINATION'}</span>
               </div>
               <p className="font-serif font-medium text-[#1C1917] text-sm">
                 {trackingResult.customerName}
@@ -438,7 +425,7 @@ export function OrderTrackerView() {
             <div className="p-4 sm:p-5 bg-[#F9F6F0] border border-[#E6DFD5] space-y-2 text-xs">
               <div className="flex items-center space-x-1.5 text-[10px] uppercase tracking-[0.2em] text-[#C7A97B] font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>{t('SETTLEMENT DETAILS', 'পেমেন্ট ও বিল')}</span>
+                <span>{'SETTLEMENT DETAILS'}</span>
               </div>
               <p className="font-serif font-medium text-[#1C1917] text-sm">
                 {trackingResult.paymentMethod}
@@ -447,7 +434,7 @@ export function OrderTrackerView() {
                 {formatBdt(trackingResult.totalBdt)}
               </p>
               <span className="text-[9px] uppercase tracking-wider text-emerald-800 block">
-                {t('AUTHENTIC FORMULATION IMPORT & SANCTUARY CARE', 'শতভাগ আসল আমদানিকৃত ফর্মুলেশন ও লাক্সারি ডেলিভারি')}
+                {'AUTHENTIC FORMULATION IMPORT & SANCTUARY CARE'}
               </span>
             </div>
 
@@ -456,7 +443,7 @@ export function OrderTrackerView() {
           {/* Formulations inside this order */}
           <div className="p-5 bg-[#F9F6F0] border border-[#E6DFD5] space-y-3">
             <h3 className="text-xs font-serif uppercase tracking-[0.2em] text-[#1C1917] font-medium">
-              {t('ENCLOSED FORMULATIONS', 'এই পার্সেলের প্রোডাক্টসমূহ')}
+              {'ENCLOSED FORMULATIONS'}
             </h3>
 
             <div className="divide-y divide-[#E6DFD5]">
@@ -464,7 +451,7 @@ export function OrderTrackerView() {
                 <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
                   <div className="space-y-0.5">
                     <p className="font-serif uppercase tracking-wider text-[#1C1917] font-medium">
-                      {lang === 'bn' ? it.titleBn : it.titleEn}
+                      {it.titleEn}
                     </p>
                     <p className="text-[10px] text-[#1C1917]/60 font-mono">
                       {it.volume} • QTY: {it.quantity}
@@ -483,10 +470,7 @@ export function OrderTrackerView() {
             <div className="flex items-center space-x-2 text-[#1C1917]/80">
               <RotateCcw className="w-4 h-4 text-[#C7A97B] shrink-0" />
               <span>
-                {t(
-                  'Need an exchange, return, or reporting a delivery issue?',
-                  'রিটার্ন বা পরিবর্তন সংক্রান্ত সহায়তা প্রয়োজন?'
-                )}
+                {'Need an exchange, return, or reporting a delivery issue?'}
               </span>
             </div>
 
@@ -494,7 +478,7 @@ export function OrderTrackerView() {
               href={`/support/returns?orderId=${trackingResult.orderId}`}
               className="px-4 py-2 bg-[#1C1917] text-[#F9F6F0] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#1C1917]/90 transition-colors shrink-0"
             >
-              {t('START SELF-SERVE RETURN (RMA)', 'রিটার্ন আবেদন করুন')}
+              {'START SELF-SERVE RETURN (RMA)'}
             </Link>
           </div>
 
@@ -521,10 +505,7 @@ export function OrderTrackerView() {
                   rel="noopener noreferrer"
                   className="hover:underline hover:text-[#C7A97B] transition-colors"
                 >
-                  {t(
-                    `Urgent Delivery Inquiry? WhatsApp SEYVEN Concierge: ${rawPhone} ↗`,
-                    `জরুরি ডেলিভারি তথ্যের জন্য হোয়াটসঅ্যাপ কনসিয়ার্জ: ${rawPhone} ↗`
-                  )}
+                  {`Urgent Delivery Inquiry? WhatsApp SEYVEN Concierge: ${rawPhone} ↗`}
                 </a>
               </p>
             );
@@ -535,10 +516,7 @@ export function OrderTrackerView() {
                 href={`mailto:${BRAND.supportEmail}`}
                 className="hover:underline hover:text-[#C7A97B] transition-colors"
               >
-                {t(
-                  `Urgent Delivery Inquiry? Contact SEYVEN Concierge: ${BRAND.supportEmail} ↗`,
-                  `জরুরি ডেলিভারি তথ্যের জন্য যোগাযোগ করুন: ${BRAND.supportEmail} ↗`
-                )}
+                {`Urgent Delivery Inquiry? Contact SEYVEN Concierge: ${BRAND.supportEmail} ↗`}
               </a>
             </p>
           );

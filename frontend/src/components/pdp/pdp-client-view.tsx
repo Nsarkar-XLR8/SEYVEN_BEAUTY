@@ -72,16 +72,13 @@ export function PdpClientView({ slug }: PdpClientViewProps) {
           FORMULATION NOT FOUND
         </span>
         <p className="text-xs text-[#1C1917]/70 max-w-md font-light">
-          {t(
-            'The requested formulation may have been archived or is temporarily transitioning in our master registry.',
-            'অনুরোধকৃত প্রোডাক্টটি বর্তমানে উপলব্ধ নেই অথবা আপডেট করা হচ্ছে।'
-          )}
+          {'The requested formulation may have been archived or is temporarily transitioning in our master registry.'}
         </p>
         <Link
           href="/catalog"
           className="mt-4 px-6 py-3 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium"
         >
-          {t('RETURN TO ALL FORMULATIONS', 'সকল প্রোডাক্ট দেখুন')}
+          {'RETURN TO ALL FORMULATIONS'}
         </Link>
       </div>
     );
@@ -104,15 +101,15 @@ export function PdpClientView({ slug }: PdpClientViewProps) {
           className="flex items-center space-x-2 text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/60 overflow-x-auto whitespace-nowrap py-2"
         >
           <Link href="/" className="hover:text-[#C7A97B] transition-colors">
-            {t('SANCTUARY', 'হোম')}
+            {'SANCTUARY'}
           </Link>
           <ChevronRight className="w-3 h-3 text-[#E6DFD5] shrink-0" />
           <Link href="/catalog" className="hover:text-[#C7A97B] transition-colors">
-            {t('THE FORMULATIONS', 'প্রোডাক্টস')}
+            {'THE FORMULATIONS'}
           </Link>
           <ChevronRight className="w-3 h-3 text-[#E6DFD5] shrink-0" />
           <span className="text-[#C7A97B] font-medium truncate max-w-xs">
-            {product.brand} // {lang === 'bn' ? product.titleBn : product.titleEn}
+            {product.brand} // {product.titleEn}
           </span>
         </nav>
       </div>

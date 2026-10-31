@@ -42,7 +42,7 @@ describe('OgGeneratorService', () => {
         id: 'prod-uuid-1',
         slug: 'seyven-niacinamide-10-serum',
         titleEn: 'Seyven Niacinamide 10% + Zinc PCA 1%',
-        titleBn: 'সেভেন নায়াসিনামাইড ১০%',
+        titleBn: 'Seyven Niacinamide 10% + Zinc PCA 1%',
         paoMonths: 12,
         bstiLicenseNumber: 'BSTI-COS-9012',
         bstiStatus: 'APPROVED',
@@ -62,7 +62,6 @@ describe('OgGeneratorService', () => {
       expect(svg).toContain('<svg width="1200" height="630"');
       expect(svg).toContain('S E Y V E N');
       expect(svg).toContain('Seyven Niacinamide 10% + Zinc PCA 1%');
-      expect(svg).toContain('সেভেন নায়াসিনামাইড ১০%');
       expect(svg).toContain('৳1,450');
       expect(svg).toContain('৳1,650');
       expect(svg).toContain('BSTI CERTIFIED: BSTI-COS-9012');

@@ -49,15 +49,15 @@ describe('SmsGatewayClient', () => {
       expect(res.parts).toBe(2);
     });
 
-    it('should calculate 1 part for Unicode / Bangla message <= 70 chars', () => {
-      const msg = 'SEYVEN: আপনার অর্ডার নিশ্চিত হয়েছে।';
+    it('should calculate 1 part for Unicode message <= 70 chars', () => {
+      const msg = 'SEYVEN: Order verified \u2728';
       const res = client.calculateSmsParts(msg);
       expect(res.isUnicode).toBe(true);
       expect(res.parts).toBe(1);
     });
 
-    it('should calculate 2 parts for Unicode / Bangla message > 70 chars', () => {
-      const msg = 'বাংলা'.repeat(16); // 80 chars (80 / 67 = 2 parts)
+    it('should calculate 2 parts for Unicode message > 70 chars', () => {
+      const msg = 'Sparkle \u2728 '.repeat(10); // > 70 chars
       const res = client.calculateSmsParts(msg);
       expect(res.isUnicode).toBe(true);
       expect(res.parts).toBe(2);

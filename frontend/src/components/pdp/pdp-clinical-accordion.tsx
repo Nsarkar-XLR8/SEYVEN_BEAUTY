@@ -38,7 +38,7 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
           <div className="flex items-center space-x-2">
             <Sparkles className="w-4 h-4 text-[#C7A97B]" />
             <h3 className="text-xs uppercase tracking-[0.22em] font-serif font-medium text-[#1C1917] group-hover:text-[#C7A97B] transition-colors">
-              {t('WHY YOUR SKIN WILL LOVE THIS', 'ত্বকের জন্য কেন এটি সেরা')}
+              {'WHY YOUR SKIN WILL LOVE THIS'}
             </h3>
           </div>
           <ChevronDown
@@ -53,9 +53,9 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
             {/* Climate & Texture Note */}
             <div className="p-3.5 bg-[#F9F6F0] border-l-2 border-[#C7A97B] text-xs text-[#1C1917]/85 leading-relaxed font-light">
               <span className="font-medium text-[#1C1917] block mb-1">
-                {t('Beauty Note for Bangladeshi Climate:', 'আমাদের রূপচর্চা পরামর্শ:')}
+                {'Beauty Note for Bangladeshi Climate:'}
               </span>
-              {lang === 'bn' ? product.dermalStoryBn : product.dermalStoryEn}
+              {product.dermalStoryEn}
             </div>
 
             {/* Key Active Highlights (Clean, intuitive cards without chemical jargon) */}
@@ -70,11 +70,11 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
                       {active.name}
                     </span>
                     <span className="text-[9px] uppercase tracking-wider text-[#C7A97B] font-medium">
-                      {t('ACTIVE HERO', 'মূল উপাদান')}
+                      {'ACTIVE HERO'}
                     </span>
                   </div>
                   <p className="text-[11px] text-[#1C1917]/75 font-light leading-relaxed">
-                    {lang === 'bn' ? active.purposeBn : active.purposeEn}
+                    {active.purposeEn}
                   </p>
                 </div>
               ))}
@@ -95,7 +95,7 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
           <div className="flex items-center space-x-2">
             <Heart className="w-4 h-4 text-[#C7A97B]" />
             <h3 className="text-xs uppercase tracking-[0.22em] font-serif font-medium text-[#1C1917] group-hover:text-[#C7A97B] transition-colors">
-              {t('HOW TO APPLY & DAILY ROUTINE', 'ব্যবহারের সহজ নিয়ম ও রুটিন')}
+              {'HOW TO APPLY & DAILY ROUTINE'}
             </h3>
           </div>
           <ChevronDown
@@ -118,10 +118,10 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
                   </span>
                   <div className="space-y-0.5">
                     <h4 className="text-xs font-serif uppercase tracking-wider text-[#1C1917] font-medium">
-                      {lang === 'bn' ? step.titleBn : step.titleEn}
+                      {step.titleEn}
                     </h4>
                     <p className="text-xs text-[#1C1917]/75 font-light leading-relaxed">
-                      {lang === 'bn' ? step.instructionBn : step.instructionEn}
+                      {step.instructionEn}
                     </p>
                   </div>
                 </div>
@@ -130,7 +130,7 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
 
             {/* Routine timing badge */}
             <div className="flex items-center space-x-2 text-[10px] uppercase tracking-wider text-[#1C1917]/60 pt-1">
-              <span>{t('IDEAL TIME TO APPLY:', 'ব্যবহারের উপযুক্ত সময়:')}</span>
+              <span>{'IDEAL TIME TO APPLY:'}</span>
               <span className="font-semibold text-[#C7A97B]">{product.routinePeriod} ROUTINE</span>
             </div>
           </div>
@@ -149,7 +149,7 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4 text-[#C7A97B]" />
             <h3 className="text-xs uppercase tracking-[0.22em] font-serif font-medium text-[#1C1917] group-hover:text-[#C7A97B] transition-colors">
-              {t('GENTLE CARE & AUTHENTICITY', 'নিরাপত্তা ও শতভাগ আসল পণ্যের নিশ্চয়তা')}
+              {'GENTLE CARE & AUTHENTICITY'}
             </h3>
           </div>
           <ChevronDown
@@ -165,28 +165,28 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               <div className="p-3 bg-[#F9F6F0] border border-[#E6DFD5] text-center space-y-0.5">
                 <span className="text-[8px] uppercase tracking-wider text-[#1C1917]/60 block">
-                  {t('PREGNANCY', 'গর্ভাবস্থা')}
+                  {'PREGNANCY'}
                 </span>
                 <span className={`text-[10px] uppercase tracking-wider font-semibold ${product.isPregnancySafe ? 'text-emerald-700' : 'text-amber-700'}`}>
-                  {product.isPregnancySafe ? t('SAFE TO USE', 'ব্যবহার উপযোগী') : t('CONSULT OB-GYN', 'ডাক্তারের পরামর্শ নিন')}
+                  {product.isPregnancySafe ? 'SAFE TO USE' : 'CONSULT OB-GYN'}
                 </span>
               </div>
 
               <div className="p-3 bg-[#F9F6F0] border border-[#E6DFD5] text-center space-y-0.5">
                 <span className="text-[8px] uppercase tracking-wider text-[#1C1917]/60 block">
-                  {t('SKIN BARRIER', 'ত্বকের সংবেদনশীলতা')}
+                  {'SKIN BARRIER'}
                 </span>
                 <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700">
-                  {t('GENTLE & TESTED', 'কোমল ও পরীক্ষিত')}
+                  {'GENTLE & TESTED'}
                 </span>
               </div>
 
               <div className="p-3 bg-[#F9F6F0] border border-[#E6DFD5] text-center space-y-0.5 col-span-2 sm:col-span-1">
                 <span className="text-[8px] uppercase tracking-wider text-[#1C1917]/60 block">
-                  {t('AUTHENTICITY', 'আমদানি নিশ্চয়তা')}
+                  {'AUTHENTICITY'}
                 </span>
                 <span className="text-[10px] uppercase tracking-wider font-semibold text-[#1C1917]">
-                  {product.originCountry ? product.originCountry.toUpperCase() : t('DIRECT IMPORT', 'সরাসরি আসল ব্র্যান্ড')}
+                  {product.originCountry ? product.originCountry.toUpperCase() : 'DIRECT IMPORT'}
                 </span>
               </div>
             </div>
@@ -195,8 +195,8 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
             <div className="p-3 bg-[#F9F6F0] border border-[#E6DFD5] text-xs text-[#1C1917]/80 flex items-center space-x-2">
               <Info className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
               <span>
-                <strong>{t('Storage Note: ', 'সংরক্ষণ টিপস: ')}</strong>
-                {lang === 'bn' ? product.storageGuidanceBn : product.storageGuidanceEn}
+                <strong>{'Storage Note: '}</strong>
+                {product.storageGuidanceEn}
               </span>
             </div>
           </div>
@@ -215,7 +215,7 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
           <div className="flex items-center space-x-2">
             <Info className="w-4 h-4 text-[#C7A97B]" />
             <h3 className="text-xs uppercase tracking-[0.22em] font-serif font-medium text-[#1C1917] group-hover:text-[#C7A97B] transition-colors">
-              {t('FULL INGREDIENTS (INCI)', 'সম্পূর্ণ উপাদান তালিকা')}
+              {'FULL INGREDIENTS (INCI)'}
             </h3>
           </div>
           <ChevronDown
@@ -228,10 +228,7 @@ export function PdpClinicalAccordion({ product }: PdpClinicalAccordionProps) {
         {openSections.fullInci && (
           <div className="pt-4 space-y-2 animate-in fade-in duration-200">
             <p className="text-xs text-[#1C1917]/60 font-light">
-              {t(
-                'Complete ingredient transparency adhering to international cosmetic standards:',
-                'আন্তর্জাতিক প্রসাধনী মানদণ্ড অনুযায়ী সম্পূর্ণ উপাদান তালিকা:'
-              )}
+              {'Complete ingredient transparency adhering to international cosmetic standards:'}
             </p>
             <div className="p-3 bg-[#F9F6F0] border border-[#E6DFD5] text-[11px] text-[#1C1917]/75 font-sans leading-relaxed max-h-36 overflow-y-auto">
               {product.fullInci.map((ing) => ing.inciName).join(', ')}.

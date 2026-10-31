@@ -68,14 +68,14 @@ export default function AdminCatalogDeskPage() {
     if (!editingProduct) return;
     const priceNum = Number(editPriceInput);
     if (isNaN(priceNum) || priceNum <= 0) {
-      alert('সঠিক দাম (BDT) লিখুন');
+      alert('Please enter a valid price (BDT)');
       return;
     }
     setIsSavingPrice(true);
     const compareNum = editCompareAtInput ? Number(editCompareAtInput) : undefined;
     await updateProductPrice(editingProduct.slug || editingProduct.id, priceNum, compareNum);
     setIsSavingPrice(false);
-    setToastMessage(`✅ "${editingProduct.titleEn}" এর দাম ৳${priceNum.toLocaleString()} ডাটাবেজে সেভ হয়েছে!`);
+    setToastMessage(`✅ "${editingProduct.titleEn}" price updated to ৳${priceNum.toLocaleString()} in database!`);
     setEditingProduct(null);
     setTimeout(() => setToastMessage(null), 4000);
   };
@@ -362,7 +362,7 @@ export default function AdminCatalogDeskPage() {
       setProdRoutineStep('Sun Protection');
       setProdRoutinePeriod('AM');
       setProdDermalStoryEn('Ultra-lightweight high-protection formulation calibrated for humid subtropical climates. Fast absorbing with zero greasy residue and zero white cast.');
-      setProdDermalStoryBn('উষ্ণ ও আর্দ্র আবহাওয়ায় ত্বককে রোদ ও পরিবেশগত দূষণ থেকে রক্ষা করতে নিখুঁত ওয়াটার-লাইট ফর্মুলেশন।');
+      setProdDermalStoryBn('');
       setProdKeyActives('Broad-Spectrum UV Matrix, Niacinamide, Hyaluronic Acid');
       setProdUsageStep1Title('The Two-Finger Rule');
       setProdUsageStep1Desc('Dispense a generous two-finger length onto index and middle fingers.');
@@ -376,7 +376,7 @@ export default function AdminCatalogDeskPage() {
       setProdRoutineStep('Barrier Moisturizer');
       setProdRoutinePeriod('AM & PM');
       setProdDermalStoryEn('Deep lipid nourishment designed to restore compromised epidermal barriers in humid tropical weather.');
-      setProdDermalStoryBn('ত্বকের ক্ষতিগ্রস্ত লিপিড ব্যারিয়ার মেরামত করে এবং ত্বকে দীর্ঘস্থায়ী আর্দ্রতা ধরে রাখে।');
+      setProdDermalStoryBn('');
       setProdKeyActives('Ceramide Complex, Hyaluronic Acid, Centella Asiatica');
       setProdUsageStep1Title('Cleanse & Prep');
       setProdUsageStep1Desc('Apply a dime-sized dollop onto cleansed and toned skin.');
@@ -390,7 +390,7 @@ export default function AdminCatalogDeskPage() {
       setProdRoutineStep('Treat & Serum');
       setProdRoutinePeriod('AM & PM');
       setProdDermalStoryEn('High-concentration clinical active matrix targeted for dermal revitalization and pigment balance.');
-      setProdDermalStoryBn('ত্বকের উজ্জ্বলতা বৃদ্ধি ও দাগ দূর করতে উচ্চ ঘনত্বের অ্যাক্টিভ সিরাম।');
+      setProdDermalStoryBn('');
       setProdKeyActives('Niacinamide, Hyaluronic Acid, Zinc PCA');
       setProdUsageStep1Title('Dispense 2-3 Drops');
       setProdUsageStep1Desc('Dispense 2-3 drops onto clean fingertips.');
@@ -404,7 +404,7 @@ export default function AdminCatalogDeskPage() {
       setProdRoutineStep('Purifying Cleanse');
       setProdRoutinePeriod('AM & PM');
       setProdDermalStoryEn('Sulfate-free pH 5.5 balanced gentle cleanser that removes impurities without stripping moisture.');
-      setProdDermalStoryBn('ত্বকের প্রাকৃতিক আর্দ্রতা অক্ষুণ্ণ রেখে গভীর থেকে ময়লা পরিষ্কার করে।');
+      setProdDermalStoryBn('');
       setProdKeyActives('Amino Acid Surfactants, Panthenol, Glycerin');
       setProdUsageStep1Title('Lather with Water');
       setProdUsageStep1Desc('Work a small amount into a rich lather with lukewarm water.');
@@ -581,7 +581,7 @@ export default function AdminCatalogDeskPage() {
       name: a.trim(),
       category: 'ACTIVE',
       purposeEn: 'Targeted dermal support & barrier restoration',
-      purposeBn: 'ত্বকের কার্যকর সুস্থতা ও সুরক্ষা',
+      purposeBn: 'Targeted dermal support & barrier restoration',
       ewgScore: 1,
     }));
 
@@ -1310,13 +1310,13 @@ export default function AdminCatalogDeskPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-[#1C1917]/70 uppercase">Category Title (বাংলা)</label>
+                <label className="text-[10px] text-[#1C1917]/70 uppercase">Category Subtitle / Alias (Optional)</label>
                 <input
                   type="text"
                   value={catNameBn}
                   onChange={(e) => setCatNameBn(e.target.value)}
-                  placeholder="e.g. আই ক্রিম ও পেপটাইড"
-                  className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none font-bangla"
+                  placeholder="e.g. Targeted Eye Treatment"
+                  className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
                 />
               </div>
 
@@ -1901,7 +1901,7 @@ export default function AdminCatalogDeskPage() {
             <form onSubmit={handleSavePrice} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[11px] font-mono uppercase tracking-wider text-[#1C1917]/80 flex items-center justify-between">
-                  <span>Selling Price (বিক্রয় মূল্য - ৳) *</span>
+                  <span>Selling Price (৳ BDT) *</span>
                   <span className="text-[10px] text-[#C7A97B]">Current: {editingProduct.priceRangeBdt}</span>
                 </label>
                 <div className="relative">
@@ -1935,7 +1935,7 @@ export default function AdminCatalogDeskPage() {
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-mono uppercase tracking-wider text-[#1C1917]/80">
-                  Compare-At / MRP Price (ঐচ্ছিক স্ট্রাইকথ্রু মূল্য - ৳)
+                  Compare-At / MRP Price (Optional Strike-through - ৳ BDT)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold font-mono text-[#1C1917]/50">৳</span>
@@ -1953,7 +1953,7 @@ export default function AdminCatalogDeskPage() {
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] font-mono text-emerald-900 flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  এই বাটন চাপার সাথে সাথে মূল্যটি সরাসরি <strong>Supabase Cloud PostgreSQL Database</strong> এ সেভ হবে এবং স্টোরফ্রন্টে লাইভ দেখাবে।
+                  Price updates persist immediately to <strong>Supabase Cloud PostgreSQL Database</strong> and reflect on storefront.
                 </span>
               </div>
 

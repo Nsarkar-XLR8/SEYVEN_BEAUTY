@@ -2,28 +2,27 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Check, Plus, Minus } from 'lucide-react';
-import { BRAND } from '@/lib/constants';
-import { useLanguage } from '@/context/language-context';
+import { Plus, Minus, ArrowRight, Check } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
-
-import { buildWhatsAppUrl, sanitizeMessengerUrl, sanitizeInstagramUrl } from '@/lib/concierge';
+import { BRAND } from '@/lib/constants';
+import { buildWhatsAppUrl, sanitizeWhatsAppNumber } from '@/lib/concierge';
 
 export function Footer() {
-  const { lang, t } = useLanguage();
   const { settings } = useCart();
-  const [email, setEmail] = useState('');
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [subscribeMessage, setSubscribeMessage] = useState<string | null>(null);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscribeMessage, setSubscribeMessage] = useState('');
 
   const supportPhone = settings?.supportPhone || BRAND.supportPhone;
   const supportWhatsApp = settings?.supportWhatsApp || BRAND.supportWhatsApp;
-  const messengerLink = sanitizeMessengerUrl(settings?.supportMessenger || BRAND.supportMessenger);
-  const instagramLink = sanitizeInstagramUrl(settings?.supportInstagram || BRAND.supportInstagram);
-  const facebookLink = settings?.supportFacebook || BRAND.supportFacebook;
-  const whatsAppUrl = buildWhatsAppUrl(supportWhatsApp, 'Hi SEYVEN Concierge! I would like to inquire about your dermal formulations.');
+  const rawMessenger = settings?.supportMessenger || BRAND.supportMessenger || 'https://m.me/seyvenofficial';
+  const messengerLink = rawMessenger.startsWith('http') ? rawMessenger : `https://${rawMessenger}`;
+  const instagramLink = BRAND.supportInstagram || 'https://www.instagram.com/seyven_beauty/';
+
+  const cleanPhone = sanitizeWhatsAppNumber(supportWhatsApp);
+  const whatsAppUrl = cleanPhone ? buildWhatsAppUrl(cleanPhone) : 'https://wa.me/8801700000000';
 
   const toggleAccordion = (id: string) => {
     setOpenAccordion(openAccordion === id ? null : id);
@@ -31,22 +30,25 @@ export function Footer() {
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || isSubmitting) return;
+    if (!email || !email.includes('@')) return;
 
     setIsSubmitting(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
-      const res = await fetch(`${apiUrl}/newsletter/subscribe`, {
+      const res = await fetch('/api/newsletter/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), source: 'FOOTER' }),
+        body: JSON.stringify({ email }),
       });
-      const data = await res.json().catch(() => null);
-      setIsSubscribed(true);
-      if (data?.message) {
-        setSubscribeMessage(data.message);
+      const data = await res.json();
+      if (res.ok) {
+        setIsSubscribed(true);
+        setSubscribeMessage(data.message || 'Thank you for subscribing to SEYVEN.');
+        setEmail('');
+      } else {
+        setIsSubscribed(true);
+        setSubscribeMessage(data.message || 'Thank you for joining our private client circle.');
+        setEmail('');
       }
-      setEmail('');
     } catch {
       setIsSubscribed(true);
       setEmail('');
@@ -58,35 +60,32 @@ export function Footer() {
   const pillarSections = [
     {
       id: 'help',
-      titleEn: 'MAY WE HELP YOU?',
-      titleBn: 'গ্রাহক সেবা ও সহায়তা',
+      title: 'MAY WE HELP YOU?',
       links: [
-        { href: messengerLink, labelEn: 'Contact the Messenger Concierge', labelBn: 'কাস্টমার কেয়ার ও কনসিয়ার্জ' },
-        { href: '/track-order', labelEn: 'Track Your Parcel Live', labelBn: 'পার্সেল লাইভ ট্র্যাকিং' },
-        { href: '/legal/return_refund', labelEn: 'Return & Exchange Sanctuary Policy', labelBn: 'রিটার্ন ও রিফান্ড নীতি' },
-        { href: '/legal/shipping_delivery', labelEn: 'Shipping & Nationwide Delivery', labelBn: 'দেশব্যাপী ডেলিভারি সংক্রান্ত তথ্য' },
+        { href: messengerLink, label: 'Contact the Messenger Concierge' },
+        { href: '/track-order', label: 'Track Your Parcel Live' },
+        { href: '/legal/return_refund', label: 'Return & Exchange Sanctuary Policy' },
+        { href: '/legal/shipping_delivery', label: 'Shipping & Nationwide Delivery' },
       ],
     },
     {
       id: 'the-edit',
-      titleEn: 'THE EDIT',
-      titleBn: 'সেভেন পরিচয়',
+      title: 'THE EDIT',
       links: [
-        { href: '/catalog', labelEn: 'The Sanctuary of International Beauty', labelBn: 'সৌন্দর্যের আন্তর্জাতিক অভয়ারণ্য' },
-        { href: '/catalog?curated=climate-research', labelEn: 'Bangladesh Dermal Climate Research', labelBn: 'বাংলাদেশি ত্বকের উপযোগী স্কিনকেয়ার' },
-        { href: '/legal/privacy', labelEn: 'Privacy & Data Sovereignty', labelBn: 'তথ্য সুরক্ষা ও প্রাইভেসি নীতিমালা' },
-        { href: '/legal/terms', labelEn: 'Terms of Service', labelBn: 'ব্যবহারের আইনি শর্তাবলী' },
+        { href: '/catalog', label: 'The Sanctuary of International Beauty' },
+        { href: '/catalog?curated=climate-research', label: 'Bangladesh Dermal Climate Research' },
+        { href: '/legal/privacy', label: 'Privacy & Data Sovereignty' },
+        { href: '/legal/terms', label: 'Terms of Service' },
       ],
     },
     {
       id: 'services',
-      titleEn: 'EXCLUSIVE SERVICES',
-      titleBn: 'বিশেষ সুবিধা ও সেবা',
+      title: 'EXCLUSIVE SERVICES',
       links: [
-        { href: messengerLink, labelEn: 'Bespoke Messenger Concierge', labelBn: 'ব্যক্তিগত মেসেঞ্জার কনসিয়ার্জ' },
-        { href: instagramLink, labelEn: 'Instagram Editorial (@seyven_beauty)', labelBn: 'ইনস্টাগ্রাম বিউটি কেয়ার' },
-        { href: '/customer/loyalty', labelEn: 'Sanctuary Privilege VIP Club', labelBn: 'ভিআইপি লয়্যালটি প্রোগ্রাম ও পয়েন্ট' },
-        { href: '/customer/account', labelEn: 'Private Client Account & Vault', labelBn: 'গ্রাহক প্রোফাইল ও অর্ডার হিস্ট্রি' },
+        { href: messengerLink, label: 'Bespoke Messenger Concierge' },
+        { href: instagramLink, label: 'Instagram Editorial (@seyven_beauty)' },
+        { href: '/customer/loyalty', label: 'Sanctuary Privilege VIP Club' },
+        { href: '/customer/account', label: 'Private Client Account & Vault' },
       ],
     },
   ];
@@ -100,14 +99,11 @@ export function Footer() {
         {/* ========================================================================= */}
         <div className="text-center max-w-xl mx-auto space-y-3 pb-8 sm:pb-10 border-b border-[#1F1F1F]">
           <h3 className="text-lg sm:text-xl font-serif uppercase tracking-[0.25em] font-light text-white">
-            {t('JOIN OUR NEWSLETTER', 'নিউজলেটারে যুক্ত থাকুন')}
+            JOIN OUR NEWSLETTER
           </h3>
           
           <p className="text-xs text-[#8E8B85] font-light leading-relaxed max-w-md mx-auto">
-            {t(
-              'Be the first to receive new formulation arrivals, skincare rituals, and private client privileges.',
-              'নতুন স্কিনকেয়ার কালেকশন, বিউটি রুটিন টিপস এবং এক্সক্লুসিভ সুবিধার নিয়মিত আপডেট পেতে সাবস্ক্রাইব করুন।'
-            )}
+            Be the first to receive new formulation arrivals, skincare rituals, and private client privileges.
           </p>
 
           <div className="pt-2 max-w-md mx-auto">
@@ -115,7 +111,7 @@ export function Footer() {
               <div className="p-3 bg-[#111111] border border-[#C7A97B]/40 flex items-center justify-center space-x-2 text-xs text-[#C7A97B]">
                 <Check className="w-4 h-4 text-[#C7A97B] shrink-0" />
                 <span className="tracking-[0.1em] font-light">
-                  {subscribeMessage || t('Thank you for subscribing to SEYVEN.', 'সেভেন নিউজলেটারে আপনাকে স্বাগতম।')}
+                  {subscribeMessage || 'Thank you for subscribing to SEYVEN.'}
                 </span>
               </div>
             ) : (
@@ -127,7 +123,7 @@ export function Footer() {
                     disabled={isSubmitting}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t('Enter your email address', 'আপনার ইমেইল অ্যাড্রেস লিখুন')}
+                    placeholder="Enter your email address"
                     className="w-full bg-transparent text-xs text-white placeholder-[#8E8B85] tracking-[0.12em] py-2 focus:outline-none pr-16 text-center sm:text-left pl-2 disabled:opacity-50"
                   />
                   <button
@@ -136,7 +132,7 @@ export function Footer() {
                     aria-label="Subscribe to newsletter"
                     className="absolute right-0 py-1.5 px-2 text-[10px] uppercase tracking-[0.2em] font-medium text-[#C7A97B] hover:text-white transition-colors flex items-center space-x-1 disabled:opacity-50"
                   >
-                    <span>{isSubmitting ? (lang === 'bn' ? 'যুক্ত হচ্ছে...' : 'JOINING...') : t('JOIN', 'যুক্ত হন')}</span>
+                    <span>{isSubmitting ? 'JOINING...' : 'JOIN'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -149,8 +145,8 @@ export function Footer() {
         {/* TIER 2: PILLARS — ACCORDIONS ON MOBILE, 4-COLUMN MEGA-GRID ON DESKTOP */}
         {/* ========================================================================= */}
         
-        {/* MOBILE ACCORDION (Gucci's signature mobile UX) */}
-        <div className="lg:hidden divide-y divide-[#1F1F1F] border-y border-[#1F1F1F]">
+        {/* MOBILE ACCORDIONS (Sleek Bordered Row Layout) */}
+        <div className="lg:hidden divide-y divide-[#1F1F1F] border-b border-[#1F1F1F] pb-4">
           {pillarSections.map((section) => {
             const isOpen = openAccordion === section.id;
             return (
@@ -160,7 +156,7 @@ export function Footer() {
                   onClick={() => toggleAccordion(section.id)}
                   className="w-full py-4 flex items-center justify-between text-left text-xs uppercase tracking-[0.2em] font-medium text-white hover:text-[#C7A97B] transition-colors"
                 >
-                  <span>{lang === 'bn' ? section.titleBn : section.titleEn}</span>
+                  <span>{section.title}</span>
                   {isOpen ? (
                     <Minus className="w-4 h-4 text-[#C7A97B] shrink-0" />
                   ) : (
@@ -171,11 +167,11 @@ export function Footer() {
                   <div className="pb-5 pt-1 space-y-3 pl-1">
                     {section.links.map((link) => (
                       <Link
-                        key={`${section.id}-${link.labelEn}`}
+                        key={link.label}
                         href={link.href}
-                        className="block text-xs font-light text-[#8E8B85] hover:text-white transition-colors tracking-[0.05em]"
+                        className="block text-xs font-light text-[#8E8B85] hover:text-white tracking-[0.05em] transition-colors"
                       >
-                        {lang === 'bn' ? link.labelBn : link.labelEn}
+                        {link.label}
                       </Link>
                     ))}
                   </div>
@@ -191,7 +187,7 @@ export function Footer() {
               onClick={() => toggleAccordion('concierge')}
               className="w-full py-4 flex items-center justify-between text-left text-xs uppercase tracking-[0.2em] font-medium text-white hover:text-[#C7A97B] transition-colors"
             >
-              <span>{t('BOUTIQUE & CONCIERGE', 'বুটিক ও কনসিয়ার্জ')}</span>
+              <span>BOUTIQUE & CONCIERGE</span>
               {openAccordion === 'concierge' ? (
                 <Minus className="w-4 h-4 text-[#C7A97B] shrink-0" />
               ) : (
@@ -232,13 +228,13 @@ export function Footer() {
           {pillarSections.map((section) => (
             <div key={section.id} className="space-y-4">
               <h4 className="text-xs uppercase tracking-[0.25em] font-medium text-white pb-2 border-b border-[#1F1F1F]">
-                {lang === 'bn' ? section.titleBn : section.titleEn}
+                {section.title}
               </h4>
               <ul className="space-y-2.5 text-xs font-light text-[#8E8B85]">
                 {section.links.map((link) => (
-                  <li key={`${section.id}-${link.labelEn}`}>
+                  <li key={link.label}>
                     <Link href={link.href} className="hover:text-white transition-colors block tracking-[0.05em]">
-                      {lang === 'bn' ? link.labelBn : link.labelEn}
+                      {link.label}
                     </Link>
                   </li>
                 ))}
@@ -249,7 +245,7 @@ export function Footer() {
           {/* Desktop Column 4: Concierge & Boutique */}
           <div className="space-y-4 text-xs">
             <h4 className="text-xs uppercase tracking-[0.25em] font-medium text-white pb-2 border-b border-[#1F1F1F]">
-              {t('CONCIERGE & THE EDIT', 'বুটিক ও কনসিয়ার্জ')}
+              CONCIERGE & THE EDIT
             </h4>
             <div className="space-y-3 text-[#8E8B85] font-light leading-relaxed">
               <p className="text-[11px]">
@@ -258,41 +254,27 @@ export function Footer() {
               {supportPhone ? (
                 <div className="pt-1">
                   <a href={`tel:${supportPhone}`} className="text-white hover:text-[#C7A97B] font-medium tracking-wider block">
-                    {supportPhone}
+                    Direct: {supportPhone}
                   </a>
-                  <span className="text-[10px] text-[#6E6B65] block mt-0.5">{BRAND.officeHours}</span>
+                  <span className="text-[10px] text-[#6E6B65] block pt-0.5">{BRAND.officeHours}</span>
                 </div>
               ) : null}
-              <p className="text-[11px] pt-1 text-[#8E8B85]">
-                {BRAND.supportEmail}
-              </p>
-              <div className="pt-2 flex flex-col gap-1.5 text-[10px] font-mono">
-                {supportWhatsApp && whatsAppUrl ? (
+              {supportWhatsApp ? (
+                <div className="pt-1 border-t border-[#1F1F1F]">
+                  <span className="text-[9px] uppercase tracking-[0.2em] text-[#C7A97B] block font-medium">
+                    Private Client WhatsApp
+                  </span>
                   <a
                     href={whatsAppUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-white hover:text-[#C7A97B] transition-colors flex items-center gap-1.5"
+                    className="text-xs text-white hover:text-[#C7A97B] font-mono transition-colors block pt-0.5"
                   >
-                    <span>WhatsApp: {supportWhatsApp} ↗</span>
+                    {supportWhatsApp} ↗
                   </a>
-                ) : null}
-                <a
-                  href={messengerLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#C7A97B] hover:underline flex items-center gap-1.5"
-                >
-                  <span>Messenger: {messengerLink.replace(/^https?:\/\//, '')} ↗</span>
-                </a>
-                <a
-                  href={facebookLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#8E8B85] hover:text-white hover:underline flex items-center gap-1.5"
-                >
-                  <span>Facebook: /{facebookLink.replace(/^https?:\/\/(www\.)?facebook\.com\/?/, '')} ↗</span>
-                </a>
+                </div>
+              ) : null}
+              <div className="pt-2">
                 <a
                   href={instagramLink}
                   target="_blank"

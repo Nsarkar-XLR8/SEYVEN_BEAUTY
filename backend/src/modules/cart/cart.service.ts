@@ -363,7 +363,7 @@ export class CartService {
     // Fallback nominal details
     return {
       title: 'SEYVEN Advanced Dermal Care Formulation',
-      titleBn: 'সেভেন অ্যাডভান্সড ডার্মাল কেয়ার ফর্মুলেশন',
+      titleBn: 'SEYVEN Advanced Dermal Care Formulation',
       variantName: '50ml Standard',
       sku: `SYV-${variantId.slice(0, 8).toUpperCase()}`,
       unitPrice: 1950,

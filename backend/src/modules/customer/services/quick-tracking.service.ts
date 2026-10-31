@@ -20,12 +20,12 @@ export class QuickTrackingService {
     label: string;
     labelBn: string;
   }[] = [
-    { status: OrderStatus.PLACED, step: 'PLACED', label: 'Order Placed', labelBn: 'অর্ডার সফলভাবে গৃহীত হয়েছে' },
-    { status: OrderStatus.CONFIRMED, step: 'CONFIRMED', label: 'Confirmed & Verified', labelBn: 'অর্ডার নিশ্চিতকরণ সম্পন্ন' },
-    { status: OrderStatus.PACKED, step: 'PACKED', label: 'Packed & Sealed', labelBn: 'স্যানিটাইজড ও প্যাকেজিং সম্পন্ন' },
-    { status: OrderStatus.BOOKED, step: 'BOOKED', label: 'Handed to Courier', labelBn: 'কুরিয়ারে হস্তান্তর করা হয়েছে' },
-    { status: OrderStatus.SHIPPED, step: 'SHIPPED', label: 'Out for Delivery', labelBn: 'ডেলিভারির জন্য বের হয়েছে' },
-    { status: OrderStatus.DELIVERED, step: 'DELIVERED', label: 'Delivered', labelBn: 'সফলভাবে ডেলিভার সম্পন্ন' },
+    { status: OrderStatus.PLACED, step: 'PLACED', label: 'Order Placed', labelBn: 'Order Placed' },
+    { status: OrderStatus.CONFIRMED, step: 'CONFIRMED', label: 'Confirmed & Verified', labelBn: 'Confirmed & Verified' },
+    { status: OrderStatus.PACKED, step: 'PACKED', label: 'Packed & Sealed', labelBn: 'Packed & Sealed' },
+    { status: OrderStatus.BOOKED, step: 'BOOKED', label: 'Handed to Courier', labelBn: 'Handed to Courier' },
+    { status: OrderStatus.SHIPPED, step: 'SHIPPED', label: 'Out for Delivery', labelBn: 'Out for Delivery' },
+    { status: OrderStatus.DELIVERED, step: 'DELIVERED', label: 'Delivered', labelBn: 'Delivered' },
   ];
 
   constructor(private readonly prisma: PrismaService) {}
@@ -218,7 +218,7 @@ export class QuickTrackingService {
       orderNumber: order.orderNumber || order.id,
       status: (order.status as any) || OrderStatus.PLACED,
       statusLabel: order.status === 'CONFIRMED' ? 'Confirmed & Verified' : 'Order Placed',
-      statusLabelBn: order.status === 'CONFIRMED' ? 'অর্ডার নিশ্চিতকরণ সম্পন্ন' : 'অর্ডার সফলভাবে গৃহীত হয়েছে',
+      statusLabelBn: order.status === 'CONFIRMED' ? 'Confirmed & Verified' : 'Order Placed',
       courierName: 'Pathao Courier',
       courierBookingId: order.consignmentId || null,
       trackingCode: order.trackingCode || null,

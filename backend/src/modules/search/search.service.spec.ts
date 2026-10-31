@@ -14,12 +14,12 @@ describe('SearchService', () => {
       id: 'prod-1',
       slug: 'triple-ceramide-barrier-cream',
       titleEn: 'Triple Ceramide Barrier Cream',
-      titleBn: 'ট্রিপল সিরামাইড ব্যারিয়ার ক্রিম',
+      titleBn: 'Triple Ceramide Barrier Cream',
       shortDescriptionEn: 'Formulated with Ceramides NP/AP/EOP and Panthenol for lipid barrier repair',
-      shortDescriptionBn: 'ত্বকের সুরক্ষায় সিরামাইড ক্রিম',
+      shortDescriptionBn: 'Formulated with Ceramides NP/AP/EOP and Panthenol for lipid barrier repair',
       dermalProtocolEn: 'Apply morning and night',
       isPregnancySafe: true,
-      category: { id: 'cat-1', slug: 'moisturizers', nameEn: 'Moisturizers', nameBn: 'ময়েশ্চারাইজার' },
+      category: { id: 'cat-1', slug: 'moisturizers', nameEn: 'Moisturizers', nameBn: 'Moisturizers' },
       variants: [
         {
           id: 'var-1',
@@ -32,12 +32,12 @@ describe('SearchService', () => {
       id: 'prod-2',
       slug: 'salicylic-acid-2-percent-acne-serum',
       titleEn: 'Salicylic Acid 2% Acne Clarifying Serum',
-      titleBn: 'স্যালিসিলিক অ্যাসিড ২% একনে সিরাম',
+      titleBn: 'Salicylic Acid 2% Acne Clarifying Serum',
       shortDescriptionEn: 'Purifies clogged pores, reduces blemishes and acne breakouts',
-      shortDescriptionBn: 'ব্রণ ও দাগ দূর করতে কার্যকর সিরাম',
+      shortDescriptionBn: 'Purifies clogged pores, reduces blemishes and acne breakouts',
       dermalProtocolEn: 'Apply 2-3 drops at night',
       isPregnancySafe: false,
-      category: { id: 'cat-2', slug: 'serums', nameEn: 'Serums', nameBn: 'সিরাম' },
+      category: { id: 'cat-2', slug: 'serums', nameEn: 'Serums', nameBn: 'Serums' },
       variants: [
         {
           id: 'var-2',
@@ -60,7 +60,7 @@ describe('SearchService', () => {
             },
             category: {
               findMany: jest.fn().mockResolvedValue([
-                { id: 'cat-2', slug: 'serums', nameEn: 'Serums', nameBn: 'সিরাম' },
+                { id: 'cat-2', slug: 'serums', nameEn: 'Serums', nameBn: 'Serums' },
               ]),
             },
             searchQueryLog: {
@@ -100,11 +100,10 @@ describe('SearchService', () => {
     expect(result.data[0].relevanceScore).toBeGreaterThan(50);
   });
 
-  it('should expand colloquial Banglish and Bangla terms using synonym dictionary', async () => {
-    // "bron" (Banglish for acne) should expand to acne/salicylic terms and match product 2
-    const result = await service.search({ q: 'bron' });
+  it('should tokenize query terms directly for clean search', async () => {
+    const result = await service.search({ q: 'salicylic' });
 
-    expect(result.expandedTerms).toContain('acne');
+    expect(result.expandedTerms).toContain('salicylic');
     expect(result.data.length).toBeGreaterThanOrEqual(1);
     expect(result.data[0].slug).toBe('salicylic-acid-2-percent-acne-serum');
   });

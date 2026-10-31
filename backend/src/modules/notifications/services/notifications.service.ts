@@ -27,6 +27,7 @@ export class NotificationsService {
 
   /**
    * Direct SMS dispatch with BTRC quiet-hours enforcement and audit logging
+   * (Currently paused per luxury English unification policy)
    */
   async sendDirectSms(dto: SendDirectSmsDto) {
     if (!BangladeshiPhoneUtil.isValid(dto.to)) {
@@ -34,83 +35,15 @@ export class NotificationsService {
     }
 
     const internationalPhone = BangladeshiPhoneUtil.toInternationalFormat(dto.to);
-    const templateName = dto.templateName || 'MANUAL_BROADCAST';
-    const quietCheck = this.quietHoursManager.canDispatchImmediately(dto.isUrgent);
-
-    // If quiet hours apply and not urgent, suppress or log as quiet-hours deferred
-    if (!quietCheck.allowed) {
-      this.logger.warn(`🌙 [Notifications] SMS suppressed for ${internationalPhone}: ${quietCheck.reason}`);
-      const log = await (this.prisma as any).notificationLog.create({
-        data: {
-          id: uuidv4(),
-          channel: NotificationChannel.SMS,
-          recipientPhone: internationalPhone,
-          templateName,
-          status: NotificationStatus.SUPPRESSED_QUIET_HOURS,
-          messageBody: dto.message,
-          failureReason: quietCheck.reason,
-          metadata: { isUrgent: Boolean(dto.isUrgent), operator: BangladeshiPhoneUtil.getOperator(dto.to) },
-        },
-      });
-
-      return {
-        success: false,
-        suppressed: true,
-        reason: quietCheck.reason,
-        logId: log.id,
-      };
-    }
-
-    try {
-      const response = await this.smsGatewayClient.sendSms({
-        to: internationalPhone,
-        message: dto.message,
-        isUrgent: dto.isUrgent,
-      });
-
-      const log = await (this.prisma as any).notificationLog.create({
-        data: {
-          id: uuidv4(),
-          channel: NotificationChannel.SMS,
-          recipientPhone: internationalPhone,
-          templateName,
-          status: NotificationStatus.SENT,
-          messageBody: dto.message,
-          providerMessageId: response.messageId,
-          sentAt: new Date(),
-          metadata: {
-            parts: response.parts,
-            charCount: response.charCount,
-            provider: response.provider,
-            senderMask: response.senderMask,
-            operator: BangladeshiPhoneUtil.getOperator(dto.to),
-          },
-        },
-      });
-
-      return {
-        success: true,
-        messageId: response.messageId,
-        logId: log.id,
-        recipient: internationalPhone,
-      };
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      await (this.prisma as any).notificationLog.create({
-        data: {
-          id: uuidv4(),
-          channel: NotificationChannel.SMS,
-          recipientPhone: internationalPhone,
-          templateName,
-          status: NotificationStatus.FAILED,
-          messageBody: dto.message,
-          failureReason: errorMessage,
-          metadata: { operator: BangladeshiPhoneUtil.getOperator(dto.to) },
-        },
-      });
-
-      throw err;
-    }
+    this.logger.log(`[SMS Paused] SMS dispatch suppressed for ${internationalPhone}`);
+    return {
+      success: true,
+      suppressed: true,
+      recipient: internationalPhone,
+      messageId: `paused-${Date.now()}`,
+      logId: `paused-${Date.now()}`,
+      reason: 'SMS service is temporarily paused.',
+    };
   }
 
   /**
@@ -226,20 +159,22 @@ export class NotificationsService {
   // ========================================================
 
   /**
-   * Transactional OTP verification SMS (ALWAYS bypasses quiet hours)
+   * Transactional OTP verification SMS (Decommissioned per policy)
    */
   async sendOtpNotification(phone: string, otpCode: string, validityMinutes = 5) {
-    const message = `SEYVEN: আপনার ভেরিফিকেশন কোড (OTP) হলো ${otpCode}। এটি পরবর্তী ${validityMinutes} মিনিট কার্যকর থাকবে। কারো সাথে শেয়ার করবেন না।`;
-    return this.sendDirectSms({
-      to: phone,
-      message,
-      isUrgent: true,
-      templateName: 'OTP_VERIFICATION',
-    });
+    this.logger.log(`[OTP Deactivated] OTP dispatch suppressed for ${phone}`);
+    return {
+      success: true,
+      suppressed: true,
+      recipient: phone,
+      messageId: `paused-${Date.now()}`,
+      logId: `paused-${Date.now()}`,
+      reason: 'OTP service is deactivated.',
+    };
   }
 
   /**
-   * Order Placed notification (SMS + WhatsApp HSM)
+   * Order Placed notification (English luxury transactional notification)
    */
   async sendOrderPlacedNotification(order: {
     id: string;
@@ -248,7 +183,7 @@ export class NotificationsService {
     guestName: string;
     totalPayableBdt: number;
   }) {
-    const smsMessage = `SEYVEN: প্রিয় ${order.guestName}, আপনার অর্ডার #${order.orderNumber} (৳${order.totalPayableBdt.toFixed(2)}) সফলভাবে গ্রহণ করা হয়েছে। বিস্তারিত: seyven.com/orders/${order.orderNumber}`;
+    const smsMessage = `SEYVEN: Dear ${order.guestName}, your order #${order.orderNumber} (৳${order.totalPayableBdt.toFixed(2)}) has been confirmed. Track: theseyven.com/track-order?id=${order.orderNumber}`;
 
     // 1. Send SMS
     const smsResult = await this.sendDirectSms({
@@ -265,7 +200,7 @@ export class NotificationsService {
     const waResult = await this.sendWhatsAppTemplate({
       to: order.guestPhone,
       templateName: WhatsAppTemplateName.ORDER_CONFIRMED,
-      languageCode: 'bn',
+      languageCode: 'en',
       components: [
         {
           type: 'body',
@@ -295,7 +230,7 @@ export class NotificationsService {
     courier: string;
     trackingCode: string;
   }) {
-    const smsMessage = `SEYVEN: আপনার অর্ডার #${order.orderNumber} ${order.courier} কুরিয়ারে হস্তান্তর করা হয়েছে। ট্র্যাকিং কোড: ${order.trackingCode}`;
+    const smsMessage = `SEYVEN: Your order #${order.orderNumber} has been dispatched via ${order.courier}. Tracking Code: ${order.trackingCode}`;
 
     const smsResult = await this.sendDirectSms({
       to: order.guestPhone,
@@ -307,7 +242,7 @@ export class NotificationsService {
     const waResult = await this.sendWhatsAppTemplate({
       to: order.guestPhone,
       templateName: WhatsAppTemplateName.ORDER_DISPATCHED,
-      languageCode: 'bn',
+      languageCode: 'en',
       components: [
         {
           type: 'body',
@@ -332,7 +267,7 @@ export class NotificationsService {
     orderNumber: string;
     guestPhone: string;
   }) {
-    const smsMessage = `SEYVEN: আপনার পার্সেল #${order.orderNumber} সফলভাবে ডেলিভারি হয়েছে। আমাদের স্কিনকেয়ার সেবা কেমন লাগলো জানাতে ভিজিট করুন: seyven.com/feedback`;
+    const smsMessage = `SEYVEN: Your parcel #${order.orderNumber} has been delivered. Thank you for choosing Seyven Luxury Skincare.`;
 
     const smsResult = await this.sendDirectSms({
       to: order.guestPhone,
@@ -344,7 +279,7 @@ export class NotificationsService {
     const waResult = await this.sendWhatsAppTemplate({
       to: order.guestPhone,
       templateName: WhatsAppTemplateName.ORDER_DELIVERED,
-      languageCode: 'bn',
+      languageCode: 'en',
       components: [
         {
           type: 'body',

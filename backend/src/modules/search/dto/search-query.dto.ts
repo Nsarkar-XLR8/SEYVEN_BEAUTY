@@ -11,7 +11,7 @@ export enum SearchSortBy {
 
 export class SearchQueryDto {
   @ApiPropertyOptional({
-    description: 'Search query in English, Bangla script, or phonetic Banglish (e.g. "niacinamide", "ব্রণ", "forsa", "barrier")',
+    description: 'Search query in English (e.g. "niacinamide", "barrier", "serum")',
     example: 'ceramide serum',
   })
   @IsString()

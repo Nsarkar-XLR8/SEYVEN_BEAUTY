@@ -299,7 +299,7 @@ export class DispatchDocsService {
       doc
         .font('Helvetica-Bold')
         .fontSize(11)
-        .text('TAX INVOICE / কর চালানপত্র [FORM MUSHAK-6.3]', 32, 60, {
+        .text('TAX INVOICE [FORM MUSHAK-6.3]', 32, 60, {
           align: 'center',
         });
       doc

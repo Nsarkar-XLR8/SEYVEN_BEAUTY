@@ -21,19 +21,21 @@ export class AntiStackingValidator {
   ): { allowed: boolean; reason?: string; reasonBn?: string } {
     // Rule 1: Multi-coupon stacking prohibition
     if (context.existingCouponCode && context.existingCouponCode.toUpperCase() !== coupon.code.toUpperCase()) {
+      const reason = `Only one coupon code can be applied per checkout session (Active: ${context.existingCouponCode}).`;
       return {
         allowed: false,
-        reason: `Only one coupon code can be applied per checkout session (Active: ${context.existingCouponCode}).`,
-        reasonBn: `প্রতিটি অর্ডারে কেবল একটি কুপন কোড ব্যবহার করা যাবে (সক্রিয়: ${context.existingCouponCode})।`,
+        reason,
+        reasonBn: reason,
       };
     }
 
     // Rule 2: Non-stackable coupon cannot combine with Loyalty VIP Tier discounts
     if (!coupon.allowStacking && context.hasTierDiscount) {
+      const reason = `Coupon "${coupon.code}" cannot be stacked with active VIP Loyalty Tier discounts.`;
       return {
         allowed: false,
-        reason: `Coupon "${coupon.code}" cannot be stacked with active VIP Loyalty Tier discounts.`,
-        reasonBn: `কুপন "${coupon.code}" ভিআইপি লয়্যালটি ডিসকাউন্টের সাথে একসাথে ব্যবহার করা যাবে না।`,
+        reason,
+        reasonBn: reason,
       };
     }
 

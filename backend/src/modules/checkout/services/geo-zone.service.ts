@@ -10,7 +10,7 @@ export class GeoZoneService {
   private readonly DIVISIONS: GeoDivision[] = [
     {
       nameEn: 'Dhaka',
-      nameBn: 'ঢাকা',
+      nameBn: '',
       districts: [
         'Dhaka',
         'Gazipur',
@@ -29,7 +29,7 @@ export class GeoZoneService {
     },
     {
       nameEn: 'Chittagong',
-      nameBn: 'চট্টগ্রাম',
+      nameBn: '',
       districts: [
         'Chittagong',
         'Cox\'s Bazar',
@@ -46,12 +46,12 @@ export class GeoZoneService {
     },
     {
       nameEn: 'Sylhet',
-      nameBn: 'সিলেট',
+      nameBn: '',
       districts: ['Sylhet', 'Moulvibazar', 'Habiganj', 'Sunamganj'],
     },
     {
       nameEn: 'Rajshahi',
-      nameBn: 'রাজশাহী',
+      nameBn: '',
       districts: [
         'Rajshahi',
         'Bogra',
@@ -65,7 +65,7 @@ export class GeoZoneService {
     },
     {
       nameEn: 'Khulna',
-      nameBn: 'খুলনা',
+      nameBn: '',
       districts: [
         'Khulna',
         'Jashore',
@@ -81,7 +81,7 @@ export class GeoZoneService {
     },
     {
       nameEn: 'Barisal',
-      nameBn: 'বরিশাল',
+      nameBn: '',
       districts: [
         'Barisal',
         'Bhola',
@@ -93,7 +93,7 @@ export class GeoZoneService {
     },
     {
       nameEn: 'Rangpur',
-      nameBn: 'রংপুর',
+      nameBn: '',
       districts: [
         'Rangpur',
         'Dinajpur',
@@ -107,56 +107,56 @@ export class GeoZoneService {
     },
     {
       nameEn: 'Mymensingh',
-      nameBn: 'ময়মনসিংহ',
+      nameBn: '',
       districts: ['Mymensingh', 'Jamalpur', 'Netrokona', 'Sherpur'],
     },
   ];
 
   private readonly DISTRICT_THANAS: Record<string, GeoThana[]> = {
     Dhaka: [
-      { nameEn: 'Dhanmondi', nameBn: 'ধানমন্ডি', courierZoneId: 1, postCode: '1209' },
-      { nameEn: 'Gulshan', nameBn: 'গুলশান', courierZoneId: 1, postCode: '1212' },
-      { nameEn: 'Banani', nameBn: 'বনানী', courierZoneId: 1, postCode: '1213' },
-      { nameEn: 'Uttara', nameBn: 'উত্তরা', courierZoneId: 1, postCode: '1230' },
-      { nameEn: 'Mirpur', nameBn: 'মিরপুর', courierZoneId: 1, postCode: '1216' },
-      { nameEn: 'Mohammadpur', nameBn: 'মোহাম্মদপুর', courierZoneId: 1, postCode: '1207' },
-      { nameEn: 'Badda', nameBn: 'বাড্ডা', courierZoneId: 1, postCode: '1212' },
-      { nameEn: 'Bashundhara R/A', nameBn: 'বসুন্ধরা আ/এ', courierZoneId: 1, postCode: '1229' },
-      { nameEn: 'Motijheel', nameBn: 'মতিঝিল', courierZoneId: 1, postCode: '1000' },
-      { nameEn: 'Old Dhaka', nameBn: 'পুরান ঢাকা', courierZoneId: 1, postCode: '1100' },
-      { nameEn: 'Savar', nameBn: 'সাভার', courierZoneId: 2, postCode: '1340' },
-      { nameEn: 'Keraniganj', nameBn: 'কেরানীগঞ্জ', courierZoneId: 2, postCode: '1310' },
-      { nameEn: 'Dhamrai', nameBn: 'ধামরাই', courierZoneId: 2, postCode: '1350' },
+      { nameEn: 'Dhanmondi', nameBn: '', courierZoneId: 1, postCode: '1209' },
+      { nameEn: 'Gulshan', nameBn: '', courierZoneId: 1, postCode: '1212' },
+      { nameEn: 'Banani', nameBn: '', courierZoneId: 1, postCode: '1213' },
+      { nameEn: 'Uttara', nameBn: '', courierZoneId: 1, postCode: '1230' },
+      { nameEn: 'Mirpur', nameBn: '', courierZoneId: 1, postCode: '1216' },
+      { nameEn: 'Mohammadpur', nameBn: '', courierZoneId: 1, postCode: '1207' },
+      { nameEn: 'Badda', nameBn: '', courierZoneId: 1, postCode: '1212' },
+      { nameEn: 'Bashundhara R/A', nameBn: '', courierZoneId: 1, postCode: '1229' },
+      { nameEn: 'Motijheel', nameBn: '', courierZoneId: 1, postCode: '1000' },
+      { nameEn: 'Old Dhaka', nameBn: '', courierZoneId: 1, postCode: '1100' },
+      { nameEn: 'Savar', nameBn: '', courierZoneId: 2, postCode: '1340' },
+      { nameEn: 'Keraniganj', nameBn: '', courierZoneId: 2, postCode: '1310' },
+      { nameEn: 'Dhamrai', nameBn: '', courierZoneId: 2, postCode: '1350' },
     ],
     Gazipur: [
-      { nameEn: 'Gazipur Sadar', nameBn: 'গাজীপুর সদর', courierZoneId: 2, postCode: '1700' },
-      { nameEn: 'Tongi', nameBn: 'টঙ্গী', courierZoneId: 2, postCode: '1710' },
-      { nameEn: 'Kaliakair', nameBn: 'কালিয়াকৈর', courierZoneId: 3, postCode: '1750' },
+      { nameEn: 'Gazipur Sadar', nameBn: '', courierZoneId: 2, postCode: '1700' },
+      { nameEn: 'Tongi', nameBn: '', courierZoneId: 2, postCode: '1710' },
+      { nameEn: 'Kaliakair', nameBn: '', courierZoneId: 3, postCode: '1750' },
     ],
     Narayanganj: [
-      { nameEn: 'Narayanganj Sadar', nameBn: 'নারায়ণগঞ্জ সদর', courierZoneId: 2, postCode: '1400' },
-      { nameEn: 'Fatullah', nameBn: 'ফতুল্লা', courierZoneId: 2, postCode: '1420' },
-      { nameEn: 'Siddhirganj', nameBn: 'সিদ্ধিরগঞ্জ', courierZoneId: 2, postCode: '1430' },
+      { nameEn: 'Narayanganj Sadar', nameBn: '', courierZoneId: 2, postCode: '1400' },
+      { nameEn: 'Fatullah', nameBn: '', courierZoneId: 2, postCode: '1420' },
+      { nameEn: 'Siddhirganj', nameBn: '', courierZoneId: 2, postCode: '1430' },
     ],
     Chittagong: [
-      { nameEn: 'Kotwali', nameBn: 'কোতোয়ালী', courierZoneId: 3, postCode: '4000' },
-      { nameEn: 'Panchlaish', nameBn: 'পাঁচলাইশ', courierZoneId: 3, postCode: '4203' },
-      { nameEn: 'Agrabad', nameBn: 'আগ্রাবাদ', courierZoneId: 3, postCode: '4100' },
-      { nameEn: 'Halishahar', nameBn: 'হালিশহর', courierZoneId: 3, postCode: '4216' },
-      { nameEn: 'Nasirabad', nameBn: 'নাসিরাবাদ', courierZoneId: 3, postCode: '4209' },
+      { nameEn: 'Kotwali', nameBn: '', courierZoneId: 3, postCode: '4000' },
+      { nameEn: 'Panchlaish', nameBn: '', courierZoneId: 3, postCode: '4203' },
+      { nameEn: 'Agrabad', nameBn: '', courierZoneId: 3, postCode: '4100' },
+      { nameEn: 'Halishahar', nameBn: '', courierZoneId: 3, postCode: '4216' },
+      { nameEn: 'Nasirabad', nameBn: '', courierZoneId: 3, postCode: '4209' },
     ],
     Sylhet: [
-      { nameEn: 'Sylhet Sadar', nameBn: 'সিলেট সদর', courierZoneId: 3, postCode: '3100' },
-      { nameEn: 'Zindabazar', nameBn: 'জিন্দাবাজার', courierZoneId: 3, postCode: '3100' },
-      { nameEn: 'Amberkhana', nameBn: 'আম্বরখানা', courierZoneId: 3, postCode: '3100' },
+      { nameEn: 'Sylhet Sadar', nameBn: '', courierZoneId: 3, postCode: '3100' },
+      { nameEn: 'Zindabazar', nameBn: '', courierZoneId: 3, postCode: '3100' },
+      { nameEn: 'Amberkhana', nameBn: '', courierZoneId: 3, postCode: '3100' },
     ],
     Rajshahi: [
-      { nameEn: 'Boalia', nameBn: 'বোয়ালিয়া', courierZoneId: 3, postCode: '6000' },
-      { nameEn: 'Motihar', nameBn: 'মতিহার', courierZoneId: 3, postCode: '6205' },
+      { nameEn: 'Boalia', nameBn: '', courierZoneId: 3, postCode: '6000' },
+      { nameEn: 'Motihar', nameBn: '', courierZoneId: 3, postCode: '6205' },
     ],
     Khulna: [
-      { nameEn: 'Khulna Sadar', nameBn: 'খুলনা সদর', courierZoneId: 3, postCode: '9100' },
-      { nameEn: 'Sonadanga', nameBn: 'সোনাডাঙ্গা', courierZoneId: 3, postCode: '9000' },
+      { nameEn: 'Khulna Sadar', nameBn: '', courierZoneId: 3, postCode: '9100' },
+      { nameEn: 'Sonadanga', nameBn: '', courierZoneId: 3, postCode: '9000' },
     ],
   };
 
@@ -183,7 +183,7 @@ export class GeoZoneService {
     return [
       {
         nameEn: `${districtName} Sadar`,
-        nameBn: `${districtName} সদর`,
+        nameBn: '',
         courierZoneId: 3,
         postCode: '0000',
       },
@@ -215,19 +215,19 @@ export class GeoZoneService {
         return {
           courierZoneId: 2,
           zoneName: 'Dhaka Suburbs',
-          zoneNameBn: 'ঢাকা উপশহর',
+          zoneNameBn: '',
           baseFee: 100,
           estimatedDays: '24-48 Hours',
-          estimatedDaysBn: '২৪-৪৮ ঘণ্টা',
+          estimatedDaysBn: '',
         };
       }
       return {
         courierZoneId: 1,
         zoneName: 'Inside Dhaka Metropolitan',
-        zoneNameBn: 'ঢাকা মেট্রোপলিটন',
+        zoneNameBn: '',
         baseFee: 80,
         estimatedDays: '12-24 Hours (Next Day)',
-        estimatedDaysBn: '১২-২৪ ঘণ্টা (পরের দিন)',
+        estimatedDaysBn: '',
       };
     }
 
@@ -236,10 +236,10 @@ export class GeoZoneService {
       return {
         courierZoneId: 2,
         zoneName: 'Dhaka Suburbs & Neighboring Districts',
-        zoneNameBn: 'ঢাকা সংলগ্ন জেলা',
+        zoneNameBn: '',
         baseFee: 100,
         estimatedDays: '24-48 Hours',
-        estimatedDaysBn: '২৪-৪৮ ঘণ্টা',
+        estimatedDaysBn: '',
       };
     }
 
@@ -247,10 +247,10 @@ export class GeoZoneService {
     return {
       courierZoneId: 3,
       zoneName: 'Outside Dhaka (Nationwide)',
-      zoneNameBn: 'ঢাকার বাইরে (সারাদেশ)',
+      zoneNameBn: '',
       baseFee: 120,
       estimatedDays: '48-72 Hours',
-      estimatedDaysBn: '৪৮-৭২ ঘণ্টা',
+      estimatedDaysBn: '',
     };
   }
 }

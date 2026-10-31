@@ -1,92 +1,69 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { X, Plus, Minus, ShoppingBag, ArrowRight, Tag, ShieldCheck, Sparkles } from 'lucide-react';
+import { X, ShoppingBag, Plus, Minus, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
-import { useLanguage } from '@/context/language-context';
-import { formatBdt } from '@/lib/formatters';
 
 function DrawerPrice({
   amount,
   prefix = '',
-  size = 'sm',
+  size = 'md',
   isDiscount = false,
   isHighlight = false,
 }: {
   amount: number;
   prefix?: string;
-  size?: 'xs' | 'sm' | 'base' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
   isDiscount?: boolean;
   isHighlight?: boolean;
 }) {
-  const formatted = Math.round(Math.abs(amount)).toLocaleString('en-IN');
+  const rounded = Math.round(amount);
+  const formatted = rounded.toLocaleString('en-IN');
+
+  const sizeClass =
+    size === 'sm'
+      ? 'text-xs'
+      : size === 'lg'
+      ? 'text-base sm:text-lg'
+      : 'text-xs sm:text-sm';
+
+  const colorClass = isDiscount
+    ? 'text-[#8C6D3B]'
+    : isHighlight
+    ? 'text-[#1C1917] font-semibold'
+    : 'text-[#1C1917]';
+
   return (
-    <span
-      className={`inline-flex items-baseline font-sans tabular-nums ${
-        isDiscount
-          ? 'text-emerald-700 font-medium'
-          : isHighlight
-          ? 'text-[#1C1917] font-semibold'
-          : 'text-[#1C1917] font-medium'
-      }`}
-    >
-      {prefix && <span className="mr-0.5">{prefix}</span>}
-      <span
-        className={`select-none mr-0.5 ${
-          isHighlight
-            ? 'text-[#C7A97B] text-xs'
-            : isDiscount
-            ? 'text-emerald-600/80 text-[11px]'
-            : 'text-[#1C1917]/50 text-[11px]'
-        }`}
-      >
-        ৳
-      </span>
-      <span className={size === 'lg' ? 'text-base font-semibold' : size === 'base' ? 'text-sm' : size === 'xs' ? 'text-[11px]' : 'text-xs'}>
-        {formatted}
-      </span>
+    <span className={`font-mono tracking-tight font-medium ${sizeClass} ${colorClass}`}>
+      {prefix}৳{formatted}
     </span>
   );
 }
 
 export function CartDrawer() {
-  const pathname = usePathname();
   const {
+    isBagOpen,
+    closeBag,
     items,
     itemCount,
     subtotalBdt,
-    vatBdt,
     discountBdt,
     privilegeCode,
     activePrivilegeLabel,
-    deliveryFeeBdt,
-    totalBdt,
-    isBagOpen,
-    closeBag,
     updateQuantity,
     removeItem,
     removePrivilege,
   } = useCart();
 
-  const { t } = useLanguage();
-
-  // Close bag automatically on route change (e.g. going to /checkout)
-  useEffect(() => {
-    if (isBagOpen) {
-      closeBag();
-    }
-  }, [pathname]);
-
   if (!isBagOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Dimmed Alabaster Backdrop */}
+      {/* Dim Backdrop */}
       <div
-        className="fixed inset-0 bg-[#1C1917]/50 backdrop-blur-xs transition-opacity"
+        className="absolute inset-0 bg-[#1C1917]/60 backdrop-blur-xs transition-opacity cursor-pointer"
         onClick={closeBag}
       />
 
@@ -99,7 +76,7 @@ export function CartDrawer() {
             <div className="flex items-center space-x-2">
               <ShoppingBag className="w-4 h-4 text-[#C7A97B]" />
               <h2 className="text-xs uppercase tracking-[0.25em] font-medium text-[#1C1917]">
-                {t('SANCTUARY BAG', 'শপিং ব্যাগ')} ({itemCount})
+                SANCTUARY BAG ({itemCount})
               </h2>
             </div>
             <button
@@ -121,10 +98,10 @@ export function CartDrawer() {
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] font-medium text-[#1C1917]">
-                    {t('YOUR BAG IS EMPTY', 'আপনার ব্যাগ খালি')}
+                    YOUR BAG IS EMPTY
                   </p>
                   <p className="text-[11px] text-[#1C1917]/60 font-light mt-0.5">
-                    {t('Discover our clinical formulations curated for your skin.', 'আপনার ত্বকের যত্নে বিজ্ঞানসম্মত ফর্মুলেশনগুলো দেখুন।')}
+                    Discover our clinical formulations curated for your skin.
                   </p>
                 </div>
                 <Link
@@ -132,7 +109,7 @@ export function CartDrawer() {
                   onClick={closeBag}
                   className="px-5 py-2.5 bg-[#1C1917] text-[#F9F6F0] text-[10px] uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-all"
                 >
-                  {t('EXPLORE FORMULATIONS', 'ফর্মুলেশনসমূহ দেখুন')}
+                  EXPLORE FORMULATIONS
                 </Link>
               </div>
             ) : (
@@ -159,7 +136,7 @@ export function CartDrawer() {
                       <div className="flex items-start justify-between gap-1">
                         <div>
                           <h4 className="text-xs uppercase tracking-[0.12em] font-medium text-[#1C1917] truncate">
-                            {t(item.titleEn, item.titleBn)}
+                            {item.titleEn}
                           </h4>
                           <p className="text-[10px] uppercase tracking-[0.08em] text-[#1C1917]/60 mt-0.5">
                             {item.volume}
@@ -180,24 +157,26 @@ export function CartDrawer() {
                         <div className="flex items-center border border-[#E6DFD5] bg-[#F9F6F0]">
                           <button
                             type="button"
-                            onClick={() => updateQuantity(item.id, -1)}
-                            className="px-2 py-1 text-xs text-[#1C1917]/70 hover:text-[#1C1917] focus:outline-none cursor-pointer"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="p-1.5 hover:text-[#C7A97B] transition-colors focus:outline-none cursor-pointer"
+                            aria-label="Decrease quantity"
                           >
-                            <Minus className="w-3 h-3" />
+                            <Minus className="w-3 h-3 stroke-[1.5]" />
                           </button>
-                          <span className="px-2 text-xs font-sans font-medium text-[#1C1917] tabular-nums">
+                          <span className="px-2 text-xs font-mono font-medium">
                             {item.quantity}
                           </span>
                           <button
                             type="button"
-                            onClick={() => updateQuantity(item.id, 1)}
-                            className="px-2 py-1 text-xs text-[#1C1917]/70 hover:text-[#1C1917] focus:outline-none cursor-pointer"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="p-1.5 hover:text-[#C7A97B] transition-colors focus:outline-none cursor-pointer"
+                            aria-label="Increase quantity"
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-3 h-3 stroke-[1.5]" />
                           </button>
                         </div>
 
-                        {/* Price */}
+                        {/* Item Total Price */}
                         <DrawerPrice amount={item.priceBdt * item.quantity} />
                       </div>
                     </div>
@@ -206,16 +185,16 @@ export function CartDrawer() {
               </div>
             )}
 
-            {/* Price Breakdown Details (Only rendered if privilege or seasonal discount is active) */}
+            {/* Privilege and Discount Row */}
             {items.length > 0 && (privilegeCode || discountBdt > 0) && (
               <div className="space-y-2 pt-3 border-t border-[#E6DFD5]">
-                {/* Active Sanctuary Client Privilege Badge (Auto-honored from seasonal campaign or private link) */}
+                {/* Active Sanctuary Client Privilege Badge */}
                 {privilegeCode && (
                   <div className="p-2.5 bg-[#1C1917] text-[#FAF8F5] border border-[#C7A97B]/60 flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1.5 min-w-0">
                       <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
                       <span className="font-serif text-[10px] uppercase tracking-wider truncate">
-                        {t('SANCTUARY PRIVILEGE HONORED:', 'প্রিভিলেজ সক্রিয়:')}{' '}
+                        SANCTUARY PRIVILEGE HONORED:{' '}
                         <strong className="font-mono text-[#C7A97B] font-semibold">{privilegeCode}</strong>
                       </span>
                     </div>
@@ -224,7 +203,7 @@ export function CartDrawer() {
                       onClick={removePrivilege}
                       className="text-[9px] text-[#FAF8F5]/60 hover:text-white underline cursor-pointer tracking-wider transition-colors shrink-0 ml-2"
                     >
-                      {t('REMOVE', 'মুছুন')}
+                      REMOVE
                     </button>
                   </div>
                 )}
@@ -234,7 +213,7 @@ export function CartDrawer() {
                     <span className="flex items-center gap-1.5 font-light">
                       <Sparkles className="w-3 h-3 text-[#C7A97B]" />
                       <span className="font-serif">
-                        {activePrivilegeLabel || t('Sanctuary Privilege Courtesy', 'সানকচুয়ারি প্রিভিলেজ ছাড়')}
+                        {activePrivilegeLabel || 'Sanctuary Privilege Courtesy'}
                       </span>
                     </span>
                     <DrawerPrice amount={discountBdt} prefix="-" isDiscount />
@@ -244,12 +223,12 @@ export function CartDrawer() {
             )}
           </div>
 
-          {/* 3. Sticky Bottom Checkout Bar (100% Always Visible on Mobile) */}
+          {/* 3. Sticky Bottom Checkout Bar */}
           {items.length > 0 && (
             <div className="p-4 sm:p-5 border-t border-[#E6DFD5] bg-[#F9F6F0] shrink-0 space-y-3 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-xl">
               <div className="flex justify-between items-baseline">
                 <span className="text-xs uppercase tracking-[0.2em] font-medium text-[#1C1917]">
-                  {t('TOTAL DUE', 'সর্বমোট')}
+                  TOTAL DUE
                 </span>
                 <DrawerPrice amount={Math.max(0, subtotalBdt - discountBdt)} size="lg" isHighlight />
               </div>
@@ -259,17 +238,17 @@ export function CartDrawer() {
                 onClick={closeBag}
                 className="w-full py-3.5 bg-[#1C1917] hover:bg-[#1C1917]/90 active:scale-[0.99] text-[#F9F6F0] uppercase text-xs tracking-[0.22em] font-medium flex items-center justify-center space-x-2 transition-all shadow-md cursor-pointer"
               >
-                <span>{t('PROCEED TO CHECKOUT', 'অর্ডার সম্পন্ন করুন')}</span>
+                <span>PROCEED TO CHECKOUT</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
 
               <div className="flex items-center justify-center space-x-3 pt-0.5 text-[9px] uppercase tracking-[0.1em] text-[#1C1917]/60">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-[#C7A97B]" />
-                  {t('MINDFULLY CRAFTED', 'নিখুঁত ডার্মাল কেয়ার')}
+                  MINDFULLY CRAFTED
                 </span>
                 <span>•</span>
-                <span>{t('DEDICATED CLIENT CARE', 'বিশ্বস্ত কাস্টমার কেয়ার')}</span>
+                <span>DEDICATED CLIENT CARE</span>
               </div>
             </div>
           )}

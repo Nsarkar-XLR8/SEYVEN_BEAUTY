@@ -87,7 +87,7 @@ export function getPrimaryConciergeAction(
     return {
       channel: 'MESSENGER',
       labelEn: 'ORDER VIA MESSENGER CONCIERGE',
-      labelBn: 'মেসেঞ্জারে সরাসরি অর্ডার করুন',
+      labelBn: 'ORDER VIA MESSENGER CONCIERGE',
       shortLabel: 'MESSENGER',
       url: messengerUrl,
       displayValue: `m.me/${handle}`,
@@ -106,7 +106,7 @@ export function getPrimaryConciergeAction(
     return {
       channel: 'MESSENGER',
       labelEn: 'ORDER VIA MESSENGER CONCIERGE',
-      labelBn: 'মেসেঞ্জারে সরাসরি অর্ডার করুন',
+      labelBn: 'ORDER VIA MESSENGER CONCIERGE',
       shortLabel: 'MESSENGER',
       url: messengerUrl,
       displayValue: `m.me/${handle}`,
@@ -125,7 +125,7 @@ export function getPrimaryConciergeAction(
   return {
     channel: 'WHATSAPP',
     labelEn: 'ORDER VIA WHATSAPP CONCIERGE',
-    labelBn: 'হোয়াটসঅ্যাপে সরাসরি অর্ডার করুন',
+    labelBn: 'ORDER VIA WHATSAPP CONCIERGE',
     shortLabel: 'WHATSAPP',
     url: buildWhatsAppUrl(cleanPhone, message),
     displayValue: rawPhone,

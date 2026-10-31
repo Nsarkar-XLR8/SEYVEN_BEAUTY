@@ -117,12 +117,12 @@ export function ProductCard({
             {isJustAdded ? (
               <>
                 <Check className="w-3.5 h-3.5 text-[#C7A97B] stroke-[2.5]" />
-                <span>{t('ADDED TO BAG', 'ব্যাগে যুক্ত হয়েছে')}</span>
+                <span>{'ADDED TO BAG'}</span>
               </>
             ) : (
               <>
                 <Plus className="w-3.5 h-3.5 stroke-[1.5]" />
-                <span>{t('QUICK ADD', 'ব্যাগে যোগ করুন')}</span>
+                <span>{'QUICK ADD'}</span>
               </>
             )}
           </button>
@@ -132,7 +132,7 @@ export function ProductCard({
         <button
           type="button"
           onClick={handleQuickAdd}
-          aria-label={t('Add to Bag', 'ব্যাগে যোগ করুন')}
+          aria-label={'Add to Bag'}
           className={`sm:hidden absolute bottom-2 right-2 w-7 h-7 rounded-full backdrop-blur-md shadow-sm flex items-center justify-center transition-all duration-300 z-20 ${
             isJustAdded
               ? 'bg-[#1C1917] text-[#C7A97B] scale-110 shadow-md ring-2 ring-[#C7A97B]/40'
@@ -156,12 +156,12 @@ export function ProductCard({
         )}
 
         <h3 className="text-xs sm:text-sm font-serif uppercase tracking-[0.12em] sm:tracking-[0.16em] font-normal text-[#1C1917] group-hover:text-[#C7A97B] transition-colors leading-snug line-clamp-1">
-          {lang === 'bn' ? titleBn : titleEn}
+          {titleEn}
         </h3>
 
         {purposeEn && (
           <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[#C7A97B] font-medium truncate">
-            {lang === 'bn' ? purposeBn || purposeEn : purposeEn}
+            {purposeEn}
           </p>
         )}
 

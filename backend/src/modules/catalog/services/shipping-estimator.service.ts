@@ -43,7 +43,7 @@ export class ShippingEstimatorService {
 
     let zone: 'INSIDE_DHAKA' | 'DHAKA_SUBURB' | 'OUTSIDE_DHAKA' = 'OUTSIDE_DHAKA';
     let zoneNameEn = 'Outside Dhaka Division (Nationwide)';
-    let zoneNameBn = 'ঢাকার বাইরে (সারা দেশ)';
+    let zoneNameBn = 'Outside Dhaka Division (Nationwide)';
     let baseShippingFee = STANDARD_OUTSIDE_DHAKA_SHIPPING_BDT; // ৳120
     let minDays = 3;
     let maxDays = 5;
@@ -55,21 +55,21 @@ export class ShippingEstimatorService {
       ) {
         zone = 'DHAKA_SUBURB';
         zoneNameEn = 'Dhaka Suburbs / Adjacent Areas';
-        zoneNameBn = 'ঢাকা উপশহর ও পার্শ্ববর্তী এলাকা';
+        zoneNameBn = 'Dhaka Suburbs / Adjacent Areas';
         baseShippingFee = 100.0;
         minDays = 2;
         maxDays = 3;
       } else if (dist === 'dhaka' || !dist) {
         zone = 'INSIDE_DHAKA';
         zoneNameEn = 'Inside Dhaka Metro';
-        zoneNameBn = 'ঢাকা মেট্রো এলাকা';
+        zoneNameBn = 'Inside Dhaka Metro';
         baseShippingFee = STANDARD_INSIDE_DHAKA_SHIPPING_BDT; // ৳60
         minDays = 1;
         maxDays = 2;
       } else {
         zone = 'DHAKA_SUBURB';
         zoneNameEn = 'Dhaka Division (District Headquarters)';
-        zoneNameBn = 'ঢাকা বিভাগ (জেলা সদর)';
+        zoneNameBn = 'Dhaka Division (District Headquarters)';
         baseShippingFee = 100.0;
         minDays = 2;
         maxDays = 3;
@@ -88,9 +88,7 @@ export class ShippingEstimatorService {
       ? `Express Delivery: 24-48 Hours (${minDays} to ${maxDays} business days)`
       : `Standard Nationwide Courier: ${minDays} to ${maxDays} business days`;
 
-    const summaryBn = minDays === 1
-      ? `এক্সপ্রেস ডেলিভারি: ২৪-৪৮ ঘণ্টা (${minDays}-${maxDays} কর্মদিবস)`
-      : `কুরিয়ার ডেলিভারি: ${minDays}-${maxDays} কর্মদিবসের মধ্যে`;
+    const summaryBn = summaryEn;
 
     return {
       zone,

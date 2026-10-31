@@ -148,15 +148,14 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
 
     for (const line of lines) {
       const lower = line.toLowerCase();
-      if (lower.startsWith('name:') || lower.startsWith('নাম:') || lower.startsWith('client:')) {
-        parsedName = line.replace(/^(name:|নাম:|client:)\s*/i, '').trim();
+      if (lower.startsWith('name:') || lower.startsWith('client:')) {
+        parsedName = line.replace(/^(name:|client:)\s*/i, '').trim();
       } else if (
         lower.startsWith('address:') ||
-        lower.startsWith('ঠিকানা:') ||
         lower.startsWith('addr:') ||
         lower.startsWith('location:')
       ) {
-        parsedAddress = line.replace(/^(address:|ঠিকানা:|addr:|location:)\s*/i, '').trim();
+        parsedAddress = line.replace(/^(address:|addr:|location:)\s*/i, '').trim();
       }
     }
 
@@ -184,34 +183,22 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
     const lowerAddr = (parsedAddress + ' ' + pastedText).toLowerCase();
     if (
       lowerAddr.includes('savar') ||
-      lowerAddr.includes('সাভার') ||
       lowerAddr.includes('gazipur') ||
-      lowerAddr.includes('গাজীপুর') ||
       lowerAddr.includes('narayanganj') ||
-      lowerAddr.includes('নারায়ণগঞ্জ') ||
-      lowerAddr.includes('keraniganj') ||
-      lowerAddr.includes('কেরানীগঞ্জ')
+      lowerAddr.includes('keraniganj')
     ) {
       setZoneName('Dhaka Suburbs');
       setDeliveryFee(100);
       if (hasAdvanceFee) setAdvanceAmount(100);
     } else if (
       lowerAddr.includes('dhaka') ||
-      lowerAddr.includes('ঢাকা') ||
       lowerAddr.includes('uttara') ||
-      lowerAddr.includes('উত্তরা') ||
       lowerAddr.includes('mirpur') ||
-      lowerAddr.includes('মিরপুর') ||
       lowerAddr.includes('dhanmondi') ||
-      lowerAddr.includes('ধানমন্ডি') ||
       lowerAddr.includes('gulshan') ||
-      lowerAddr.includes('গুলশান') ||
       lowerAddr.includes('banani') ||
-      lowerAddr.includes('বনানী') ||
       lowerAddr.includes('mohammadpur') ||
-      lowerAddr.includes('মোহাম্মদপুর') ||
-      lowerAddr.includes('badda') ||
-      lowerAddr.includes('বাড্ডা')
+      lowerAddr.includes('badda')
     ) {
       setZoneName('Dhaka City');
       setDeliveryFee(70);
@@ -437,7 +424,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                 className="text-xs font-semibold text-[#1C1917] flex items-center gap-1.5 hover:text-[#C7A97B] transition-colors cursor-pointer"
               >
                 <ClipboardPaste className="w-3.5 h-3.5 text-[#C7A97B]" />
-                <span>Smart Paste (চ্যাট মেসেজ থেকে অটো-ফিল)</span>
+                <span>Smart Paste (Auto-fill from Concierge Chat)</span>
                 <span className="text-[10px] font-mono font-normal text-[#1C1917]/50 ml-1">
                   {showSmartPaste ? '▲ Hide' : '▼ Click to paste customer text'}
                 </span>
@@ -450,7 +437,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                   rows={3}
                   value={pastedText}
                   onChange={(e) => setPastedText(e.target.value)}
-                  placeholder="মেসেঞ্জারের মেসেজ পেস্ট করুন, যেমন:&#10;তানজিলা আহমেদ&#10;01712345678&#10;বাড়ি ১২, রোড ৪, সেক্টর ৭, উত্তরা, ঢাকা"
+                  placeholder="Paste concierge chat message, e.g.:&#10;Tanzila Ahmed&#10;01712345678&#10;House 12, Road 4, Sector 7, Uttara, Dhaka"
                   className="w-full p-2.5 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:outline-none font-sans"
                 />
                 <div className="flex justify-end">
@@ -554,14 +541,14 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <label className="text-xs font-semibold text-[#1C1917] block">
-                    Delivery Fee (৳ BDT) — আপনার ইচ্ছামত যেকোনো অ্যামাউন্ট বসান
+                    Delivery Fee (৳ BDT) — Custom Delivery Charge
                   </label>
                   <span className="text-[11px] text-[#1C1917]/60 font-sans">
-                    পাঠাও বা কুরিয়ার চার্জ অনুযায়ী স্বাধীনভাবে সেট করুন (যেমন 70, 80, 100, 130 বা 0)
+                    Set according to courier service charge (e.g. 70, 80, 100, 130 or 0)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-[#1C1917]/60">ফি:</span>
+                  <span className="text-xs font-mono font-bold text-[#1C1917]/60">Fee:</span>
                   <div className="relative w-28">
                     <span className="absolute left-2.5 top-1.5 text-xs font-mono font-bold text-[#1C1917]/50">৳</span>
                     <input
@@ -610,7 +597,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                   <span>Products & Items ({orderItems.length} items)</span>
                 </span>
                 <span className="text-[11px] text-[#1C1917]/60 block mt-0.5">
-                  নাম, সাইজ/ভ্যারিয়েন্ট (15ml/30ml/50ml) ও প্রাইস যেকোনোটি এডিট করতে পারেন
+                  Edit name, variant size (15ml/30ml/50ml), and unit price as required
                 </span>
               </div>
               <div className="flex items-center gap-2">

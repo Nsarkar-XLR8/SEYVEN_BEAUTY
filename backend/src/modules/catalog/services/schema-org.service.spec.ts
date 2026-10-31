@@ -12,7 +12,7 @@ describe('SchemaOrgService', () => {
       id: 'prod-1',
       slug: 'triple-ceramide-cream',
       titleEn: 'Triple Ceramide Barrier Cream',
-      titleBn: 'ট্রিপল সিরামাইড ক্রিম',
+      titleBn: 'Triple Ceramide Barrier Cream',
       shortDescriptionEn: 'Barrier repair cream with ceramides and panthenol',
       dermalProtocolEn: 'Apply morning and night',
       patchTestGuideEn: 'Apply behind the ear for 24h',

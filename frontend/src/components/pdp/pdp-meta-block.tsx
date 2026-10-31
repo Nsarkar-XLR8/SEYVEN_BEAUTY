@@ -97,18 +97,18 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
       {/* 1. Purpose Tag & Brand Header */}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-[#C7A97B] font-medium">
-          <span>{lang === 'bn' ? product.purposeTagBn : product.purposeTagEn}</span>
+          <span>{product.purposeTagEn}</span>
           <span className="text-[#1C1917]/50">{product.brand}</span>
         </div>
 
         {/* Product Title */}
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif uppercase tracking-[0.16em] font-light text-[#1C1917] leading-tight">
-          {lang === 'bn' ? product.titleBn : product.titleEn}
+          {product.titleEn}
         </h1>
 
         {/* Subtitle / Short description */}
         <p className="text-xs text-[#1C1917]/70 font-light leading-relaxed tracking-[0.03em] pt-1">
-          {lang === 'bn' ? product.subtitleBn : product.subtitleEn}
+          {product.subtitleEn}
         </p>
       </div>
 
@@ -126,7 +126,7 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
         </div>
         <span className="text-[#E6DFD5] hidden sm:inline">•</span>
         <div className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/60">
-          {t('ROUTINE STEP', 'রুটিন ধাপ')}: {product.routineStep}
+          {'ROUTINE STEP'}: {product.routineStep}
         </div>
       </div>
 
@@ -140,7 +140,7 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
             </span>
           </div>
           <span className="text-[9px] uppercase tracking-[0.2em] text-[#1C1917]/50 block">
-            {t('INCLUSIVE OF ALL STATUTORY TAXES', 'সকল ট্যাক্স অন্তর্ভুক্ত')}
+            {'INCLUSIVE OF ALL STATUTORY TAXES'}
           </span>
         </div>
 
@@ -149,12 +149,12 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
           {isCurrentVariantInStock ? (
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[#F9F6F0] border border-[#C7A97B]/40 text-[9px] uppercase tracking-[0.2em] text-[#1C1917] font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-              <span>{t('[ IN STOCK ]', '[ স্টকে আছে ]')}</span>
+              <span>{'[ IN STOCK ]'}</span>
             </div>
           ) : (
             <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[#1C1917]/5 border border-[#1C1917]/20 text-[9px] uppercase tracking-[0.2em] text-[#1C1917]/70">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-              <span>{t('[ RESTOCKING SOON ]', '[ শীঘ্রই পুনরায় আসছে ]')}</span>
+              <span>{'[ RESTOCKING SOON ]'}</span>
             </div>
           )}
         </div>
@@ -238,12 +238,12 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
                 {isAddedRecently ? (
                   <>
                     <Check className="w-4 h-4 text-[#FAF8F5] transition-transform duration-300 group-hover:scale-110" />
-                    <span>{t('ADDED TO BAG', 'ব্যাগ-এ যোগ হয়েছে')}</span>
+                    <span>{'ADDED TO BAG'}</span>
                   </>
                 ) : (
                   <>
                     <ShoppingBag className="w-4 h-4 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-all duration-300 group-hover:scale-110" />
-                    <span>{t('ADD TO BAG', 'ব্যাগ-এ যোগ করুন')}</span>
+                    <span>{'ADD TO BAG'}</span>
                   </>
                 )}
               </button>
@@ -253,7 +253,7 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
                 onClick={handleInstantBuy}
                 className="group px-6 py-3.5 bg-transparent hover:bg-[#1C1917] text-[#1C1917] hover:text-[#FAF8F5] border border-[#1C1917]/30 hover:border-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 shrink-0 rounded-none cursor-pointer"
               >
-                <span>{t('BUY NOW', 'এখনই কিনুন')}</span>
+                <span>{'BUY NOW'}</span>
                 <ArrowRight className="w-3.5 h-3.5 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-all duration-300 group-hover:translate-x-1" />
               </button>
             </div>
@@ -264,7 +264,7 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
               className="group flex-1 px-6 py-3.5 border border-[#1C1917]/30 hover:border-[#8C6D3B] bg-transparent hover:bg-[#8C6D3B] text-[#1C1917] hover:text-[#FAF8F5] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none cursor-pointer"
             >
               <Bell className="w-4 h-4 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-all duration-300 group-hover:scale-110" />
-              <span>{t('NOTIFY WHEN RESTOCKED', 'স্টকে আসলে আমাকে জানান')}</span>
+              <span>{'NOTIFY WHEN RESTOCKED'}</span>
             </button>
           )}
         </div>
@@ -287,7 +287,7 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
           <div className="flex items-center justify-between p-3 bg-[#F9F6F0] border border-[#C7A97B]/40 text-xs animate-in fade-in duration-200">
             <div className="flex items-center space-x-2 text-[11px] text-[#1C1917]">
               <Check className="w-3.5 h-3.5 text-emerald-700" />
-              <span>{t('Placed in your Sanctuary Bag.', 'পণ্যটি আপনার ব্যাগে যুক্ত হয়েছে।')}</span>
+              <span>{'Placed in your Sanctuary Bag.'}</span>
             </div>
             <div className="flex items-center space-x-3">
               <button
@@ -295,13 +295,13 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
                 onClick={() => openBag()}
                 className="text-[10px] uppercase tracking-wider text-[#C7A97B] font-semibold hover:underline"
               >
-                {t('VIEW BAG', 'ব্যাগ দেখুন')}
+                {'VIEW BAG'}
               </button>
               <Link
                 href="/checkout"
                 className="text-[10px] uppercase tracking-wider bg-[#1C1917] text-[#F9F6F0] px-3 py-1 font-medium hover:bg-[#1C1917]/90"
               >
-                {t('CHECKOUT', 'চেকআউট')}
+                {'CHECKOUT'}
               </Link>
             </div>
           </div>
@@ -313,19 +313,13 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
         <div className="flex items-center space-x-2.5 text-[11px] text-[#1C1917]/80">
           <ShieldCheck className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
           <span>
-            {t(
-              `Curated authentic formulation directly imported from ${product.originCountry || 'brand partners'}`,
-              `${product.originCountry || 'আন্তর্জাতিক ব্র্যান্ড'} থেকে সরাসরি সংগৃহীত শতভাগ আসল পণ্য`
-            )}
+            {`Curated authentic formulation directly imported from ${product.originCountry || 'brand partners'}`}
           </span>
         </div>
         <div className="flex items-center space-x-2.5 text-[11px] text-[#1C1917]/80">
           <Sparkles className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
           <span>
-            {t(
-              'Cash on Delivery (COD) supported nationwide with open box inspection',
-              'সারাদেশে ক্যাশ অন ডেলিভারি (COD) ও পণ্য দেখে নেওয়ার সুবিধা'
-            )}
+            {'Cash on Delivery (COD) supported nationwide with open box inspection'}
           </span>
         </div>
       </div>
@@ -361,7 +355,7 @@ export function PdpMetaBlock({ product, onOpenWaitlist }: PdpMetaBlockProps) {
               onClick={handleInstantBuy}
               className="group py-3 px-5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.2em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 shadow-sm rounded-none cursor-pointer"
             >
-              <span>{t('BUY NOW', 'এখনই কিনুন')}</span>
+              <span>{'BUY NOW'}</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-all duration-300 group-hover:translate-x-1" />
             </button>
           </div>

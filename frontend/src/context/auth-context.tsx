@@ -149,41 +149,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const sendOtp = async (phone: string) => {
-    try {
-      return await apiFetch('/auth/otp/send', {
-        method: 'POST',
-        body: JSON.stringify({ phone }),
-      });
-    } catch (err: any) {
-      if (err.message?.includes('Database service is currently unreachable') || err.message?.includes('Failed to fetch')) {
-        return { success: true, message: 'Verification code simulated (Use 123456)', expiresInSeconds: 120 };
-      }
-      throw err;
-    }
+  const sendOtp = async () => {
+    return { success: false, message: 'OTP service is decommissioned. Please log in with password.', expiresInSeconds: 0 };
   };
 
-  const verifyOtp = async (phone: string, code: string) => {
-    try {
-      const response = await apiFetch<{
-        tokens: { accessToken: string; refreshToken: string };
-        user: UserProfile;
-      }>('/auth/otp/verify', {
-        method: 'POST',
-        body: JSON.stringify({ phone, code }),
-      });
-
-      if (response?.tokens?.accessToken) {
-        localStorage.setItem('seyven_access_token', response.tokens.accessToken);
-        localStorage.setItem('seyven_refresh_token', response.tokens.refreshToken);
-        setUser(response.user);
-        setIsAuthModalOpen(false);
-        return true;
-      }
-      return false;
-    } catch (err: any) {
-      throw err;
-    }
+  const verifyOtp = async () => {
+    return false;
   };
 
   const forgotPassword = async (email: string) => {

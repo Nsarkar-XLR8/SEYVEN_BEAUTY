@@ -273,7 +273,7 @@ export class CatalogService {
 
       const routineStep = meta?.routineStep || (categoryName.toLowerCase().includes('sun') ? 'Sun Defence' : 'Treat & Serum');
       const purposeTagEn = meta?.purposeTagEn || (categoryName.toLowerCase().includes('sun') ? 'SUN DEFENCE // BROAD SPECTRUM' : 'TARGETED SERUM // ACTIVE CARE');
-      const purposeTagBn = meta?.purposeTagBn || (categoryName.toLowerCase().includes('sun') ? 'সান প্রোটেকশন ও ফ্লুইড শিল্ড' : 'টার্গেটেড অ্যাক্টিভ সিরাম');
+      const purposeTagBn = meta?.purposeTagBn || purposeTagEn;
       const primaryVolume = meta?.volume || variants[0]?.volume || '50 ML';
 
       return {
@@ -425,7 +425,7 @@ export class CatalogService {
         id: v.id || `var-${Date.now()}-${idx}`,
         sku: uniqueSku,
         titleEn: v.titleEn || `${volStr} Edition`,
-        titleBn: v.titleBn || `${volStr} সংস্করণ`,
+        titleBn: v.titleBn || `${volStr} Edition`,
         volume: volStr,
         priceBdt: Number(v.priceBdt) || 2450,
         inStock: v.inStock ?? true,
@@ -930,7 +930,7 @@ export class CatalogService {
       usageSteps: meta?.usageSteps || [],
       routineStep: meta?.routineStep || 'Treat & Serum',
       purposeTagEn: meta?.purposeTagEn || 'CLINICAL CARE // NOURISH',
-      purposeTagBn: meta?.purposeTagBn || 'ক্লিনিক্যাল ডার্মাল কেয়ার',
+      purposeTagBn: meta?.purposeTagBn || meta?.purposeTagEn || 'CLINICAL CARE // NOURISH',
       variants: variantsWithStock,
     };
 

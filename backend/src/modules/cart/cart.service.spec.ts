@@ -101,7 +101,7 @@ describe('CartService', () => {
         weightGrams: 150,
         product: {
           titleEn: 'Vitamin C 15% Serum',
-          titleBn: 'ভিটামিন সি ১৫% সিরাম',
+          titleBn: 'Vitamin C 15% Radiance Booster Serum',
         },
       });
 

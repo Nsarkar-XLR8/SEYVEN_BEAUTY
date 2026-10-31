@@ -79,7 +79,7 @@ export default function CatalogPage() {
 
   // 100% Dynamic luxury category navigation options (Derived strictly from Admin & Database)
   const filterOptions = useMemo(() => {
-    const base = [{ id: 'ALL', labelEn: 'ALL FORMULATIONS', labelBn: 'সকল প্রোডাক্ট' }];
+    const base = [{ id: 'ALL', labelEn: 'ALL FORMULATIONS', labelBn: 'ALL FORMULATIONS' }];
     const seen = new Set<string>();
 
     // 1. Primary: Use categories fetched from Admin DB
@@ -264,20 +264,17 @@ export default function CatalogPage() {
         {/* Architectural Sharp Luxury Overline Badge */}
         <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 sm:px-4 sm:py-2 bg-[#FAF8F5] border border-[#C7A97B]/40 rounded-none text-[9px] sm:text-[10px] uppercase tracking-[0.28em] sm:tracking-[0.32em] font-medium text-[#8C6D3B] mb-4 sm:mb-6">
           <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#C7A97B] shrink-0" />
-          <span>{t('CURATED ICONS • 100% AUTHENTIC GUARANTEE', 'আন্তর্জাতিক ব্র্যান্ড • ১০০% আসল স্কিনকেয়ার')}</span>
+          <span>CURATED ICONS • 100% AUTHENTIC GUARANTEE</span>
         </div>
 
         {/* Majestic Serif Headline */}
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif uppercase tracking-[0.12em] sm:tracking-[0.16em] md:tracking-[0.18em] font-light text-[#1C1917] leading-[1.25] sm:leading-[1.2] mb-3.5 sm:mb-5">
-          {t('THE CURATED COLLECTION', 'আন্তর্জাতিক স্কিনকেয়ার কালেকশন')}
+          THE CURATED COLLECTION
         </h1>
 
         {/* Airy Editorial Subtitle with Proper Line Height and Kerning */}
         <p className="text-xs sm:text-[13px] md:text-sm text-[#1C1917]/75 font-light leading-relaxed sm:leading-[1.8] tracking-wide sm:tracking-wider max-w-xl sm:max-w-2xl mx-auto">
-          {t(
-            'Authentic Korean, French, and American dermatological icons curated specifically for the unique needs of Bangladeshi skin in humid tropical climates.',
-            'বাংলাদেশের আবহাওয়া ও ত্বকের বৈশিষ্ট্যের সাথে মানানসই বিশ্বের সেরা ও প্রমাণিত আন্তর্জাতিক স্কিনকেয়ার প্রোডাক্ট।'
-          )}
+          Authentic Korean, French, and American dermatological icons curated specifically for the unique needs of Bangladeshi skin in humid tropical climates.
         </p>
       </div>
 
@@ -303,7 +300,7 @@ export default function CatalogPage() {
                       isActive ? 'text-[#1C1917] font-semibold' : 'text-[#1C1917]/45 hover:text-[#1C1917] font-normal'
                     }`}
                   >
-                    <span>{lang === 'bn' ? filter.labelBn : filter.labelEn}</span>
+                    <span>{filter.labelEn}</span>
                     {isActive && (
                       <span className="absolute bottom-0 inset-x-0 h-[2px] bg-[#1C1917] rounded-full transition-all" />
                     )}
@@ -323,10 +320,7 @@ export default function CatalogPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder={t(
-                `Search across ${totalItems > 0 ? totalItems.toLocaleString() : '1,000+'} formulations or brands...`,
-                `${totalItems > 0 ? totalItems.toLocaleString() : '১,০০০+'} প্রোডাক্ট বা ব্র্যান্ডের নাম খুঁজুন...`
-              )}
+              placeholder={`Search across ${totalItems > 0 ? totalItems.toLocaleString() : '1,000+'} formulations or brands...`}
               className="w-full pl-9 pr-8 py-2 bg-[#F9F6F0]/60 border border-[#E6DFD5] text-[11px] text-[#1C1917] placeholder:text-[#1C1917]/35 tracking-wider focus:outline-none focus:border-[#C7A97B] focus:bg-white transition-all font-light"
             />
             {searchQuery && (
@@ -344,7 +338,7 @@ export default function CatalogPage() {
           <div className="flex items-center justify-between md:justify-end gap-2.5 sm:gap-4 text-[10px] tracking-wider text-[#1C1917]/70">
             {/* Items Per Page */}
             <div className="flex items-center space-x-1.5 shrink-0">
-              <span className="uppercase text-[9px] text-[#1C1917]/50 hidden sm:inline">{t('Show', 'প্রতি পেজে')}:</span>
+              <span className="uppercase text-[9px] text-[#1C1917]/50 hidden sm:inline">Show:</span>
               <select
                 value={pageSize}
                 onChange={(e) => {
@@ -369,11 +363,11 @@ export default function CatalogPage() {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="bg-[#F9F6F0]/80 border border-[#E6DFD5] text-[#1C1917] py-1.5 px-2.5 text-[10px] uppercase tracking-wider focus:outline-none focus:border-[#C7A97B]"
               >
-                <option value="FEATURED">{t('Curated Editorial', 'সেরা কালেকশন')}</option>
-                <option value="PRICE_ASC">{t('Price: Low to High', 'দাম: কম থেকে বেশি')}</option>
-                <option value="PRICE_DESC">{t('Price: High to Low', 'দাম: বেশি থেকে কম')}</option>
-                <option value="BRAND_ASC">{t('Brand (A - Z)', 'ব্র্যান্ড (A - Z)')}</option>
-                <option value="TITLE_ASC">{t('Name (A - Z)', 'নাম (A - Z)')}</option>
+                <option value="FEATURED">Curated Editorial</option>
+                <option value="PRICE_ASC">Price: Low to High</option>
+                <option value="PRICE_DESC">Price: High to Low</option>
+                <option value="BRAND_ASC">Brand (A - Z)</option>
+                <option value="TITLE_ASC">Name (A - Z)</option>
               </select>
             </div>
           </div>
@@ -381,14 +375,11 @@ export default function CatalogPage() {
 
         {/* Discreet Collection Meta Counter */}
         <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.22em] text-[#1C1917]/50 px-1 pt-1 border-t border-[#E6DFD5]/50">
-          <span>{t('AUTHENTIC SELECTION', 'আসল সিলেকশন')}</span>
+          <span>AUTHENTIC SELECTION</span>
           <span className="font-mono">
             {totalItems > 0
-              ? t(
-                  `Showing ${startIndex + 1} - ${endIndex} of ${totalItems.toLocaleString()} Formulations`,
-                  `মোট ${totalItems.toLocaleString()} টির মধ্যে ${startIndex + 1} - ${endIndex} টি দেখানো হচ্ছে`
-                )
-              : t('No matching formulations found', 'কোনো প্রোডাক্ট পাওয়া যায়নি')}
+              ? `Showing ${startIndex + 1} - ${endIndex} of ${totalItems.toLocaleString()} Formulations`
+              : 'No matching formulations found'}
           </span>
         </div>
       </div>
@@ -398,7 +389,7 @@ export default function CatalogPage() {
         <div className="py-24 text-center space-y-3">
           <div className="w-6 h-6 border-2 border-[#C7A97B] border-t-transparent animate-spin rounded-full mx-auto" />
           <span className="text-[10px] uppercase font-mono tracking-[0.25em] text-[#C7A97B]">
-            {t('LOADING CLINICAL COLLECTION...', 'কালেকশন লোড হচ্ছে...')}
+            LOADING CLINICAL COLLECTION...
           </span>
         </div>
       ) : paginatedProducts.length > 0 ? (
@@ -410,9 +401,9 @@ export default function CatalogPage() {
               slug={p.slug}
               brand={p.brand}
               titleEn={p.titleEn}
-              titleBn={p.titleBn}
+              titleBn={p.titleEn}
               purposeEn={p.purposeTagEn}
-              purposeBn={p.purposeTagBn}
+              purposeBn={p.purposeTagEn}
               volume={p.volume}
               priceBdt={p.priceBdt}
               imageUrl={p.images?.[0]?.url || (p as any).imageUrl}
@@ -425,26 +416,17 @@ export default function CatalogPage() {
         <div className="py-24 text-center space-y-4 border border-[#E6DFD5] bg-[#FAF8F5]/80 p-10 max-w-xl mx-auto shadow-xs">
           <Sparkles className="w-5 h-5 text-[#C7A97B] mx-auto animate-pulse" />
           <h3 className="text-base font-serif uppercase tracking-[0.2em] text-[#1C1917] font-light">
-            {t('COLLECTION READY FOR CURATION', 'কালেকশন প্রস্তুত')}
+            COLLECTION READY FOR CURATION
           </h3>
-          {/* <p className="text-xs text-[#1C1917]/65 max-w-md mx-auto font-light leading-relaxed">
-            {t(
-              'Add formulations directly from the Admin Portal to curate your authenticated skincare sanctuary.',
-              'আপনার স্কিনকেয়ার ব্র্যান্ডের প্রোডাক্টসমূহ অ্যাডমিন ড্যাশবোর্ড থেকে এক এক করে অ্যাড করুন।'
-            )}
-          </p> */}
         </div>
       ) : (
         <div className="py-20 text-center space-y-4 border border-dashed border-[#E6DFD5] bg-[#FAF8F5]/50 p-8">
           <Layers className="w-6 h-6 text-[#C7A97B]/70 mx-auto" />
           <h3 className="text-sm font-serif uppercase tracking-[0.2em] text-[#1C1917]">
-            {t('No Formulations Match Your Filter', 'আপনার ফিল্টারের সাথে কোনো প্রোডাক্ট মেলেনি')}
+            No Formulations Match Your Filter
           </h3>
           <p className="text-xs text-[#1C1917]/60 max-w-md mx-auto font-light">
-            {t(
-              'Try clearing your search query or selecting a different formulation category from the runway above.',
-              'অনুসন্ধান শব্দ পরিবর্তন করুন অথবা উপরের ক্যাটাগরি থেকে অন্য কোনো বিভাগ বেছে নিন।'
-            )}
+            Try clearing your search query or selecting a different formulation category from the runway above.
           </p>
           <button
             type="button"
@@ -455,7 +437,7 @@ export default function CatalogPage() {
             }}
             className="inline-flex items-center px-5 py-2.5 bg-[#1C1917] text-[#FAF8F5] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#C7A97B] transition-colors"
           >
-            {t('RESET ALL FILTERS', 'সকল ফিল্টার রিসেট করুন')}
+            RESET ALL FILTERS
           </button>
         </div>
       )}
@@ -473,7 +455,7 @@ export default function CatalogPage() {
               className="group flex items-center space-x-2 py-2 px-3 text-[#1C1917]/70 hover:text-[#1C1917] disabled:opacity-20 disabled:pointer-events-none transition-all duration-300"
             >
               <ChevronLeft className="w-3.5 h-3.5 transition-transform duration-300 group-hover:-translate-x-0.5" />
-              <span className="text-[10px] sm:text-[11px] font-light">{t('PREV', 'পূর্ববর্তী')}</span>
+              <span className="text-[10px] sm:text-[11px] font-light">PREV</span>
             </button>
 
             {/* Clean Number Sequence without clunky boxes */}
@@ -517,20 +499,20 @@ export default function CatalogPage() {
               onClick={() => handlePageChange(safeCurrentPage + 1)}
               className="group flex items-center space-x-2 py-2 px-3 text-[#1C1917]/70 hover:text-[#1C1917] disabled:opacity-20 disabled:pointer-events-none transition-all duration-300"
             >
-              <span className="text-[10px] sm:text-[11px] font-light">{t('NEXT', 'পরবর্তী')}</span>
+              <span className="text-[10px] sm:text-[11px] font-light">NEXT</span>
               <ChevronRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
             </button>
           </div>
 
           {/* Discreet Luxury Meta Counter & Quick Page Dropdown */}
           <div className="flex items-center space-x-3 text-[10px] font-mono text-[#1C1917]/50 tracking-[0.2em] uppercase">
-            <span>{t('PAGE', 'পৃষ্ঠা')}</span>
+            <span>PAGE</span>
             <div className="relative inline-flex items-center">
               <select
                 value={safeCurrentPage}
                 onChange={(e) => handlePageChange(Number(e.target.value))}
                 className="appearance-none bg-transparent border-b border-[#C7A97B]/70 text-[#1C1917] font-bold px-2 py-0.5 pr-4 text-center cursor-pointer hover:border-[#1C1917] focus:outline-none transition-colors text-[11px]"
-                title={t('Jump directly to page', 'নির্দিষ্ট পেজে যান')}
+                title="Jump directly to page"
               >
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
                   <option key={num} value={num}>
@@ -540,9 +522,9 @@ export default function CatalogPage() {
               </select>
               <span className="absolute right-0.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] text-[#C7A97B]">▾</span>
             </div>
-            <span>{t('OF', 'এর')} {totalPages}</span>
+            <span>OF {totalPages}</span>
             <span className="text-[#C7A97B]/70">&bull;</span>
-            <span>{totalItems.toLocaleString()} {t('FORMULATIONS', 'ফর্মুলেশন')}</span>
+            <span>{totalItems.toLocaleString()} FORMULATIONS</span>
           </div>
         </nav>
       )}

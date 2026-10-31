@@ -11,13 +11,13 @@ describe('PromotionsController', () => {
     isValid: true,
     code: 'WELCOME10',
     titleEn: '10% Welcome',
-    titleBn: '১০% স্বাগতম',
+    titleBn: '10% Welcome',
     discountType: DiscountType.PERCENTAGE,
     discountValue: 10,
     calculatedDiscount: 350,
     freeShipping: false,
     message: 'Applied',
-    messageBn: 'যুক্ত হয়েছে',
+    messageBn: 'Applied',
   };
 
   const mockPromotionsService = {

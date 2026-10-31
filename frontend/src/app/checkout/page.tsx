@@ -1,61 +1,51 @@
 'use client';
 
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ShieldCheck, Lock, MapPin, Truck, AlertCircle, ShoppingBag, Sparkles, MessageCircle } from 'lucide-react';
+import {
+  ShoppingBag,
+  Truck,
+  ShieldCheck,
+  Lock,
+  ArrowLeft,
+  AlertCircle,
+  MessageCircle,
+} from 'lucide-react';
 import { useCart } from '@/context/cart-context';
-import { useLanguage } from '@/context/language-context';
-import { useAuth } from '@/context/auth-context';
-import { formatBdt } from '@/lib/formatters';
-import { buildWhatsAppUrl, sanitizeMessengerUrl } from '@/lib/concierge';
-import { BRAND } from '@/lib/constants';
+import { CheckoutPaymentSelector } from '@/components/checkout/checkout-payment-selector';
 import { CheckoutOrderSummary } from '@/components/checkout/checkout-order-summary';
-import { CheckoutPaymentSelector, PaymentMethod } from '@/components/checkout/checkout-payment-selector';
 import { CheckoutLoyaltySlider } from '@/components/checkout/checkout-loyalty-slider';
 import { CheckoutSuccessView } from '@/components/checkout/checkout-success-view';
+import { BRAND } from '@/lib/constants';
+import { formatBdt } from '@/lib/formatters';
+import { buildWhatsAppUrl, sanitizeMessengerUrl } from '@/lib/concierge';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { lang, t } = useLanguage();
-  const { user, isAuthenticated } = useAuth();
-  const { items, subtotalBdt, discountBdt, clearCart, settings, refreshSettings } = useCart();
+  const { items, subtotalBdt, discountBdt, clearCart, settings } = useCart();
 
-  // Always refresh settings when entering checkout
-  useEffect(() => {
-    refreshSettings();
-  }, [refreshSettings]);
-
-  // Form states
-  const [fullName, setFullName] = useState(user?.fullName || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [email, setEmail] = useState(user?.email || '');
+  // Primary customer form states
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [isInsideDhaka, setIsInsideDhaka] = useState(true);
   const [streetAddress, setStreetAddress] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH' | 'SSLCOMMERZ'>('COD');
   const [loyaltyDiscountBdt, setLoyaltyDiscountBdt] = useState(0);
 
-  // Submitting & success states
+  // Submission & UI feedback states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderSuccessData, setOrderSuccessData] = useState<any | null>(null);
 
-  // Guest order persistence against F5 refresh & smooth multi-order flow
+  // Restore persisted active order on page load
   useEffect(() => {
-    // If the bag contains items, user is checking out a new/second order -> clear previous success view
-    if (items.length > 0) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('seyven_active_order');
-      }
-      setOrderSuccessData(null);
-      return;
-    }
-
-    // If bag is empty, check if user placed an order in this browser session (< 4 hours)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && items.length === 0) {
       try {
-        const rawSaved = sessionStorage.getItem('seyven_active_order') || localStorage.getItem('seyven_last_order');
+        const rawSession = sessionStorage.getItem('seyven_active_order');
+        const rawSaved = rawSession || localStorage.getItem('seyven_last_order');
         if (rawSaved) {
           const parsed = JSON.parse(rawSaved);
           if (parsed && parsed.orderId && parsed.createdAt) {
@@ -76,9 +66,7 @@ export default function CheckoutPage() {
   }, []);
 
   // Delivery Destination Zone Name
-  const activeDistrictName = isInsideDhaka
-    ? (lang === 'bn' ? 'ঢাকার ভেতরে' : 'Inside Dhaka')
-    : (lang === 'bn' ? 'ঢাকার বাইরে / সারাদেশে' : 'Outside Dhaka (Nationwide)');
+  const activeDistrictName = isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka (Nationwide)';
 
   // Dynamic Delivery Fee strictly matches selected destination & admin threshold
   const standardFeeDhaka = Number(settings?.standardDeliveryDhakaBdt) || 70;
@@ -104,35 +92,24 @@ export default function CheckoutPage() {
 
     // Form validations
     if (!fullName.trim()) {
-      setErrorMessage(t('Please enter your full name.', 'অনুগ্রহ করে আপনার পুরো নাম লিখুন।'));
+      setErrorMessage('Please enter your full name.');
       return;
     }
 
     const cleanPhone = phone.trim().replace(/\s+/g, '');
     const isBdPhone = /^(\+?8801|01)[3-9]\d{8}$/.test(cleanPhone);
     if (!isBdPhone) {
-      setErrorMessage(
-        t(
-          'Please enter a valid 11-digit Bangladeshi mobile number (e.g. 01700 000000).',
-          'অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর লিখুন (যেমন: ০১৭১২ ৩৪৫৬৭৮)।'
-        )
-      );
+      setErrorMessage('Please enter a valid 11-digit Bangladeshi mobile number (e.g. 01700 000000).');
       return;
     }
 
     if (!streetAddress.trim() || streetAddress.trim().length < 8) {
-      setErrorMessage(
-        t(
-          'Please provide your full detailed address (House, Road, Area).',
-          'অনুগ্রহ করে আপনার বিস্তারিত ঠিকানা (বাড়ি নম্বর, রোড নম্বর, এলাকা) লিখুন।'
-        )
-      );
+      setErrorMessage('Please provide your full detailed address (House, Road, Area).');
       return;
     }
 
     setIsSubmitting(true);
 
-    // Simulate order placement commit with server idempotency key
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
@@ -165,14 +142,12 @@ export default function CheckoutPage() {
           quantity: it.quantity,
         })),
         createdAt: now.toISOString(),
-        estimatedDays: isInsideDhaka
-          ? (lang === 'bn' ? '১-২ কর্মদিবস' : '1-2 Days')
-          : (lang === 'bn' ? '২-৩ কর্মদিবস' : '2-3 Days'),
+        estimatedDays: isInsideDhaka ? '1-2 Days' : '2-3 Days',
         supportPhone: settings?.supportPhone || '',
         supportWhatsApp: settings?.supportWhatsApp || '',
       };
 
-      // Dispatch live order to backend & database & trigger admin email
+      // Dispatch live order to backend
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
       try {
         await fetch(`${apiUrl}/orders/direct`, {
@@ -235,9 +210,7 @@ export default function CheckoutPage() {
           date: now.toISOString(),
         });
         localStorage.setItem('seyven_client_order_history', JSON.stringify(history.slice(0, 10)));
-      } catch {
-        // ignore
-      }
+      } catch {}
 
       // Persist active order for guest user resilience against F5 refresh
       if (typeof window !== 'undefined') {
@@ -250,9 +223,7 @@ export default function CheckoutPage() {
       setOrderSuccessData(successPayload);
       clearCart();
     } catch {
-      setErrorMessage(
-        t('Order placement was interrupted. Please try again.', 'অর্ডার প্রক্রিয়াকরণে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।')
-      );
+      setErrorMessage('Order placement was interrupted. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -279,19 +250,16 @@ export default function CheckoutPage() {
           <ShoppingBag className="w-7 h-7" />
         </div>
         <h1 className="text-2xl font-serif uppercase tracking-[0.2em] text-[#1C1917] font-light">
-          {t('YOUR SANCTUARY BAG IS EMPTY', 'আপনার ব্যাগ খালি')}
+          YOUR SANCTUARY BAG IS EMPTY
         </h1>
         <p className="text-xs text-[#1C1917]/70 max-w-md font-light leading-relaxed">
-          {t(
-            'Explore our curated collection of genuine international skincare to illuminate your daily routine.',
-            'আপনার ত্বকের উপযোগী আন্তর্জাতিক স্কিনকেয়ার প্রোডাক্ট বেছে নিতে কালেকশন ঘুরে দেখুন।'
-          )}
+          Explore our curated collection of genuine international skincare to illuminate your daily routine.
         </p>
         <Link
           href="/catalog"
           className="mt-2 px-8 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-colors"
         >
-          {t('EXPLORE COLLECTION', 'প্রোডাক্ট কালেকশন')}
+          EXPLORE COLLECTION
         </Link>
       </div>
     );
@@ -307,17 +275,17 @@ export default function CheckoutPage() {
             className="text-xs uppercase tracking-wider text-[#1C1917]/60 hover:text-[#1C1917] flex items-center space-x-1"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('CONTINUE SHOPPING', 'শপিং চালু রাখুন')}</span>
+            <span className="hidden sm:inline">CONTINUE SHOPPING</span>
           </Link>
           <span className="text-[#E6DFD5]">•</span>
           <span className="text-xs font-serif uppercase tracking-[0.2em] font-medium text-[#1C1917]">
-            {t('EXPRESS 1-PAGE CHECKOUT', '১-পেজ এক্সপ্রেস চেকআউট')}
+            EXPRESS 1-PAGE CHECKOUT
           </span>
         </div>
 
         <div className="flex items-center space-x-1.5 text-[9px] uppercase tracking-wider text-[#C7A97B] font-medium">
           <Lock className="w-3.5 h-3.5" />
-          <span>{t('CONFIDENTIAL & SECURE', 'নিরাপদ চেকআউট')}</span>
+          <span>CONFIDENTIAL & SECURE</span>
         </div>
       </div>
 
@@ -335,14 +303,14 @@ export default function CheckoutPage() {
                 <span className="w-5 h-5 rounded-full bg-[#1C1917] text-[#F9F6F0] flex items-center justify-center text-[10px] font-mono">
                   1
                 </span>
-                <span>{t('RECIPIENT & CONTACT DETAILS', 'গ্রাহকের নাম ও মোবাইল নম্বর')}</span>
+                <span>RECIPIENT & CONTACT DETAILS</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Full Name */}
                 <div className="space-y-1 sm:col-span-2">
                   <label htmlFor="full-name" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block font-medium">
-                    {t('FULL NAME (REQUIRED)', 'পুরো নাম (বাধ্যতামূলক)')}
+                    FULL NAME (REQUIRED)
                   </label>
                   <input
                     id="full-name"
@@ -350,7 +318,7 @@ export default function CheckoutPage() {
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder={t('Enter your full name', 'আপনার পুরো নাম লিখুন')}
+                    placeholder="Enter your full name"
                     className="w-full bg-[#F9F6F0] border-b border-[#E6DFD5] focus:border-[#C7A97B] py-2.5 text-base sm:text-xs text-[#1C1917] placeholder:text-[#1C1917]/35 focus:outline-hidden transition-colors"
                   />
                 </div>
@@ -358,7 +326,7 @@ export default function CheckoutPage() {
                 {/* Mobile Phone (E.164 Bangladeshi) */}
                 <div className="space-y-1">
                   <label htmlFor="phone" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block font-medium">
-                    {t('BANGLADESHI MOBILE PHONE (REQUIRED)', 'মোবাইল নম্বর (বাধ্যতামূলক)')}
+                    BANGLADESHI MOBILE PHONE (REQUIRED)
                   </label>
                   <input
                     id="phone"
@@ -371,14 +339,14 @@ export default function CheckoutPage() {
                     className="w-full bg-[#F9F6F0] border-b border-[#E6DFD5] focus:border-[#C7A97B] py-2.5 text-base sm:text-xs font-mono text-[#1C1917] placeholder:text-[#1C1917]/35 focus:outline-hidden transition-colors"
                   />
                   <span className="text-[9px] text-[#1C1917]/50 block">
-                    {t('Used for courier SMS & delivery confirmation.', 'ডেলিভারি কল ও এসএমএস কনফার্মেশনের জন্য।')}
+                    Used for courier delivery confirmation.
                   </span>
                 </div>
 
                 {/* Optional Email */}
                 <div className="space-y-1">
                   <label htmlFor="email" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block font-medium">
-                    {t('EMAIL (OPTIONAL — FOR ORDER RECEIPT)', 'ইমেইল (ঐচ্ছিক — রসিদ ও ট্র্যাকিংয়ের জন্য)')}
+                    EMAIL (OPTIONAL — FOR ORDER RECEIPT)
                   </label>
                   <input
                     id="email"
@@ -390,10 +358,7 @@ export default function CheckoutPage() {
                     className="w-full bg-[#F9F6F0] border-b border-[#E6DFD5] focus:border-[#C7A97B] py-2.5 text-base sm:text-xs text-[#1C1917] placeholder:text-[#1C1917]/35 focus:outline-hidden transition-colors"
                   />
                   <span className="text-[9px] text-[#1C1917]/50 block">
-                    {t(
-                      'Order receipt and courier tracking link will be sent here.',
-                      'অর্ডার রসিদ ও ট্র্যাকিং লিংক ইমেইলে পাঠানো হবে।'
-                    )}
+                    Order receipt and courier tracking link will be sent here.
                   </span>
                 </div>
               </div>
@@ -405,7 +370,7 @@ export default function CheckoutPage() {
                 <span className="w-5 h-5 rounded-full bg-[#1C1917] text-[#F9F6F0] flex items-center justify-center text-[10px] font-mono">
                   2
                 </span>
-                <span>{t('DELIVERY DESTINATION & ADDRESS', 'ডেলিভারি এলাকা ও ঠিকানা')}</span>
+                <span>DELIVERY DESTINATION & ADDRESS</span>
               </div>
 
               {/* 1-Tap Inside / Outside Dhaka Selector */}
@@ -422,12 +387,12 @@ export default function CheckoutPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-serif uppercase tracking-wider text-[#1C1917] font-medium">
-                        {t('INSIDE DHAKA', 'ঢাকার ভেতরে')}
+                        INSIDE DHAKA
                       </span>
                       <span className="text-xs font-mono font-medium text-[#C7A97B]">৳{standardFeeDhaka}</span>
                     </div>
                     <p className="text-[10px] text-[#1C1917]/55 mt-1 font-light">
-                      {t('1–2 Days Express Delivery', '১-২ দিনে দ্রুত ডেলিভারি')}
+                      1–2 Days Express Delivery
                     </p>
                   </button>
 
@@ -442,12 +407,12 @@ export default function CheckoutPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-serif uppercase tracking-wider text-[#1C1917] font-medium">
-                        {t('OUTSIDE DHAKA', 'ঢাকার বাইরে')}
+                        OUTSIDE DHAKA
                       </span>
                       <span className="text-xs font-mono font-medium text-[#C7A97B]">৳{standardFeeOutside}</span>
                     </div>
                     <p className="text-[10px] text-[#1C1917]/55 mt-1 font-light">
-                      {t('2–3 Days Nationwide Courier', '২-৩ দিনে সারাদেশে ডেলিভারি')}
+                      2–3 Days Nationwide Courier
                     </p>
                   </button>
                 </div>
@@ -456,7 +421,7 @@ export default function CheckoutPage() {
               {/* Detailed Street Address */}
               <div className="space-y-1 pt-1">
                 <label htmlFor="street-address" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block font-medium">
-                  {t('FULL DELIVERY ADDRESS (HOUSE, ROAD, AREA, THANA, DISTRICT)', 'সম্পূর্ণ ডেলিভারি ঠিকানা (বাড়ি, রোড, এলাকা/থানা ও জেলা)')}
+                  FULL DELIVERY ADDRESS (HOUSE, ROAD, AREA, THANA, DISTRICT)
                 </label>
                 <textarea
                   id="street-address"
@@ -467,7 +432,7 @@ export default function CheckoutPage() {
                   placeholder={
                     isInsideDhaka
                       ? 'e.g. House 24, Road 11, Block D, Banani, Dhaka'
-                      : 'e.g. House 15, Nasirabad Housing Society, Chattogram (বা আপনার সম্পূর্ণ ঠিকানা, থানা ও জেলা)'
+                      : 'e.g. House 15, Nasirabad Housing Society, Chattogram'
                   }
                   className="w-full bg-[#F9F6F0] border border-[#E6DFD5] p-3 text-base sm:text-xs text-[#1C1917] placeholder:text-[#1C1917]/35 focus:outline-hidden focus:border-[#C7A97B] transition-colors resize-none"
                 />
@@ -476,7 +441,7 @@ export default function CheckoutPage() {
               {/* Special Delivery Notes */}
               <div className="space-y-1">
                 <label htmlFor="delivery-notes" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block">
-                  {t('SPECIAL INSTRUCTIONS FOR COURIER (OPTIONAL)', 'ডেলিভারি ম্যানের জন্য বিশেষ নির্দেশনা (ঐচ্ছিক)')}
+                  SPECIAL INSTRUCTIONS FOR COURIER (OPTIONAL)
                 </label>
                 <input
                   id="delivery-notes"
@@ -489,7 +454,7 @@ export default function CheckoutPage() {
               </div>
             </section>
 
-            {/* 3. Esteemed Client Privilege (Hidden if festival campaign code is applied) */}
+            {/* 3. Esteemed Client Privilege */}
             {discountBdt === 0 && (
               <section className="pt-2">
                 <CheckoutLoyaltySlider
@@ -514,13 +479,10 @@ export default function CheckoutPage() {
               />
             </section>
 
-            {/* Reassuring Guarantee Notice (No mandatory checkboxes) */}
+            {/* Reassuring Guarantee Notice */}
             <section className="pt-2">
               <p className="text-[10px] text-[#1C1917]/65 text-center leading-relaxed">
-                {t(
-                  'By placing your order, you enjoy SEYVEN complimentary 7-day exchange and direct parcel tracking.',
-                  'অর্ডার করলেই পাচ্ছেন সেভেনের ৭ দিনের সহজ এক্সচেঞ্জ ও সার্বক্ষণিক ট্র্যাকিং সুবিধা।'
-                )}
+                By placing your order, you enjoy SEYVEN complimentary 7-day exchange and direct parcel tracking.
               </p>
 
               {errorMessage && (
@@ -541,8 +503,8 @@ export default function CheckoutPage() {
                 <ShieldCheck className="w-4 h-4 text-[#C7A97B]" />
                 <span>
                   {isSubmitting
-                    ? t('PLACING YOUR ORDER...', 'অর্ডার সম্পন্ন হচ্ছে...')
-                    : `${t('COMPLETE SECURE ORDER — ', 'অর্ডার নিশ্চিত করুন — ')} ${formatBdt(netPayableBdt)}`}
+                    ? 'PLACING YOUR ORDER...'
+                    : `COMPLETE SECURE ORDER — ${formatBdt(netPayableBdt)}`}
                 </span>
               </button>
 
@@ -556,8 +518,8 @@ export default function CheckoutPage() {
                   <MessageCircle className="w-3.5 h-3.5 text-[#C7A97B]" />
                   <span>
                     {isMessengerConcierge
-                      ? t('PREFER ASSISTED MESSENGER CHECKOUT? TAP HERE', 'অথবা মেসেঞ্জার কনসিয়ার্জে অর্ডার করুন')
-                      : t('PREFER ASSISTED WHATSAPP CHECKOUT? TAP HERE', 'অথবা হোয়াটসঅ্যাপ কনসিয়ার্জে অর্ডার করুন')}
+                      ? 'PREFER ASSISTED MESSENGER CHECKOUT? TAP HERE'
+                      : 'PREFER ASSISTED WHATSAPP CHECKOUT? TAP HERE'}
                   </span>
                 </a>
               </div>
@@ -579,19 +541,14 @@ export default function CheckoutPage() {
               <div className="flex items-center space-x-2">
                 <Truck className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
                 <span>
-                  <strong>{isInsideDhaka ? t('Inside Dhaka', 'ঢাকার ভেতরে') : t('Outside Dhaka (Nationwide)', 'ঢাকার বাইরে / সারাদেশে')}:</strong>{' '}
-                  {isInsideDhaka
-                    ? (lang === 'bn' ? '১-২ কর্মদিবসে এক্সপ্রেস ডেলিভারি' : '1-2 Days Express Delivery')
-                    : (lang === 'bn' ? '২-৩ কর্মদিবসে সারাদেশে কুরিয়ার ডেলিভারি' : '2-3 Days Nationwide Courier')}
+                  <strong>{isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka (Nationwide)'}:</strong>{' '}
+                  {isInsideDhaka ? '1-2 Days Express Delivery' : '2-3 Days Nationwide Courier'}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#C7A97B] shrink-0" />
                 <span>
-                  {t(
-                    'Direct brand imports in original sealed packaging.',
-                    'আন্তর্জাতিক ব্র্যান্ড থেকে সরাসরি আমদানিকৃত ও সিলযুক্ত আসল পণ্য।'
-                  )}
+                  Direct brand imports in original sealed packaging.
                 </span>
               </div>
             </div>
@@ -605,7 +562,7 @@ export default function CheckoutPage() {
         <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#F9F6F0]/95 backdrop-blur-md border-t border-[#E6DFD5] p-3 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-2xl flex items-center justify-between gap-3">
           <div className="space-y-0.5 min-w-0 pr-1">
             <span className="text-[9px] uppercase tracking-wider text-[#1C1917]/60 block">
-              {t('NET TOTAL', 'মোট প্রদেয়')}
+              NET TOTAL
             </span>
             <span className="text-base font-serif font-medium text-[#1C1917]">
               {formatBdt(netPayableBdt)}
@@ -630,7 +587,7 @@ export default function CheckoutPage() {
               className="flex-1 py-3 px-3 bg-[#1C1917] active:bg-[#1C1917]/80 disabled:opacity-50 text-[#F9F6F0] text-xs uppercase tracking-[0.18em] font-medium transition-colors flex items-center justify-center space-x-1.5 shadow-sm cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-[#C7A97B]" />
-              <span>{isSubmitting ? t('COMMITTING...', 'অর্ডার হচ্ছে...') : t('CONFIRM', 'কনফার্ম')}</span>
+              <span>{isSubmitting ? 'COMMITTING...' : 'CONFIRM'}</span>
             </button>
           </div>
         </div>

@@ -104,12 +104,12 @@ export class FacetService {
 
     // 2. Skin Concern Facet Counts
     const concernDefinitions = [
-      { id: 'barrier_repair', slug: 'barrier-repair', nameEn: 'Barrier Repair', nameBn: 'স্কিন ব্যারিয়ার', regex: /barrier|ceramide|panthenol|lipid/i },
-      { id: 'acne_blemishes', slug: 'acne-blemishes', nameEn: 'Acne & Blemishes', nameBn: 'ব্রণ ও দাগ', regex: /acne|blemish|salicylic|bha|tea tree|zinc/i },
-      { id: 'hyperpigmentation', slug: 'hyperpigmentation', nameEn: 'Hyperpigmentation', nameBn: 'পিগমেন্টেশন', regex: /pigment|dark spot|melasma|arbutin|niacinamide|bright/i },
-      { id: 'anti_aging', slug: 'anti-aging', nameEn: 'Anti-Aging', nameBn: 'অ্যান্টি-এজিং', regex: /aging|wrinkle|peptide|retinol|collagen/i },
-      { id: 'hydration', slug: 'hydration', nameEn: 'Hydration', nameBn: 'আর্দ্রতা', regex: /hydrat|hyaluronic|moist|water/i },
-      { id: 'sensitivity', slug: 'sensitivity', nameEn: 'Sensitivity & Calming', nameBn: 'সংবেদনশীল ত্বক', regex: /calm|sensitiv|sooth|cica|centella|redness/i },
+      { id: 'barrier_repair', slug: 'barrier-repair', nameEn: 'Barrier Repair', nameBn: 'Barrier Repair', regex: /barrier|ceramide|panthenol|lipid/i },
+      { id: 'acne_blemishes', slug: 'acne-blemishes', nameEn: 'Acne & Blemishes', nameBn: 'Acne & Blemishes', regex: /acne|blemish|salicylic|bha|tea tree|zinc/i },
+      { id: 'hyperpigmentation', slug: 'hyperpigmentation', nameEn: 'Hyperpigmentation', nameBn: 'Hyperpigmentation', regex: /pigment|dark spot|melasma|arbutin|niacinamide|bright/i },
+      { id: 'anti_aging', slug: 'anti-aging', nameEn: 'Anti-Aging', nameBn: 'Anti-Aging', regex: /aging|wrinkle|peptide|retinol|collagen/i },
+      { id: 'hydration', slug: 'hydration', nameEn: 'Hydration', nameBn: 'Hydration', regex: /hydrat|hyaluronic|moist|water/i },
+      { id: 'sensitivity', slug: 'sensitivity', nameEn: 'Sensitivity & Calming', nameBn: 'Sensitivity & Calming', regex: /calm|sensitiv|sooth|cica|centella|redness/i },
     ];
 
     const concerns: FacetCountItem[] = concernDefinitions.map((c) => {
@@ -129,12 +129,12 @@ export class FacetService {
 
     // 3. Routine Facet Counts
     const routineDefinitions = [
-      { id: 'cleanser', slug: 'cleanser', nameEn: 'Cleanser', nameBn: 'ক্লিনজার', regex: /cleanse|cleanser|wash|foam|oil cleanser/i },
-      { id: 'toner', slug: 'toner', nameEn: 'Toner & Essence', nameBn: 'টোনার ও এসেন্স', regex: /toner|essence|prep/i },
-      { id: 'serum', slug: 'serum', nameEn: 'Serum & Ampoule', nameBn: 'সিরাম ও অ্যাম্পুল', regex: /serum|ampoule|treatment/i },
-      { id: 'moisturizer', slug: 'moisturizer', nameEn: 'Moisturizer', nameBn: 'ময়েশ্চারাইজার', regex: /moisturiz|cream|lotion|gel cream|emulsion/i },
-      { id: 'sunscreen', slug: 'sunscreen', nameEn: 'Sunscreen & SPF', nameBn: 'সানস্ক্রিন', regex: /sunscreen|spf|sun|uv/i },
-      { id: 'night_repair', slug: 'night-repair', nameEn: 'Night Repair', nameBn: 'নাইট রিপেয়ার', regex: /night|sleep|overnight/i },
+      { id: 'cleanser', slug: 'cleanser', nameEn: 'Cleanser', nameBn: 'Cleanser', regex: /cleanse|cleanser|wash|foam|oil cleanser/i },
+      { id: 'toner', slug: 'toner', nameEn: 'Toner & Essence', nameBn: 'Toner & Essence', regex: /toner|essence|prep/i },
+      { id: 'serum', slug: 'serum', nameEn: 'Serum & Ampoule', nameBn: 'Serum & Ampoule', regex: /serum|ampoule|treatment/i },
+      { id: 'moisturizer', slug: 'moisturizer', nameEn: 'Moisturizer', nameBn: 'Moisturizer', regex: /moisturiz|cream|lotion|gel cream|emulsion/i },
+      { id: 'sunscreen', slug: 'sunscreen', nameEn: 'Sunscreen & SPF', nameBn: 'Sunscreen & SPF', regex: /sunscreen|spf|sun|uv/i },
+      { id: 'night_repair', slug: 'night-repair', nameEn: 'Night Repair', nameBn: 'Night Repair', regex: /night|sleep|overnight/i },
     ];
 
     const routines: FacetCountItem[] = routineDefinitions.map((r) => {

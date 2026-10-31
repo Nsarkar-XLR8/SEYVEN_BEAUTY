@@ -350,7 +350,7 @@ export class OrdersController {
   @ApiOperation({
     summary: 'Generate NBR Mushak-6.7 Credit Note Vector PDF',
     description:
-      'Renders statutory NBR Form Mushak-6.7 Credit Note (কর ক্রেডিট নোট) in Vector PDF A4 format pursuant to Rule 40(1)(g) of Bangladesh VAT & SD Rules 2016 for returned, rejected, or adjusted orders.',
+      'Renders statutory NBR Form Mushak-6.7 Credit Note in Vector PDF A4 format pursuant to Rule 40(1)(g) of Bangladesh VAT & SD Rules 2016 for returned, rejected, or adjusted orders.',
   })
   @ApiParam({ name: 'id', description: 'Order UUID' })
   @ApiResponse({ status: 200, description: 'NBR Mushak-6.7 Credit Note PDF stream' })

@@ -6,13 +6,11 @@ import { usePathname } from 'next/navigation';
 import { Home, Sparkles, ShoppingBag, Compass, User } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { useAuth } from '@/context/auth-context';
-import { useLanguage } from '@/context/language-context';
 
 export function MobileDock() {
   const pathname = usePathname();
   const { itemCount, openBag } = useCart();
   const { isAuthenticated, openAuthModal } = useAuth();
-  const { t } = useLanguage();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -34,7 +32,7 @@ export function MobileDock() {
         >
           <Home className="w-5 h-5 stroke-[1.25]" />
           <span className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
-            {t('HOME', 'হোম')}
+            HOME
           </span>
         </Link>
 
@@ -47,7 +45,7 @@ export function MobileDock() {
         >
           <Compass className="w-5 h-5 stroke-[1.25]" />
           <span className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
-            {t('SHOP', 'শপ')}
+            SHOP
           </span>
         </Link>
 
@@ -67,7 +65,7 @@ export function MobileDock() {
             )}
           </div>
           <span className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
-            {t('BAG', 'ব্যাগ')}
+            BAG
           </span>
         </button>
 
@@ -80,7 +78,7 @@ export function MobileDock() {
         >
           <Sparkles className="w-5 h-5 stroke-[1.25]" />
           <span className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
-            {t('VIP', 'ভিআইপি')}
+            VIP
           </span>
         </Link>
 
@@ -93,7 +91,7 @@ export function MobileDock() {
         >
           <User className="w-5 h-5 stroke-[1.25]" />
           <span suppressHydrationWarning className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
-            {mounted && isAuthenticated ? t('ACCOUNT', 'প্রোফাইল') : t('LOGIN', 'লগইন')}
+            {mounted && isAuthenticated ? 'ACCOUNT' : 'LOGIN'}
           </span>
         </button>
 

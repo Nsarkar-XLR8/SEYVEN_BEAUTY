@@ -10,7 +10,7 @@ export interface InciActive {
 export interface InciIngredient {
   inciName: string;
   commonNameEn: string;
-  commonNameBn: string;
+  commonNameBn?: string;
   functionEn: string;
   ewgScore: number;
   comedogenic: number; // 0 to 5
@@ -190,7 +190,7 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
       concentration: a.concentration || undefined,
       category: normalizeActiveCategory(a.category),
       purposeEn: a.purposeEn || 'Targeted dermal support & barrier replenishment',
-      purposeBn: a.purposeBn || a.purposeEn || 'ত্বকের কার্যকর সুস্থতা ও সুরক্ষা',
+      purposeBn: a.purposeBn || a.purposeEn || 'Targeted dermal support & barrier replenishment',
       ewgScore: a.ewgScore ?? 1,
     }));
   } else if (typeof raw.keyActives === 'string' && raw.keyActives.trim()) {
@@ -198,7 +198,7 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
       name: act.trim(),
       category: normalizeActiveCategory(act),
       purposeEn: 'Targeted dermal support & clinical balance',
-      purposeBn: 'ত্বকের কার্যকর সুস্থতা ও সুরক্ষা',
+      purposeBn: 'Targeted dermal support & clinical balance',
       ewgScore: 1,
     }));
   } else {
@@ -208,14 +208,14 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
           name: 'Broad-Spectrum UV Filters',
           category: 'SUN_FILTER',
           purposeEn: 'Photostable UVA/UVB shield against sunburn, premature aging, and HEV blue light',
-          purposeBn: 'সূর্যের ক্ষতিকর অতিবেগুনি রশ্মি ও ব্লু-লাইট থেকে ত্বকের সর্বোচ্চ সুরক্ষা',
+          purposeBn: 'Photostable UVA/UVB shield against sunburn, premature aging, and HEV blue light',
           ewgScore: 1,
         },
         {
           name: 'Niacinamide & Antioxidants',
           category: 'NIACINAMIDE',
           purposeEn: 'Soothes heat redness and guards against urban environmental stress',
-          purposeBn: 'রোদে পোড়া লালচে ভাব কমায় এবং ত্বকের আর্দ্রতা বজায় রাখে',
+          purposeBn: 'Soothes heat redness and guards against urban environmental stress',
           ewgScore: 1,
         },
       ];
@@ -225,7 +225,7 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
           name: 'Dermal Active Matrix',
           category: 'HYDRATOR',
           purposeEn: 'Bio-compatible moisture binding and cellular lipid protection',
-          purposeBn: 'ত্বকের গভীরের আর্দ্রতা ধরে রেখে প্রাকৃতিক ভারসাম্য রক্ষা করে',
+          purposeBn: 'Bio-compatible moisture binding and cellular lipid protection',
           ewgScore: 1,
         },
       ];
@@ -256,10 +256,10 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
     });
   } else {
     fullInci = [
-      { inciName: 'Aqua / Water', commonNameEn: 'Purified Water', commonNameBn: 'পরিশোধিত পানি', functionEn: 'Solvent Base', ewgScore: 1, comedogenic: 0 },
-      { inciName: 'Glycerin', commonNameEn: 'Plant Glycerin', commonNameBn: 'গ্লিসারিন', functionEn: 'Humectant', ewgScore: 1, comedogenic: 0 },
-      { inciName: 'Butylene Glycol', commonNameEn: 'Hydration Carrier', commonNameBn: 'বিউটিলিন গ্লাইকল', functionEn: 'Penetration Aid', ewgScore: 1, comedogenic: 1 },
-      { inciName: '1,2-Hexanediol', commonNameEn: 'Stabilizer', commonNameBn: 'ফর্মুলা স্টেবিলাইজার', functionEn: 'Preservative Booster', ewgScore: 1, comedogenic: 0 },
+      { inciName: 'Aqua / Water', commonNameEn: 'Purified Water', commonNameBn: 'Purified Water', functionEn: 'Solvent Base', ewgScore: 1, comedogenic: 0 },
+      { inciName: 'Glycerin', commonNameEn: 'Plant Glycerin', commonNameBn: 'Plant Glycerin', functionEn: 'Humectant', ewgScore: 1, comedogenic: 0 },
+      { inciName: 'Butylene Glycol', commonNameEn: 'Hydration Carrier', commonNameBn: 'Hydration Carrier', functionEn: 'Penetration Aid', ewgScore: 1, comedogenic: 1 },
+      { inciName: '1,2-Hexanediol', commonNameEn: 'Stabilizer', commonNameBn: 'Stabilizer', functionEn: 'Preservative Booster', ewgScore: 1, comedogenic: 0 },
     ];
   }
 
@@ -269,9 +269,9 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
     usageSteps = raw.usageSteps.map((s: any, idx: number) => ({
       step: s.step || idx + 1,
       titleEn: s.titleEn || `Application Step ${idx + 1}`,
-      titleBn: s.titleBn || `ব্যবহার ধাপ ${idx + 1}`,
+      titleBn: s.titleBn || s.titleEn || `Application Step ${idx + 1}`,
       instructionEn: s.instructionEn || 'Apply evenly onto clean skin.',
-      instructionBn: s.instructionBn || 'পরিষ্কার ত্বকে আলতো করে সমানভাবে লাগান।',
+      instructionBn: s.instructionBn || s.instructionEn || 'Apply evenly onto clean skin.',
     }));
   } else if (raw.howToUseEn || raw.howToUse) {
     const enText = raw.howToUseEn || raw.howToUse || '';
@@ -280,7 +280,7 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
       {
         step: 1,
         titleEn: 'Preparation & Dispense',
-        titleBn: 'প্রস্তুতি ও প্রয়োগ',
+        titleBn: 'Preparation & Dispense',
         instructionEn: enText,
         instructionBn: bnText,
       },
@@ -290,22 +290,22 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
       {
         step: 1,
         titleEn: 'Precision Dispense',
-        titleBn: 'প্রয়োজনমতো নিন',
+        titleBn: 'Precision Dispense',
         instructionEn: 'Dispense 2-3 drops or a dime-sized amount onto clean fingertips.',
-        instructionBn: 'পরিষ্কার আঙুলে ২-৩ ফোঁটা বা পরিমিত পরিমাণ নিন।',
+        instructionBn: 'Dispense 2-3 drops or a dime-sized amount onto clean fingertips.',
       },
       {
         step: 2,
         titleEn: 'Gentle Press Application',
-        titleBn: 'আলতোভাবে ম্যাসাজ করুন',
+        titleBn: 'Gentle Press Application',
         instructionEn: 'Press gently across face and neck until fully absorbed. Do not rub vigorously.',
-        instructionBn: 'মুখ ও গলায় আলতো করে প্রেস করে মিলিয়ে দিন। ঘষবেন না।',
+        instructionBn: 'Press gently across face and neck until fully absorbed. Do not rub vigorously.',
       },
     ];
   }
 
   const dermalStoryEn = raw.dermalStoryEn || raw.shortDescriptionEn || 'Formulated with clinically-studied bio-active agents to reinforce dermal matrix resilience and restore baseline epidermal equilibrium.';
-  const dermalStoryBn = raw.dermalStoryBn || raw.shortDescriptionBn || 'ত্বকের প্রাকৃতিক আর্দ্রতা ও সুরক্ষার ভারসাম্য রক্ষা করতে বিশেষভাবে তৈরি বৈজ্ঞানিক ফর্মুলেশন।';
+  const dermalStoryBn = raw.dermalStoryBn || raw.shortDescriptionBn || dermalStoryEn;
 
   const routinePeriod: 'AM' | 'PM' | 'AM & PM' =
     raw.routinePeriod === 'AM' || raw.routinePeriod === 'AM Only'
@@ -338,11 +338,11 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
     slug: raw.slug,
     brand: rawBrand.toUpperCase(),
     titleEn: raw.titleEn || 'Curated Formulation',
-    titleBn: raw.titleBn || raw.titleEn || 'কিউরেটেড ফর্মুলেশন',
+    titleBn: raw.titleBn || raw.titleEn || 'Curated Formulation',
     purposeTagEn: raw.purposeTagEn || 'CLINICAL CARE // ACTIVE DERMAL FORMULATION',
-    purposeTagBn: raw.purposeTagBn || raw.purposeTagEn || 'ক্লিনিক্যাল ডার্মাল কেয়ার',
+    purposeTagBn: raw.purposeTagBn || raw.purposeTagEn || 'CLINICAL CARE // ACTIVE DERMAL FORMULATION',
     subtitleEn: raw.shortDescriptionEn || raw.dermalStoryEn || `Certified genuine formulation by ${rawBrand}. Direct batch verification.`,
-    subtitleBn: raw.shortDescriptionBn || raw.dermalStoryBn || `${rawBrand} এর আসল ও পরীক্ষিত ফর্মুলেশন। সরাসরি আমদানিকৃত।`,
+    subtitleBn: raw.shortDescriptionBn || raw.dermalStoryBn || `Certified genuine formulation by ${rawBrand}. Direct batch verification.`,
     volume: vol || variants[0]?.volume || '',
     priceBdt: primaryPrice,
     stockStatus: 'IN_STOCK',
@@ -365,9 +365,9 @@ export function createDynamicProductDetail(raw: any): ProductDetail {
     fullInci,
     usageSteps,
     patchTestGuideEn: raw.patchTestGuideEn || 'Apply a small amount to upper forearm or jawline. If irritation occurs within 24 hours, rinse thoroughly.',
-    patchTestGuideBn: raw.patchTestGuideBn || 'হাতের ওপরের অংশে বা কানের নিচে অল্প লাগিয়ে ২৪ ঘণ্টা পর্যবেক্ষণ করুন।',
+    patchTestGuideBn: raw.patchTestGuideBn || raw.patchTestGuideEn || 'Apply a small amount to upper forearm or jawline. If irritation occurs within 24 hours, rinse thoroughly.',
     storageGuidanceEn: raw.storageGuidanceEn || 'Store in a cool, dry place away from direct sunlight.',
-    storageGuidanceBn: raw.storageGuidanceBn || 'সরাসরি রোদ থেকে দূরে ঠান্ডা ও শুকনো জায়গায় সংরক্ষণ করুন।',
+    storageGuidanceBn: raw.storageGuidanceBn || raw.storageGuidanceEn || 'Store in a cool, dry place away from direct sunlight.',
     category: typeof raw.category === 'object' && raw.category ? (raw.category.nameEn || raw.category.slug || '') : String(raw.category || categoryStr || ''),
     categoryId: raw.categoryId || (typeof raw.category === 'object' ? raw.category?.id : undefined),
     variants,

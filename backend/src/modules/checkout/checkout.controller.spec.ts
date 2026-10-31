@@ -22,7 +22,7 @@ describe('CheckoutController', () => {
     advancePaymentRequired: 0,
     codDue: 2450,
     estimatedDeliveryWindow: '12-24 Hours',
-    estimatedDeliveryWindowBn: '১২-২৪ ঘণ্টা',
+    estimatedDeliveryWindowBn: '12-24 Hours',
     totalWeightGrams: 200,
     currency: 'BDT',
   };

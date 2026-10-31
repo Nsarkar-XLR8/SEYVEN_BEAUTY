@@ -11,8 +11,8 @@ export class SendDirectSmsDto {
   to: string;
 
   @ApiProperty({
-    example: 'SEYVEN: আপনার অর্ডার SYV-202610-101 নিশ্চিত হয়েছে। বিস্তারিত: seyven.com/track',
-    description: 'SMS message text (GSM-7 or Unicode/Bangla)',
+    example: 'SEYVEN: Your order SYV-202610-101 has been confirmed. Track: theseyven.com/track',
+    description: 'SMS message text',
   })
   @IsString()
   @IsNotEmpty()

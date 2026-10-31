@@ -160,28 +160,19 @@ export function CheckoutLoyaltySlider({
             <div className="flex items-center space-x-2">
               <span className="text-xs font-serif uppercase tracking-wider text-[#1C1917] font-semibold">
                 {recognizedName
-                  ? `${t('HONORED CLIENT:', 'সম্মানিত ক্লায়েন্ট:')} ${recognizedName.toUpperCase()}`
-                  : t('ESTEEMED RETURNING CLIENT PRIVILEGE', 'সম্মানিত ক্লায়েন্ট প্রিভিলেজ')}
+                  ? `HONORED CLIENT: ${recognizedName.toUpperCase()}`
+                  : 'ESTEEMED RETURNING CLIENT PRIVILEGE'}
               </span>
               <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold uppercase rounded">
-                {t('5% PRIVILEGE APPLIED', '৫% প্রিভিলেজ সক্রিয়')}
+                5% PRIVILEGE APPLIED
               </span>
             </div>
             <span className="text-[11px] text-[#1C1917]/70 font-light block mt-0.5">
               {matchedBy === 'phone'
-                ? t(
-                    'Recognized via phone number — 5% automatic returning courtesy honored.',
-                    'ফোন নম্বরের মাধ্যমে স্বীকৃত — ৫% নিয়মিত ক্লায়েন্ট সুবিধা যুক্ত হয়েছে।'
-                  )
+                ? 'Recognized via phone number — 5% automatic returning courtesy honored.'
                 : matchedBy === 'email'
-                ? t(
-                    'Recognized via email address — 5% automatic returning courtesy honored.',
-                    'ইমেইলের মাধ্যমে স্বীকৃত — ৫% নিয়মিত ক্লায়েন্ট সুবিধা যুক্ত হয়েছে।'
-                  )
-                : t(
-                    'Honoring your cherished relationship with SEYVEN — automatic courtesy applied.',
-                    'আপনার অব্যাহত আস্থার সৌজন্যে অর্ডারে স্বয়ংক্রিয় ৫% সুবিধা যুক্ত করা হয়েছে।'
-                  )}
+                ? 'Recognized via email address — 5% automatic returning courtesy honored.'
+                : 'Honoring your cherished relationship with SEYVEN — automatic courtesy applied.'}
             </span>
           </div>
         </div>
@@ -191,7 +182,7 @@ export function CheckoutLoyaltySlider({
             -{formatBdt(discountAmount)}
           </div>
           <span className="text-[10px] text-[#1C1917]/50 block font-light">
-            (5% {t('courtesy on curation', 'অর্ডারে বিশেষ ছাড়')})
+            (5% courtesy on curation)
           </span>
         </div>
       </div>
@@ -210,18 +201,15 @@ export function CheckoutLoyaltySlider({
             <div className="flex items-center space-x-2">
               <span className="text-xs font-serif uppercase tracking-wider text-[#1C1917] font-semibold">
                 {recognizedName
-                  ? `${t('HONORED CLIENT DETECTED:', 'পূর্ববর্তী ক্লায়েন্ট:')} ${recognizedName.toUpperCase()}`
-                  : t('RETURNING CLIENT DETECTED', 'পূর্ববর্তী ক্লায়েন্ট শনাক্ত হয়েছে')}
+                  ? `HONORED CLIENT DETECTED: ${recognizedName.toUpperCase()}`
+                  : 'RETURNING CLIENT DETECTED'}
               </span>
               <span className="px-1.5 py-0.5 bg-amber-100 text-amber-900 text-[9px] font-bold uppercase rounded">
-                {t('LOGIN TO REDEEM 5%', 'লগইন করে ৫% ছাড় নিন')}
+                LOGIN TO REDEEM 5%
               </span>
             </div>
             <span className="text-[11px] text-[#1C1917]/70 font-light block mt-0.5">
-              {t(
-                'Log in to your Private Client Account to apply your lifetime 5% Courtesy Privilege on this curation.',
-                'এই অর্ডারে আজীবন ৫% ক্লায়েন্ট সুবিধা যুক্ত করতে আপনার একাউন্টে লগইন করুন।'
-              )}
+              Log in to your Private Client Account to apply your lifetime 5% Courtesy Privilege on this curation.
             </span>
           </div>
         </div>
@@ -231,7 +219,7 @@ export function CheckoutLoyaltySlider({
           onClick={openAuthModal}
           className="px-4 py-2 bg-[#1C1917] hover:bg-[#1C1917]/90 text-[#F9F6F0] text-[10px] uppercase tracking-widest font-medium transition-colors shrink-0 cursor-pointer shadow-xs"
         >
-          {t('LOG IN TO APPLY 5%', 'লগইন করে ৫% নিন')}
+          LOG IN TO APPLY 5%
         </button>
       </div>
     );
@@ -244,18 +232,15 @@ export function CheckoutLoyaltySlider({
         <Sparkles className="w-4 h-4 text-[#C7A97B] shrink-0" />
         <div>
           <span className="font-serif tracking-wide text-[#1C1917] font-medium block">
-            {t('Seyven Sanctuary Client Courtesy', 'সেভেন সানকচুয়ারি ক্লায়েন্ট প্রিভিলেজ')}
+            Seyven Sanctuary Client Courtesy
           </span>
           <p className="text-[10px] text-[#1C1917]/60 font-light">
-            {t(
-              'First curation unlocks lifetime 5% privilege. Returning registered clients receive 5% off every order.',
-              'প্রথম অর্ডারের পর রেজিস্টার্ড ক্লায়েন্ট হিসেবে পরবর্তী সকল ক্রয়ে আজীবন ৫% বিশেষ ছাড় প্রযোজ্য হবে।'
-            )}
+            First curation unlocks lifetime 5% privilege. Returning registered clients receive 5% off every order.
           </p>
         </div>
       </div>
       <span className="text-[10px] text-[#C7A97B] uppercase tracking-widest font-serif shrink-0 ml-2">
-        {t('MEMBER EXCLUSIVE', 'মেম্বার প্রিভিলেজ')}
+        MEMBER EXCLUSIVE
       </span>
     </div>
   );

@@ -13,7 +13,7 @@ describe('FacetService', () => {
       id: 'prod-1',
       slug: 'cica-barrier-cream',
       titleEn: 'Cica Barrier Repair Cream',
-      titleBn: 'সিকা ব্যারিয়ার ক্রিম',
+      titleBn: 'Cica Barrier Cream',
       shortDescriptionEn: 'Formulated with ceramides and panthenol for skin barrier repair',
       dermalProtocolEn: 'Apply morning and night after serum',
       isPregnancySafe: true,
@@ -22,7 +22,7 @@ describe('FacetService', () => {
         id: 'cat-1',
         slug: 'moisturizers',
         nameEn: 'Moisturizers',
-        nameBn: 'ময়েশ্চারাইজার',
+        nameBn: 'Moisturizers',
       },
       variants: [
         {
@@ -45,7 +45,7 @@ describe('FacetService', () => {
       id: 'prod-2',
       slug: 'salicylic-acid-cleanser',
       titleEn: 'Salicylic Acid Acne Cleanser',
-      titleBn: 'স্যালিসিলিক অ্যাসিড একনে ক্লিনজার',
+      titleBn: 'Salicylic Acid Acne Cleanser',
       shortDescriptionEn: 'BHA gentle purifying cleanser for acne and blemishes',
       dermalProtocolEn: 'Use once daily',
       isPregnancySafe: false,
@@ -54,7 +54,7 @@ describe('FacetService', () => {
         id: 'cat-2',
         slug: 'cleansers',
         nameEn: 'Cleansers',
-        nameBn: 'ক্লিনজার',
+        nameBn: 'Cleansers',
       },
       variants: [
         {

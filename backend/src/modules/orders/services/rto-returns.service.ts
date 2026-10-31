@@ -510,7 +510,7 @@ export class RtoReturnsService {
   }
 
   /**
-   * Generate Statutory NBR Mushak-6.7 Credit Note (কর ক্রেডিট নোট) Vector PDF (A4 Format)
+   * Generate Statutory NBR Mushak-6.7 Credit Note Vector PDF (A4 Format)
    * Pursuant to Rule 40(1)(g) of Bangladesh VAT & SD Rules, 2016
    */
   async generateMushak67Pdf(orderId: string): Promise<Buffer> {
@@ -591,7 +591,7 @@ export class RtoReturnsService {
       doc
         .font('Helvetica-Bold')
         .fontSize(11)
-        .text('CREDIT NOTE / কর ক্রেডিট নোট [FORM MUSHAK-6.7]', 32, 60, {
+        .text('CREDIT NOTE [FORM MUSHAK-6.7]', 32, 60, {
           align: 'center',
         });
       doc

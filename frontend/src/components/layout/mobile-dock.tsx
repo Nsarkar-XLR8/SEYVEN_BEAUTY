@@ -70,18 +70,18 @@ export function MobileDock() {
           </span>
         </button>
 
-        {/* Tab 4: Complimentary Skincare Care & Advisory via Messenger */}
-        <a
-          href={BRAND.supportMessenger || 'https://m.me/seyvenofficial'}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-col items-center justify-center p-1 w-14 transition-colors text-[#1C1917]/60 hover:text-[#C7A97B]"
+        {/* Tab 4: Dedicated Client Care & Complimentary Advisory */}
+        <Link
+          href="/care"
+          className={`flex flex-col items-center justify-center p-1 w-14 transition-colors ${
+            pathname === '/care' ? 'text-[#C7A97B]' : 'text-[#1C1917]/50 hover:text-[#1C1917]'
+          }`}
         >
           <MessageCircle className="w-5 h-5 stroke-[1.25]" />
           <span className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
             CARE
           </span>
-        </a>
+        </Link>
 
         {/* Tab 5: Profile / Auth */}
         <button

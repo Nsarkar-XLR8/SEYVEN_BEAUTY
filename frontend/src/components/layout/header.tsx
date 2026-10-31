@@ -154,12 +154,12 @@ export function Header({ onOpenSearch }: HeaderProps) {
                     </Link>
 
                     <Link
-                      href="/customer/loyalty"
+                      href="/care"
                       onClick={() => setIsUserMenuOpen(false)}
                       className="flex items-center space-x-2.5 px-4 py-2 text-[#1C1917] hover:bg-[#F9F6F0] transition-colors tracking-wide"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-[#C7A97B]" />
-                      <span>Sanctuary VIP Privileges</span>
+                      <span>Client Care & Privileges</span>
                     </Link>
 
                     <Link

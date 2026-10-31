@@ -176,10 +176,10 @@ export default function AboutPage() {
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
-            href="/customer/loyalty"
+            href="/care"
             className="w-full sm:w-auto px-7 py-3.5 bg-transparent hover:bg-[#1C1917]/5 border border-[#1C1917]/30 hover:border-[#1C1917] text-[#1C1917] text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 flex items-center justify-center space-x-2 rounded-none"
           >
-            <span>CLIENT PRIVILEGES</span>
+            <span>CLIENT CARE</span>
           </Link>
         </div>
       </section>

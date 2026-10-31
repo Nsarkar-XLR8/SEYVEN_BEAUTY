@@ -30,13 +30,13 @@ export const BRAND = {
 
 export const GUEST_NAV_LINKS = [
   { href: '/catalog', labelEn: 'SHOP ALL', labelBn: 'SHOP ALL' },
-  { href: '/customer/loyalty', labelEn: 'PRIVILEGE', labelBn: 'PRIVILEGE' },
+  { href: '/care', labelEn: 'CARE', labelBn: 'CARE' },
   { href: '/about', labelEn: 'ABOUT US', labelBn: 'ABOUT US' },
 ];
 
 export const AUTH_NAV_LINKS = [
   { href: '/catalog', labelEn: 'SHOP ALL', labelBn: 'SHOP ALL' },
-  { href: '/customer/loyalty', labelEn: 'PRIVILEGE', labelBn: 'PRIVILEGE' },
+  { href: '/care', labelEn: 'CARE', labelBn: 'CARE' },
   { href: '/track-order', labelEn: 'TRACK PARCEL', labelBn: 'TRACK PARCEL' },
   { href: '/about', labelEn: 'ABOUT US', labelBn: 'ABOUT US' },
 ];
@@ -52,7 +52,7 @@ export const FOOTER_LINKS = {
   ],
   clientCare: [
     { href: '/track-order', labelEn: 'Track Your Parcel', labelBn: 'Track Your Parcel' },
-    { href: '/customer/loyalty', labelEn: 'Sanctuary VIP Privileges', labelBn: 'Sanctuary VIP Privileges' },
+    { href: '/care', labelEn: 'Client Care & Advisory', labelBn: 'Client Care & Advisory' },
     { href: '/legal/return_refund', labelEn: 'Return & Exchange Policy', labelBn: 'Return & Exchange Policy' },
     { href: '/support/grievance', labelEn: 'Client Support Concierge', labelBn: 'Client Support Concierge' },
   ],

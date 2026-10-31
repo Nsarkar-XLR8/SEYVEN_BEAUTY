@@ -115,9 +115,9 @@ export default function CustomerAccountPage() {
           </div>
         </Link>
 
-        {/* Card 2: Sanctuary VIP Privileges */}
+        {/* Card 2: Client Care & Privileges */}
         <Link
-          href="/customer/loyalty"
+          href="/care"
           className="p-6 bg-[#F9F6F0] border border-[#E6DFD5] hover:border-[#C7A97B] transition-all duration-200 group flex flex-col justify-between space-y-4"
         >
           <div className="space-y-2">
@@ -125,14 +125,14 @@ export default function CustomerAccountPage() {
               <Sparkles className="w-5 h-5 stroke-[1.5]" />
             </div>
             <h2 className="text-xs uppercase tracking-[0.2em] font-serif font-medium text-[#1C1917]">
-              SANCTUARY VIP PRIVILEGES
+              CLIENT CARE & PRIVILEGES
             </h2>
             <p className="text-[11px] text-[#1C1917]/70 font-light leading-relaxed">
-              Automatic 5% courtesy discount on all repeat curations, private collection previews & concierge advisory.
+              Automatic 5% courtesy discount on all repeat orders, festive celebrations & 1-on-1 Messenger advisory.
             </p>
           </div>
           <div className="flex items-center space-x-1.5 text-[10px] uppercase tracking-[0.2em] text-[#C7A97B] font-medium pt-2">
-            <span>VIEW PRIVILEGES</span>
+            <span>EXPLORE CARE</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
           </div>
         </Link>

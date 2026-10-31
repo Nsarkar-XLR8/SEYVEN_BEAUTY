@@ -84,7 +84,7 @@ export function Footer() {
       links: [
         { href: messengerLink, label: 'Bespoke Messenger Concierge' },
         { href: instagramLink, label: 'Instagram Editorial (@seyven_beauty)' },
-        { href: '/customer/loyalty', label: 'Sanctuary Privilege VIP Club' },
+        { href: '/care', label: 'Client Care & Privileges' },
         { href: '/customer/account', label: 'Private Client Account & Vault' },
       ],
     },

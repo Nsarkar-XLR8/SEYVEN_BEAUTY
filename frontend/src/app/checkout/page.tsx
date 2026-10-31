@@ -41,14 +41,25 @@ export default function CheckoutPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderSuccessData, setOrderSuccessData] = useState<any | null>(null);
 
-  // Restore persisted active order on page load
+  // Restore persisted active order on page load (ONLY if cart is empty and active session exists)
   useEffect(() => {
-    if (typeof window !== 'undefined' && items.length === 0) {
+    if (typeof window !== 'undefined') {
       try {
+        // Guard against hydration lag: check if cart items already exist in storage
+        const rawBag = localStorage.getItem('seyven_bag_items');
+        const hasBagItems = rawBag ? JSON.parse(rawBag)?.length > 0 : false;
+        if (items.length > 0 || hasBagItems) {
+          // Customer has active items in bag — clear past receipt state immediately
+          setOrderSuccessData(null);
+          sessionStorage.removeItem('seyven_active_order');
+          localStorage.removeItem('seyven_last_order');
+          return;
+        }
+
+        // Only restore on F5 refresh immediately after checkout in the active tab session
         const rawSession = sessionStorage.getItem('seyven_active_order');
-        const rawSaved = rawSession || localStorage.getItem('seyven_last_order');
-        if (rawSaved) {
-          const parsed = JSON.parse(rawSaved);
+        if (rawSession) {
+          const parsed = JSON.parse(rawSession);
           if (parsed && parsed.orderId && parsed.createdAt) {
             const ageMs = Date.now() - new Date(parsed.createdAt).getTime();
             if (ageMs < 4 * 60 * 60 * 1000) {
@@ -59,6 +70,19 @@ export default function CheckoutPage() {
       } catch {}
     }
   }, [items.length]);
+
+  // If cart items are detected at any time, invalidate any old order confirmation view
+  useEffect(() => {
+    if (items.length > 0 && orderSuccessData) {
+      setOrderSuccessData(null);
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.removeItem('seyven_active_order');
+          localStorage.removeItem('seyven_last_order');
+        } catch {}
+      }
+    }
+  }, [items.length, orderSuccessData]);
 
   // Auto-generate Idempotency Key per session
   const [idempotencyKey, setIdempotencyKey] = useState('');
@@ -223,11 +247,10 @@ export default function CheckoutPage() {
         localStorage.setItem('seyven_client_order_history', JSON.stringify(history.slice(0, 10)));
       } catch {}
 
-      // Persist active order for guest user resilience against F5 refresh
+      // Persist active order for guest user resilience against F5 refresh in this tab
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem('seyven_active_order', JSON.stringify(successPayload));
-          localStorage.setItem('seyven_last_order', JSON.stringify(successPayload));
         } catch {}
       }
 
@@ -261,14 +284,17 @@ export default function CheckoutPage() {
 
   const handleOrderMore = () => {
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('seyven_active_order');
+      try {
+        sessionStorage.removeItem('seyven_active_order');
+        localStorage.removeItem('seyven_last_order');
+      } catch {}
     }
     setOrderSuccessData(null);
     router.push('/catalog');
   };
 
-  // Render Order Confirmation if placed
-  if (orderSuccessData) {
+  // Render Order Confirmation if placed and cart is empty
+  if (orderSuccessData && items.length === 0) {
     return <CheckoutSuccessView orderData={orderSuccessData} onOrderMore={handleOrderMore} />;
   }
 

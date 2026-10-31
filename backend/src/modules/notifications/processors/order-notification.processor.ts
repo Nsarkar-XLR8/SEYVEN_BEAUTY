@@ -30,43 +30,62 @@ export class OrderNotificationProcessor extends WorkerHost {
       `⚙️ [BullMQ Worker] Processing notification for Order #${order.orderNumber} (Attempt ${attempt}/3)`,
     );
 
-    // Parallel dispatch: Email and Telegram run concurrently
+    // Parallel dispatch with idempotency protection:
+    // If an alert succeeded on an earlier attempt, it will not be duplicated.
+    const emailAlreadySent = Boolean(order._emailSent);
+    const telegramAlreadySent = Boolean(order._telegramSent);
+
+    const emailPromise = emailAlreadySent
+      ? Promise.resolve({ success: true, cached: true })
+      : this.resendEmailService.sendOrderNotificationEmail(order);
+
+    const telegramPromise = telegramAlreadySent
+      ? Promise.resolve(true)
+      : this.telegramNotificationService.sendOrderAlert(order);
+
     const [emailResult, telegramResult] = await Promise.allSettled([
-      this.resendEmailService.sendOrderNotificationEmail(order),
-      this.telegramNotificationService.sendOrderAlert(order),
+      emailPromise,
+      telegramPromise,
     ]);
 
     const emailSuccess =
-      emailResult.status === 'fulfilled' && (emailResult.value as any)?.success !== false;
+      emailAlreadySent ||
+      (emailResult.status === 'fulfilled' && (emailResult.value as any)?.success !== false);
     const telegramSuccess =
-      telegramResult.status === 'fulfilled' && (telegramResult.value as any) !== false;
+      telegramAlreadySent ||
+      (telegramResult.status === 'fulfilled' && (telegramResult.value as any) !== false);
 
-    if (!emailSuccess || !telegramSuccess) {
-      const errorReasons: string[] = [];
-      if (!emailSuccess) {
-        const reason =
-          emailResult.status === 'rejected'
-            ? (emailResult as PromiseRejectedResult).reason?.message
-            : (emailResult.value as any)?.message || 'Email delivery failed';
-        errorReasons.push(`Email error: ${reason}`);
-      }
-      if (!telegramSuccess) {
-        const reason =
-          telegramResult.status === 'rejected'
-            ? (telegramResult as PromiseRejectedResult).reason?.message
-            : 'Telegram alert failed';
-        errorReasons.push(`Telegram error: ${reason}`);
-      }
-
-      this.logger.warn(
-        `⚠️ [BullMQ Worker Notice] Order #${order.orderNumber} dispatch issue on attempt ${attempt}: ${errorReasons.join(' | ')}`,
-      );
-
-      // Throw error to trigger BullMQ retry backoff
-      throw new Error(errorReasons.join(' | '));
+    // Save success flags to prevent duplicate customer emails on retry
+    if (emailSuccess && !emailAlreadySent) {
+      order._emailSent = true;
+      await job.updateData(order).catch(() => {});
+    }
+    if (telegramSuccess && !telegramAlreadySent) {
+      order._telegramSent = true;
+      await job.updateData(order).catch(() => {});
     }
 
-    this.logger.log(`✅ [BullMQ Worker] Successfully dispatched all notifications for Order #${order.orderNumber}`);
+    if (!emailSuccess) {
+      const reason =
+        emailResult.status === 'rejected'
+          ? (emailResult as PromiseRejectedResult).reason?.message
+          : (emailResult.value as any)?.message || 'Email delivery failed';
+
+      this.logger.warn(
+        `⚠️ [BullMQ Worker Notice] Order #${order.orderNumber} dispatch issue on attempt ${attempt}: Email error: ${reason}`,
+      );
+
+      // Throw error to trigger BullMQ retry backoff only if critical email failed
+      throw new Error(`Email error: ${reason}`);
+    }
+
+    if (!telegramSuccess) {
+      this.logger.warn(
+        `⚠️ [BullMQ Worker Notice] Order #${order.orderNumber}: Telegram alert delayed or failed, but customer email succeeded.`,
+      );
+    }
+
+    this.logger.log(`✅ [BullMQ Worker] Successfully dispatched notifications for Order #${order.orderNumber}`);
     return { success: true };
   }
 

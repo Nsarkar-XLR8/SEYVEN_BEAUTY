@@ -148,7 +148,7 @@ export class TelegramNotificationService {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(payload),
         },
-        timeout: 8000,
+        timeout: 15000,
       };
 
       const req = https.request(options, (res) => {

@@ -285,14 +285,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const toggleBag = () => setIsBagOpen(!isBagOpen);
 
   const addItem = (item: Omit<CartItem, 'id' | 'quantity'>, quantity = 1, openDrawer = false) => {
-    // Clear past order confirmation state when customer adds a new item to buy
-    if (typeof window !== 'undefined') {
-      try {
-        sessionStorage.removeItem('seyven_active_order');
-        localStorage.removeItem('seyven_last_order');
-      } catch {}
-    }
-
     setItems((prev) => {
       const existing = prev.find((i) => i.variantId === item.variantId);
       if (existing) {

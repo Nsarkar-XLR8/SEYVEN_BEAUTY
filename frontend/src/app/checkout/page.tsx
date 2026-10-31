@@ -41,30 +41,24 @@ export default function CheckoutPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderSuccessData, setOrderSuccessData] = useState<any | null>(null);
 
-  // Restore persisted active order on page load only if F5 refreshed in same tab
+  // Restore persisted active order on page load
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && items.length === 0) {
       try {
-        const rawBag = localStorage.getItem('seyven_bag_items');
-        const hasBagItems = rawBag ? JSON.parse(rawBag)?.length > 0 : false;
-        if (hasBagItems) {
-          sessionStorage.removeItem('seyven_active_order');
-          return;
-        }
-
         const rawSession = sessionStorage.getItem('seyven_active_order');
-        if (rawSession) {
-          const parsed = JSON.parse(rawSession);
+        const rawSaved = rawSession || localStorage.getItem('seyven_last_order');
+        if (rawSaved) {
+          const parsed = JSON.parse(rawSaved);
           if (parsed && parsed.orderId && parsed.createdAt) {
             const ageMs = Date.now() - new Date(parsed.createdAt).getTime();
-            if (ageMs < 30 * 60 * 1000) {
+            if (ageMs < 4 * 60 * 60 * 1000) {
               setOrderSuccessData(parsed);
             }
           }
         }
       } catch {}
     }
-  }, []);
+  }, [items.length]);
 
   // Auto-generate Idempotency Key per session
   const [idempotencyKey, setIdempotencyKey] = useState('');
@@ -229,10 +223,11 @@ export default function CheckoutPage() {
         localStorage.setItem('seyven_client_order_history', JSON.stringify(history.slice(0, 10)));
       } catch {}
 
-      // Persist active order for guest user resilience against F5 refresh in this tab
+      // Persist active order for guest user resilience against F5 refresh
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem('seyven_active_order', JSON.stringify(successPayload));
+          localStorage.setItem('seyven_last_order', JSON.stringify(successPayload));
         } catch {}
       }
 
@@ -255,8 +250,8 @@ export default function CheckoutPage() {
         console.warn('Meta Pixel Purchase tracking notice:', err);
       }
 
-      clearCart();
       setOrderSuccessData(successPayload);
+      clearCart();
     } catch {
       setErrorMessage('Order placement was interrupted. Please try again.');
     } finally {
@@ -266,10 +261,7 @@ export default function CheckoutPage() {
 
   const handleOrderMore = () => {
     if (typeof window !== 'undefined') {
-      try {
-        sessionStorage.removeItem('seyven_active_order');
-        localStorage.removeItem('seyven_last_order');
-      } catch {}
+      sessionStorage.removeItem('seyven_active_order');
     }
     setOrderSuccessData(null);
     router.push('/catalog');

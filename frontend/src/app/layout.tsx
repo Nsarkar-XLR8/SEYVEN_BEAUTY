@@ -71,7 +71,8 @@ const organizationJsonLd = {
       '@id': 'https://theseyven.com/#website',
       url: 'https://theseyven.com',
       name: 'SEYVEN — The Sanctuary of Beauty',
-      description: 'Complimentary Skincare & Dermal Problem Consultation & 100% Authentic Imported Skincare in Bangladesh',
+      description:
+        'The digital sanctuary of SEYVEN — dedicated to helping women and beauty seekers across Bangladesh solve their real skin and beauty concerns through 100% complimentary private Messenger consultations, alongside unconditionally authentic, sealed international skincare curations.',
       inLanguage: ['en-BD', 'bn-BD'],
       potentialAction: {
         '@type': 'SearchAction',
@@ -83,17 +84,65 @@ const organizationJsonLd = {
       '@type': 'Organization',
       '@id': 'https://theseyven.com/#organization',
       name: 'SEYVEN — The Sanctuary of Beauty',
+      alternateName: 'SEYVEN Beauty',
       url: 'https://theseyven.com',
-      logo: 'https://theseyven.com/apple-icon.png',
+      logo: 'https://theseyven.com/images/seyven-monogram.png',
+      slogan: 'Helping You Solve Real Skin Concerns First. Uncompromising Global Authenticity.',
+      description:
+        'A purpose-driven luxury beauty house and skincare sanctuary in Bangladesh. Built on the conviction that helping women solve their real skin and beauty challenges comes before commercial selling — delivered through 100% complimentary, empathetic 1-on-1 consultations and guaranteed authentic international formulations imported direct from certified supply hubs in South Korea, the United States, and Europe.',
       sameAs: [
-        'https://www.facebook.com/officialseyven',
-        'https://www.instagram.com/officialseyven',
+        'https://www.facebook.com/seyvenofficial',
+        'https://www.instagram.com/seyven_beauty/',
+        'https://m.me/seyvenofficial',
       ],
+      founder: {
+        '@type': 'Person',
+        '@id': 'https://theseyven.com/#founder',
+        name: 'Nayem Sarkar',
+        jobTitle: 'Founder & CEO',
+        url: 'https://www.linkedin.com/in/nayemsarkar',
+        sameAs: [
+          'https://www.linkedin.com/in/nayemsarkar',
+          'https://tyrand.dev/',
+        ],
+        hasOccupation: [
+          {
+            '@type': 'Role',
+            roleName: 'Founder & CEO',
+            affiliation: {
+              '@type': 'Organization',
+              name: 'SEYVEN — The Sanctuary of Beauty',
+              url: 'https://theseyven.com',
+            },
+            description:
+              'Founder & CEO steering SEYVEN with a vision to help women across Bangladesh solve real skin concerns through complimentary guidance and 100% authentic international curation.',
+          },
+          {
+            '@type': 'Role',
+            roleName: 'Co-Founder',
+            affiliation: {
+              '@type': 'Organization',
+              name: 'Tyrand',
+              url: 'https://tyrand.dev/',
+              description: 'Software Engineering & Technology Agency',
+            },
+            description:
+              'Co-Founder at Tyrand, helping businesses scale through robust engineering and AI driven software solutions. I partner with business leaders to build reliable technical infrastructure, optimize digital strategy and accelerate growth in the modern AI era.',
+          },
+        ],
+        knowsAbout: [
+          'International Luxury Skincare',
+          'Curated Products',
+          'Software Architecture & Engineering',
+          'Digital Commerce & Technology',
+        ],
+      },
       contactPoint: {
         '@type': 'ContactPoint',
-        contactType: 'Customer Support & Dermal Consultation via Facebook Messenger',
+        contactType: 'SEYVEN Skincare Problem-Solving & Advisory Team via Facebook Messenger',
         areaServed: 'BD',
         availableLanguage: ['English', 'Bengali'],
+        url: 'https://m.me/seyvenofficial',
       },
     },
   ],

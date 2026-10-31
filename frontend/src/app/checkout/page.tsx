@@ -41,59 +41,29 @@ export default function CheckoutPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderSuccessData, setOrderSuccessData] = useState<any | null>(null);
 
-  // Restore persisted active order on page load (ONLY if cart is empty and active session exists)
+  // Restore persisted active order on page load only if F5 refreshed in same tab
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        // Guard against hydration lag: check if cart items already exist in storage
         const rawBag = localStorage.getItem('seyven_bag_items');
         const hasBagItems = rawBag ? JSON.parse(rawBag)?.length > 0 : false;
-        if (items.length > 0 || hasBagItems) {
-          // Customer has active items in bag — clear past receipt state immediately
-          setOrderSuccessData(null);
+        if (hasBagItems) {
           sessionStorage.removeItem('seyven_active_order');
-          localStorage.removeItem('seyven_last_order');
           return;
         }
 
-        // Only restore on F5 refresh immediately after checkout in the active tab session
         const rawSession = sessionStorage.getItem('seyven_active_order');
         if (rawSession) {
           const parsed = JSON.parse(rawSession);
           if (parsed && parsed.orderId && parsed.createdAt) {
             const ageMs = Date.now() - new Date(parsed.createdAt).getTime();
-            if (ageMs < 4 * 60 * 60 * 1000) {
+            if (ageMs < 30 * 60 * 1000) {
               setOrderSuccessData(parsed);
             }
           }
         }
       } catch {}
     }
-  }, [items.length]);
-
-  // If cart items are detected at any time, invalidate any old order confirmation view
-  useEffect(() => {
-    if (items.length > 0 && orderSuccessData) {
-      setOrderSuccessData(null);
-      if (typeof window !== 'undefined') {
-        try {
-          sessionStorage.removeItem('seyven_active_order');
-          localStorage.removeItem('seyven_last_order');
-        } catch {}
-      }
-    }
-  }, [items.length, orderSuccessData]);
-
-  // Cleanup active order confirmation when customer navigates away from checkout (e.g. clicking S Monogram or Header links)
-  useEffect(() => {
-    return () => {
-      if (typeof window !== 'undefined') {
-        try {
-          sessionStorage.removeItem('seyven_active_order');
-          localStorage.removeItem('seyven_last_order');
-        } catch {}
-      }
-    };
   }, []);
 
   // Auto-generate Idempotency Key per session
@@ -285,8 +255,8 @@ export default function CheckoutPage() {
         console.warn('Meta Pixel Purchase tracking notice:', err);
       }
 
-      setOrderSuccessData(successPayload);
       clearCart();
+      setOrderSuccessData(successPayload);
     } catch {
       setErrorMessage('Order placement was interrupted. Please try again.');
     } finally {
@@ -305,8 +275,8 @@ export default function CheckoutPage() {
     router.push('/catalog');
   };
 
-  // Render Order Confirmation if placed and cart is empty
-  if (orderSuccessData && items.length === 0) {
+  // Render Order Confirmation if placed
+  if (orderSuccessData) {
     return <CheckoutSuccessView orderData={orderSuccessData} onOrderMore={handleOrderMore} />;
   }
 

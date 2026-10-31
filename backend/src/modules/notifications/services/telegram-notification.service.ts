@@ -124,14 +124,14 @@ export class TelegramNotificationService {
   }
 
   /**
-   * Raw HTTP request to Telegram Bot API sendMessage endpoint.
+   * HTTP request to Telegram Bot API sendMessage endpoint using native fetch.
    */
-  private dispatchTelegramMessage(
+  private async dispatchTelegramMessage(
     token: string,
     chatId: string,
     htmlText: string,
   ): Promise<boolean> {
-    return new Promise((resolve) => {
+    try {
       const payload = JSON.stringify({
         chat_id: chatId,
         text: htmlText,
@@ -139,48 +139,29 @@ export class TelegramNotificationService {
         disable_web_page_preview: true,
       });
 
-      const options: https.RequestOptions = {
-        hostname: 'api.telegram.org',
-        port: 443,
-        path: `/bot${token}/sendMessage`,
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(payload),
         },
-        timeout: 15000,
-      };
-
-      const req = https.request(options, (res) => {
-        let responseBody = '';
-        res.on('data', (chunk) => {
-          responseBody += chunk;
-        });
-
-        res.on('end', () => {
-          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-            this.logger.log(`[TelegramNotificationService] 🔔 Order alert successfully sent to Telegram chat ${chatId}`);
-            resolve(true);
-          } else {
-            this.logger.warn(`[TelegramNotificationService] Telegram API error (${res.statusCode}): ${responseBody}`);
-            resolve(false);
-          }
-        });
+        body: payload,
+        signal: AbortSignal.timeout(15000),
       });
 
-      req.on('timeout', () => {
-        req.destroy();
-        this.logger.warn('[TelegramNotificationService] Telegram request timed out after 8s');
-        resolve(false);
-      });
+      const data = await response.json().catch(() => null);
 
-      req.on('error', (err) => {
-        this.logger.warn(`[TelegramNotificationService] Network error dispatching Telegram alert: ${err.message}`);
-        resolve(false);
-      });
+      if (response.ok && data?.ok) {
+        this.logger.log(`[TelegramNotificationService] 🔔 Order alert successfully sent to Telegram chat ${chatId}`);
+        return true;
+      }
 
-      req.write(payload);
-      req.end();
-    });
+      this.logger.warn(
+        `[TelegramNotificationService] Telegram API error (${response.status}): ${JSON.stringify(data || {})}`,
+      );
+      return false;
+    } catch (err: any) {
+      this.logger.warn(`[TelegramNotificationService] Network error dispatching Telegram alert: ${err.message}`);
+      return false;
+    }
   }
 }

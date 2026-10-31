@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { Processor, WorkerHost, InjectQueue } from '@nestjs/bullmq';
+import { Processor, WorkerHost, InjectQueue, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job, Queue } from 'bullmq';
 import { ResendEmailService } from '../../auth/services/resend-email.service';
 import { TelegramNotificationService } from '../services/telegram-notification.service';
@@ -65,24 +65,29 @@ export class OrderNotificationProcessor extends WorkerHost {
       await job.updateData(order).catch(() => {});
     }
 
-    if (!emailSuccess) {
-      const reason =
-        emailResult.status === 'rejected'
-          ? (emailResult as PromiseRejectedResult).reason?.message
-          : (emailResult.value as any)?.message || 'Email delivery failed';
+    if (!emailSuccess || !telegramSuccess) {
+      const errorReasons: string[] = [];
+      if (!emailSuccess) {
+        const reason =
+          emailResult.status === 'rejected'
+            ? (emailResult as PromiseRejectedResult).reason?.message
+            : (emailResult.value as any)?.message || 'Email delivery failed';
+        errorReasons.push(`Email: ${reason}`);
+      }
+      if (!telegramSuccess) {
+        const reason =
+          telegramResult.status === 'rejected'
+            ? (telegramResult as PromiseRejectedResult).reason?.message
+            : 'Telegram alert failed';
+        errorReasons.push(`Telegram: ${reason}`);
+      }
 
       this.logger.warn(
-        `⚠️ [BullMQ Worker Notice] Order #${order.orderNumber} dispatch issue on attempt ${attempt}: Email error: ${reason}`,
+        `⚠️ [BullMQ Worker Notice] Order #${order.orderNumber} incomplete on attempt ${attempt}: ${errorReasons.join(' | ')}. Scheduling retry for uncompleted channel(s).`,
       );
 
-      // Throw error to trigger BullMQ retry backoff only if critical email failed
-      throw new Error(`Email error: ${reason}`);
-    }
-
-    if (!telegramSuccess) {
-      this.logger.warn(
-        `⚠️ [BullMQ Worker Notice] Order #${order.orderNumber}: Telegram alert delayed or failed, but customer email succeeded.`,
-      );
+      // Throws error so BullMQ retries the failed channel or moves to DLQ on attempt 3
+      throw new Error(errorReasons.join(' | '));
     }
 
     this.logger.log(`✅ [BullMQ Worker] Successfully dispatched notifications for Order #${order.orderNumber}`);
@@ -92,6 +97,7 @@ export class OrderNotificationProcessor extends WorkerHost {
   /**
    * Dead Letter Queue (DLQ) Hook: Triggered when job fails after all 3 retries
    */
+  @OnWorkerEvent('failed')
   async onFailed(job: Job<any> | undefined, error: Error) {
     if (!job) return;
 

@@ -84,6 +84,18 @@ export default function CheckoutPage() {
     }
   }, [items.length, orderSuccessData]);
 
+  // Cleanup active order confirmation when customer navigates away from checkout (e.g. clicking S Monogram or Header links)
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.removeItem('seyven_active_order');
+          localStorage.removeItem('seyven_last_order');
+        } catch {}
+      }
+    };
+  }, []);
+
   // Auto-generate Idempotency Key per session
   const [idempotencyKey, setIdempotencyKey] = useState('');
   useEffect(() => {

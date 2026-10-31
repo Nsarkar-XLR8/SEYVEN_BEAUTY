@@ -24,6 +24,7 @@ import { CustomerModule } from './modules/customer/customer.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { NewsletterModule } from './modules/newsletter/newsletter.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { MetaCapiModule } from './modules/meta-capi/meta-capi.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -84,6 +85,7 @@ import { AppController } from './app.controller';
     SeoModule,
     NewsletterModule,
     SettingsModule,
+    MetaCapiModule,
   ],
 })
 export class AppModule {}

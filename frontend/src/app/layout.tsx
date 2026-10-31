@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AppProviders } from '@/components/layout/app-providers';
+import { MetaPixel } from '@/components/analytics/meta-pixel';
 
 export const viewport: Viewport = {
   themeColor: '#F9F6F0',
@@ -168,6 +169,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-[#F9F6F0] text-[#1C1917]">
+        <MetaPixel />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

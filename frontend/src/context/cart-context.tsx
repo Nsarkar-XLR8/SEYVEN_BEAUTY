@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { BRAND } from '@/lib/constants';
+import { trackAddToCart } from '@/lib/analytics/meta-pixel';
 
 export interface CartItem {
   id: string;
@@ -303,6 +304,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (openDrawer) {
       setIsBagOpen(true);
     }
+    try {
+      trackAddToCart({
+        variantId: item.variantId,
+        titleEn: item.titleEn,
+        priceBdt: item.priceBdt,
+        quantity,
+      });
+    } catch {}
   };
 
   const updateQuantity = (id: string, delta: number) => {

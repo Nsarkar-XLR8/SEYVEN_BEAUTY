@@ -11,6 +11,7 @@ import { PdpDeliveryEstimator } from '@/components/pdp/pdp-delivery-estimator';
 import { PdpWaitlistModal } from '@/components/pdp/pdp-waitlist-modal';
 import { PdpJsonLd } from '@/components/pdp/pdp-jsonld';
 import { ProductCard } from '@/components/storefront/product-card';
+import { trackViewContent } from '@/lib/analytics/meta-pixel';
 
 interface PdpClientViewProps {
   slug: string;
@@ -53,6 +54,19 @@ export function PdpClientView({ slug }: PdpClientViewProps) {
         setIsLoading(false);
       });
   }, [slug, staticProduct]);
+
+  // Meta Pixel: Track ViewContent
+  useEffect(() => {
+    if (product) {
+      trackViewContent({
+        id: product.id,
+        slug: product.slug,
+        titleEn: product.titleEn,
+        priceBdt: product.priceBdt,
+        category: (product as any)?.category,
+      });
+    }
+  }, [product?.id]);
 
   if (isLoading) {
     return (

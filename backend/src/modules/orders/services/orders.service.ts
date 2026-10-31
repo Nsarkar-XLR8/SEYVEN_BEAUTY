@@ -20,6 +20,7 @@ import { ResendEmailService } from '../../auth/services/resend-email.service';
 import { TelegramNotificationService } from '../../notifications/services/telegram-notification.service';
 import { SettingsService } from '../../settings/settings.service';
 import { NotificationQueueService } from '../../notifications/services/notification-queue.service';
+import { MetaCapiService } from '../../meta-capi/meta-capi.service';
 // Prisma Generated Entities & Enums
 import {
   CallVerificationOutcome,
@@ -44,6 +45,7 @@ export class OrdersService {
     @Optional() private readonly telegramNotificationService?: TelegramNotificationService,
     @Optional() private readonly settingsService?: SettingsService,
     @Optional() private readonly notificationQueueService?: NotificationQueueService,
+    @Optional() private readonly metaCapiService?: MetaCapiService,
   ) {}
 
   async createDirectOrder(dto: any) {
@@ -205,6 +207,27 @@ export class OrdersService {
       } catch (err: any) {
         this.logger.warn(`[Order Notification Fallback Notice] ${err?.message || err}`);
       }
+    }
+
+    // 4. Meta Conversions API (CAPI) Server-Side Purchase Event Dispatch
+    if (this.metaCapiService) {
+      this.metaCapiService
+        .sendPurchaseEvent({
+          eventId: dto.eventId || newOrder.orderNumber,
+          orderNumber: newOrder.orderNumber,
+          customerPhone: newOrder.customerPhone,
+          customerEmail: newOrder.customerEmail,
+          customerName: newOrder.customerName,
+          district: newOrder.district,
+          totalAmount: newOrder.totalAmount,
+          currency: 'BDT',
+          items: newOrder.items,
+          clientIp: dto.clientIp,
+          clientUserAgent: dto.clientUserAgent,
+        })
+        .catch((err) =>
+          this.logger.warn(`[Meta CAPI] Dispatch error: ${err.message}`),
+        );
     }
 
     return newOrder;

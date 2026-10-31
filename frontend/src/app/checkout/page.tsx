@@ -20,6 +20,7 @@ import { CheckoutSuccessView } from '@/components/checkout/checkout-success-view
 import { BRAND } from '@/lib/constants';
 import { formatBdt } from '@/lib/formatters';
 import { buildWhatsAppUrl, sanitizeMessengerUrl } from '@/lib/concierge';
+import { trackInitiateCheckout, trackPurchase } from '@/lib/analytics/meta-pixel';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -64,6 +65,15 @@ export default function CheckoutPage() {
   useEffect(() => {
     setIdempotencyKey(`idemp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`);
   }, []);
+
+  // Meta Pixel: Track InitiateCheckout once when checkout mounts with items
+  const hasTrackedCheckoutRef = React.useRef(false);
+  useEffect(() => {
+    if (items.length > 0 && !hasTrackedCheckoutRef.current) {
+      hasTrackedCheckoutRef.current = true;
+      trackInitiateCheckout(items, subtotalBdt);
+    }
+  }, [items, subtotalBdt]);
 
   // Delivery Destination Zone Name
   const activeDistrictName = isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka (Nationwide)';
@@ -123,6 +133,7 @@ export default function CheckoutPage() {
 
       const successPayload = {
         orderId: orderTrackingId,
+        eventId: orderTrackingId,
         customerName: fullName.trim(),
         phone: cleanPhone,
         email: email.trim(),
@@ -218,6 +229,25 @@ export default function CheckoutPage() {
           sessionStorage.setItem('seyven_active_order', JSON.stringify(successPayload));
           localStorage.setItem('seyven_last_order', JSON.stringify(successPayload));
         } catch {}
+      }
+
+      // Meta Pixel: Track Purchase with identical eventId for deduplication
+      try {
+        trackPurchase(
+          {
+            orderNumber: orderTrackingId,
+            totalAmount: netPayableBdt,
+            subtotal: subtotalBdt,
+            items: items.map((it) => ({
+              id: it.id,
+              quantity: it.quantity,
+              unitPrice: it.priceBdt,
+            })),
+          },
+          orderTrackingId,
+        );
+      } catch (err) {
+        console.warn('Meta Pixel Purchase tracking notice:', err);
       }
 
       setOrderSuccessData(successPayload);

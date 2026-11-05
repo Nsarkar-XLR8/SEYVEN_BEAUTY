@@ -21,6 +21,7 @@ import { TelegramNotificationService } from '../../notifications/services/telegr
 import { SettingsService } from '../../settings/settings.service';
 import { NotificationQueueService } from '../../notifications/services/notification-queue.service';
 import { MetaCapiService } from '../../meta-capi/meta-capi.service';
+import { FraudDetectionService } from './fraud-detection.service';
 // Prisma Generated Entities & Enums
 import {
   CallVerificationOutcome,
@@ -46,6 +47,7 @@ export class OrdersService {
     @Optional() private readonly settingsService?: SettingsService,
     @Optional() private readonly notificationQueueService?: NotificationQueueService,
     @Optional() private readonly metaCapiService?: MetaCapiService,
+    @Optional() private readonly fraudDetectionService?: FraudDetectionService,
   ) {}
 
   async createDirectOrder(dto: any) {
@@ -228,6 +230,52 @@ export class OrdersService {
         .catch((err) =>
           this.logger.warn(`[Meta CAPI] Dispatch error: ${err.message}`),
         );
+    }
+
+    // 5. Asynchronous Background Fraud & IP Geolocation Intelligence (0ms delay to customer)
+    if (this.fraudDetectionService) {
+      setImmediate(async () => {
+        try {
+          const fraudResult = await this.fraudDetectionService!.analyzeOrder({
+            customerPhone: newOrder.customerPhone,
+            customerName: newOrder.customerName,
+            shippingAddress: newOrder.shippingAddress,
+            district: newOrder.district,
+            zone: newOrder.zone,
+            totalAmount: newOrder.totalAmount,
+            paymentMethod: newOrder.paymentMethod,
+            clientIp: (dto.clientIp || '').toString(),
+            userAgent: (dto.clientUserAgent || '').toString(),
+          });
+
+          const existingOrder = await this.prisma.order
+            .findUnique({
+              where: { orderNumber: orderId },
+              select: { shippingAddress: true },
+            })
+            .catch(() => null);
+
+          if (existingOrder && existingOrder.shippingAddress && typeof existingOrder.shippingAddress === 'object') {
+            const updatedAddr = {
+              ...(existingOrder.shippingAddress as object),
+              fraudAnalysis: fraudResult,
+            };
+            await this.prisma.order
+              .update({
+                where: { orderNumber: orderId },
+                data: {
+                  shippingAddress: updatedAddr as any,
+                },
+              })
+              .catch(() => null);
+          }
+          this.logger.log(
+            `🛡️ [Fraud Intelligence] Analyzed Order #${orderId} (Risk: ${fraudResult.riskLevel}, Score: ${fraudResult.riskScore})`,
+          );
+        } catch (err: any) {
+          this.logger.debug(`[Fraud Analysis Background Notice] ${err?.message || err}`);
+        }
+      });
     }
 
     return newOrder;
@@ -813,7 +861,10 @@ export class OrdersService {
           discount: Number(o.discountBdt || 0),
           advancePaid: Number(o.advancePaidBdt || 0),
           paymentMethod: 'COD',
-          codVerification: o.status === 'CONFIRMED' || o.status === 'SHIPPED' || o.status === 'DELIVERED' ? 'VERIFIED' : 'PENDING',
+          codVerification: (addr?.fraudAnalysis?.riskLevel === 'HIGH_RISK')
+            ? 'FLAGGED'
+            : (o.status === 'CONFIRMED' || o.status === 'SHIPPED' || o.status === 'DELIVERED' ? 'VERIFIED' : 'PENDING'),
+          fraudAnalysis: addr?.fraudAnalysis || null,
           allowedNextStatuses: OrderStateMachine.getAllowedNextStates(o.status),
           items: (o.items || []).map((it: any, idx: number) => ({
             id: it.id || `it-${idx}`,

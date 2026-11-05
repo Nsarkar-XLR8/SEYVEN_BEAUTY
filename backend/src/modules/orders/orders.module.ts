@@ -9,6 +9,7 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './services/orders.service';
 import { DispatchDocsService } from './services/dispatch-docs.service';
 import { RtoReturnsService } from './services/rto-returns.service';
+import { FraudDetectionService } from './services/fraud-detection.service';
 import { OrderStateMachine } from './state-machine/order-state-machine';
 
 @Module({
@@ -25,12 +26,14 @@ import { OrderStateMachine } from './state-machine/order-state-machine';
     OrdersService,
     DispatchDocsService,
     RtoReturnsService,
+    FraudDetectionService,
     OrderStateMachine,
   ],
   exports: [
     OrdersService,
     DispatchDocsService,
     RtoReturnsService,
+    FraudDetectionService,
     OrderStateMachine,
   ],
 })

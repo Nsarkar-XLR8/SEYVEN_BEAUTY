@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -114,8 +115,20 @@ export class OrdersController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Direct customer order placement from storefront checkout' })
   @ApiResponse({ status: 201, description: 'Customer order placed and synced to admin desk' })
-  async createDirectOrder(@Body() body: any) {
-    return this.ordersService.createDirectOrder(body);
+  async createDirectOrder(@Body() body: any, @Req() req: any) {
+    const rawIp =
+      req.headers?.['x-forwarded-for']?.toString().split(',')[0].trim() ||
+      req.headers?.['cf-connecting-ip']?.toString() ||
+      req.ip ||
+      req.connection?.remoteAddress ||
+      '';
+    const clientUserAgent = req.headers?.['user-agent'] || '';
+
+    return this.ordersService.createDirectOrder({
+      ...body,
+      clientIp: body.clientIp || rawIp,
+      clientUserAgent: body.clientUserAgent || clientUserAgent,
+    });
   }
 
   @Post('admin/orders/manual')

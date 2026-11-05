@@ -24,6 +24,24 @@ export type OrderStatus =
 
 export type CODVerificationStatus = 'PENDING' | 'VERIFIED' | 'FAILED' | 'FLAGGED';
 
+export interface FraudAnalysisResult {
+  riskScore: number;
+  riskLevel: 'LOW_RISK' | 'MEDIUM_RISK' | 'HIGH_RISK';
+  reasons: string[];
+  clientIp: string;
+  ipCity?: string;
+  ipRegion?: string;
+  ipCountry?: string;
+  ipIsp?: string;
+  ipCoordinates?: [number, number];
+  ipMapsUrl?: string;
+  addressMapsUrl: string;
+  isLocationMismatch: boolean;
+  isSuspiciousPhone: boolean;
+  isGibberishAddress: boolean;
+  analyzedAt: string;
+}
+
 export interface OrderItem {
   id: string;
   sku: string;
@@ -54,6 +72,7 @@ export interface AdminOrder {
   paymentMethod: 'COD' | 'BKASH' | 'NAGAD' | 'CARD';
   status: OrderStatus;
   codVerification: CODVerificationStatus;
+  fraudAnalysis?: FraudAnalysisResult;
   courier?: 'Pathao' | 'Steadfast';
   consignmentId?: string;
   courierTrackingUrl?: string;

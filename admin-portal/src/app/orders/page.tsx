@@ -17,6 +17,8 @@ import {
   User,
   MapPin,
   AlertCircle,
+  ShieldAlert,
+  ShieldCheck,
   Plus,
   RefreshCw,
   MessageCircle,
@@ -98,8 +100,14 @@ export default function AdminOrdersDeskPage() {
     }
   };
 
-  const statusTabs: { label: string; value: string; count: number }[] = [
+  const statusTabs: { label: string; value: string; count: number; isAlert?: boolean }[] = [
     { label: 'All Orders', value: 'ALL', count: orders.length },
+    {
+      label: '⚠️ Flagged / High Risk',
+      value: 'FLAGGED',
+      count: orders.filter((o) => o.codVerification === 'FLAGGED' || o.fraudAnalysis?.riskLevel === 'HIGH_RISK').length,
+      isAlert: true,
+    },
     { label: 'Placed', value: 'PLACED', count: orders.filter((o) => o.status === 'PLACED').length },
     { label: 'Confirmed', value: 'CONFIRMED', count: orders.filter((o) => o.status === 'CONFIRMED').length },
     { label: 'Packed', value: 'PACKED', count: orders.filter((o) => o.status === 'PACKED').length },
@@ -108,7 +116,12 @@ export default function AdminOrdersDeskPage() {
   ];
 
   const filteredOrders = orders.filter((o) => {
-    const matchesStatus = selectedStatus === 'ALL' || o.status === selectedStatus;
+    const matchesStatus =
+      selectedStatus === 'ALL'
+        ? true
+        : selectedStatus === 'FLAGGED'
+        ? o.codVerification === 'FLAGGED' || o.fraudAnalysis?.riskLevel === 'HIGH_RISK'
+        : o.status === selectedStatus;
     const matchesSearch =
       o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -215,7 +228,11 @@ export default function AdminOrdersDeskPage() {
             <span>{tab.label}</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                selectedStatus === tab.value ? 'bg-[#C7A97B] text-[#141211] font-bold' : 'bg-[#F9F6F0]'
+                tab.isAlert && tab.count > 0
+                  ? 'bg-rose-500 text-white font-bold'
+                  : selectedStatus === tab.value
+                  ? 'bg-[#C7A97B] text-[#141211] font-bold'
+                  : 'bg-[#F9F6F0]'
               }`}
             >
               {tab.count}
@@ -323,7 +340,7 @@ export default function AdminOrdersDeskPage() {
               <th className="p-3.5">Total (BDT)</th>
               <th className="p-3.5">Payment</th>
               <th className="p-3.5">Pipeline Stage</th>
-              <th className="p-3.5">COD Status</th>
+              <th className="p-3.5">Risk & COD</th>
               <th className="p-3.5 text-right">Fulfillment Action</th>
             </tr>
           </thead>
@@ -371,20 +388,64 @@ export default function AdminOrdersDeskPage() {
                   </span>
                 </td>
                 <td className="p-3.5">
-                  {o.codVerification === 'PENDING' ? (
-                    <button
-                      type="button"
-                      onClick={() => setVerifyingOrder(o)}
-                      className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-mono rounded flex items-center space-x-1"
-                    >
-                      <PhoneCall className="w-3 h-3 text-amber-600" />
-                      <span>Verify Call</span>
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-mono text-emerald-800 font-bold">
-                      {o.codVerification}
-                    </span>
-                  )}
+                  <div className="space-y-1.5">
+                    {/* Fraud Risk Indicator Badge */}
+                    {o.fraudAnalysis ? (
+                      <div>
+                        <span
+                          className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase shadow-2xs ${
+                            o.fraudAnalysis.riskLevel === 'HIGH_RISK' || o.codVerification === 'FLAGGED'
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                              : o.fraudAnalysis.riskLevel === 'MEDIUM_RISK'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          }`}
+                        >
+                          {o.fraudAnalysis.riskLevel === 'HIGH_RISK' || o.codVerification === 'FLAGGED' ? (
+                            <>
+                              <ShieldAlert className="w-3 h-3 text-rose-600 shrink-0" />
+                              <span>Fake ({o.fraudAnalysis.riskScore})</span>
+                            </>
+                          ) : o.fraudAnalysis.riskLevel === 'MEDIUM_RISK' ? (
+                            <>
+                              <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />
+                              <span>Review ({o.fraudAnalysis.riskScore})</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                              <span>Safe</span>
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    ) : o.codVerification === 'FLAGGED' ? (
+                      <div>
+                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-rose-100 text-rose-800 border border-rose-300">
+                          <ShieldAlert className="w-3 h-3 text-rose-600 shrink-0" />
+                          <span>Flagged</span>
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {/* COD Call Verification Action */}
+                    <div>
+                      {o.codVerification === 'PENDING' ? (
+                        <button
+                          type="button"
+                          onClick={() => setVerifyingOrder(o)}
+                          className="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-mono rounded flex items-center space-x-1 transition-colors"
+                        >
+                          <PhoneCall className="w-3 h-3 text-amber-600" />
+                          <span>Verify Call</span>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] font-mono text-emerald-800 font-bold block">
+                          {o.codVerification}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </td>
                 <td className="p-3.5 text-right space-x-1.5">
                   {o.status === 'PLACED' && (
@@ -476,6 +537,141 @@ export default function AdminOrdersDeskPage() {
                 </a>
                 <div className="text-[11px] text-[#1C1917]/70 leading-relaxed">
                   {selectedOrder.shippingAddress} · {selectedOrder.district}
+                </div>
+              </div>
+
+              {/* Security & Geolocation Intelligence Card */}
+              <div className="p-4 bg-white border border-[#E6DFD5] rounded-lg space-y-3 text-xs shadow-xs">
+                <div className="flex items-center justify-between border-b border-[#E6DFD5]/60 pb-2.5">
+                  <div className="flex items-center space-x-1.5 text-[10px] uppercase font-mono tracking-wider font-bold text-[#1C1917]">
+                    <ShieldAlert className="w-4 h-4 text-[#C7A97B]" />
+                    <span>Security & Geo Intelligence</span>
+                  </div>
+                  {/* Risk Badge */}
+                  {selectedOrder.fraudAnalysis ? (
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase shadow-2xs ${
+                        selectedOrder.fraudAnalysis.riskLevel === 'HIGH_RISK' || selectedOrder.codVerification === 'FLAGGED'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : selectedOrder.fraudAnalysis.riskLevel === 'MEDIUM_RISK'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      }`}
+                    >
+                      {selectedOrder.fraudAnalysis.riskLevel.replace('_', ' ')} ({selectedOrder.fraudAnalysis.riskScore}/100)
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-stone-100 text-stone-700">
+                      Standard COD
+                    </span>
+                  )}
+                </div>
+
+                {/* Location Mismatch Alert Banner */}
+                {selectedOrder.fraudAnalysis?.isLocationMismatch && (
+                  <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-900 text-[11px] font-mono flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block font-bold">⚠️ Location Mismatch Detected:</strong>
+                      Customer stated delivery in <u>{selectedOrder.district}</u>, but device network is located in <u>{selectedOrder.fraudAnalysis.ipCity || 'another region'}</u>!
+                    </div>
+                  </div>
+                )}
+
+                {/* Network & IP Details Grid */}
+                <div className="grid grid-cols-2 gap-2 p-2.5 bg-[#F9F6F0] rounded text-[11px] font-mono border border-[#E6DFD5]/60">
+                  <div>
+                    <span className="text-[9px] uppercase text-[#1C1917]/50 block">Device IP Address</span>
+                    <span className="font-semibold text-[#1C1917] truncate block">
+                      {selectedOrder.fraudAnalysis?.clientIp || 'Captured on Submit'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] uppercase text-[#1C1917]/50 block">Detected Location</span>
+                    <span className="font-semibold text-[#1C1917] truncate block">
+                      {selectedOrder.fraudAnalysis?.ipCity
+                        ? `${selectedOrder.fraudAnalysis.ipCity}, ${selectedOrder.fraudAnalysis.ipCountry || 'BD'}`
+                        : selectedOrder.district || 'Bangladesh'}
+                    </span>
+                  </div>
+                  {selectedOrder.fraudAnalysis?.ipIsp && (
+                    <div className="col-span-2 pt-1 border-t border-[#E6DFD5]/40">
+                      <span className="text-[9px] uppercase text-[#1C1917]/50 block">Network / ISP</span>
+                      <span className="text-[#1C1917]/80 truncate block">{selectedOrder.fraudAnalysis.ipIsp}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Triggered Reasons List (if any) */}
+                {selectedOrder.fraudAnalysis?.reasons && selectedOrder.fraudAnalysis.reasons.length > 0 && (
+                  <div className="space-y-1.5 p-2.5 bg-amber-50/50 border border-amber-200/60 rounded">
+                    <span className="text-[9px] uppercase font-mono text-amber-900 font-bold block">
+                      Audit Risk Factors ({selectedOrder.fraudAnalysis.reasons.length}):
+                    </span>
+                    <ul className="space-y-1 text-[11px] font-mono text-stone-700">
+                      {selectedOrder.fraudAnalysis.reasons.map((r, idx) => (
+                        <li key={idx} className="flex items-start space-x-1.5">
+                          <span className="text-amber-600 font-bold">•</span>
+                          <span>{r}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* 100% Free Google Maps Pin Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+                  {selectedOrder.fraudAnalysis?.ipMapsUrl ? (
+                    <a
+                      href={selectedOrder.fraudAnalysis.ipMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex items-center justify-center space-x-1.5 shadow-2xs transition-colors"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Open IP on Maps ↗</span>
+                    </a>
+                  ) : (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedOrder.district + ', Bangladesh')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex items-center justify-center space-x-1.5 shadow-2xs transition-colors"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Open District on Maps ↗</span>
+                    </a>
+                  )}
+
+                  <a
+                    href={
+                      selectedOrder.fraudAnalysis?.addressMapsUrl ||
+                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedOrder.shippingAddress + ', Bangladesh')}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex items-center justify-center space-x-1.5 shadow-2xs transition-colors"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Open Address on Maps ↗</span>
+                  </a>
+                </div>
+
+                {/* 1-Click WhatsApp Quick Verification */}
+                <div className="pt-1">
+                  <a
+                    href={`https://wa.me/${selectedOrder.customerPhone.replace(/\D/g, '').replace(/^0/, '880')}?text=${encodeURIComponent(
+                      `Hi ${selectedOrder.customerName}, this is SEYVEN Concierge. We are preparing Order #${selectedOrder.id} (${formatBdt(
+                        selectedOrder.totalAmount,
+                      )}) for delivery at ${selectedOrder.shippingAddress}. Kindly reply to confirm your shipment.`,
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded font-mono text-[11px] font-bold flex items-center justify-center space-x-1.5 transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>WhatsApp 1-Click Verify</span>
+                  </a>
                 </div>
               </div>
 

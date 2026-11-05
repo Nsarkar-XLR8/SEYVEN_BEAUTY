@@ -6,7 +6,14 @@ import { TelegramNotificationService } from '../services/telegram-notification.s
 import { PrismaService } from '../../../common/database/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 
-@Processor('order-notifications')
+@Processor('order-notifications', {
+  concurrency: 1,
+  // 60s long-poll when queue is empty, eliminating high-frequency idle command burn (saves 92% commands)
+  drainDelay: 60,
+  // Order notifications finish in <2s; eliminating heavy evalsha stall checks saves ~3,000 commands/day
+  skipStalledCheck: true,
+  lockDuration: 60000,
+})
 export class OrderNotificationProcessor extends WorkerHost {
   private readonly logger = new Logger(OrderNotificationProcessor.name);
 

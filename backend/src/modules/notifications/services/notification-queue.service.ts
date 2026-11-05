@@ -55,7 +55,7 @@ export class NotificationQueueService {
           delay: 2000, // 2s, 4s, 8s retries
         },
         removeOnComplete: true,
-        removeOnFail: false, // Keep failed jobs for DLQ inspection
+        removeOnFail: 50, // Keep at most 50 failed jobs for DLQ inspection without bloating memory
       });
 
       this.logger.log(

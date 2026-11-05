@@ -620,42 +620,77 @@ export default function AdminOrdersDeskPage() {
                 )}
 
                 {/* 100% Free Google Maps Pin Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
-                  {selectedOrder.fraudAnalysis?.ipMapsUrl ? (
-                    <a
-                      href={selectedOrder.fraudAnalysis.ipMapsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex items-center justify-center space-x-1.5 shadow-2xs transition-colors"
-                    >
-                      <MapPin className="w-3.5 h-3.5 text-rose-600" />
-                      <span>Open IP on Maps ↗</span>
-                    </a>
-                  ) : (
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedOrder.district + ', Bangladesh')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex items-center justify-center space-x-1.5 shadow-2xs transition-colors"
-                    >
-                      <MapPin className="w-3.5 h-3.5 text-rose-600" />
-                      <span>Open District on Maps ↗</span>
-                    </a>
-                  )}
+                {(() => {
+                  const cleanFallbackAddr = (selectedOrder.shippingAddress || '')
+                    .replace(/[#&/\\;:]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                  const fallbackDistrict =
+                    selectedOrder.district === 'Inside Dhaka' || cleanFallbackAddr.toLowerCase().includes('dhaka')
+                      ? 'Dhaka'
+                      : selectedOrder.district === 'Outside Dhaka'
+                      ? ''
+                      : selectedOrder.district || '';
+                  const fallbackAddressQuery = encodeURIComponent(
+                    [cleanFallbackAddr, fallbackDistrict, 'Bangladesh'].filter(Boolean).join(', '),
+                  );
+                  const effectiveAddressMapsUrl =
+                    selectedOrder.fraudAnalysis?.addressMapsUrl ||
+                    `https://www.google.com/maps/search/?api=1&query=${fallbackAddressQuery}`;
 
-                  <a
-                    href={
-                      selectedOrder.fraudAnalysis?.addressMapsUrl ||
-                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedOrder.shippingAddress + ', Bangladesh')}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex items-center justify-center space-x-1.5 shadow-2xs transition-colors"
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Open Address on Maps ↗</span>
-                  </a>
-                </div>
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+                      {selectedOrder.fraudAnalysis?.ipMapsUrl ? (
+                        <a
+                          href={selectedOrder.fraudAnalysis.ipMapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex flex-col items-center justify-center shadow-2xs transition-colors text-center"
+                        >
+                          <div className="flex items-center space-x-1.5 text-stone-900 font-bold">
+                            <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Device IP on Maps ↗</span>
+                          </div>
+                          <span className="text-[9px] text-stone-500 font-normal">
+                            (Broadband / Network Tower)
+                          </span>
+                        </a>
+                      ) : (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            (fallbackDistrict || 'Bangladesh') + ', Bangladesh',
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex flex-col items-center justify-center shadow-2xs transition-colors text-center"
+                        >
+                          <div className="flex items-center space-x-1.5 text-stone-900 font-bold">
+                            <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                            <span>District on Maps ↗</span>
+                          </div>
+                          <span className="text-[9px] text-stone-500 font-normal">
+                            ({selectedOrder.district || 'Regional City'})
+                          </span>
+                        </a>
+                      )}
+
+                      <a
+                        href={effectiveAddressMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 rounded font-semibold flex flex-col items-center justify-center shadow-2xs transition-colors text-center"
+                      >
+                        <div className="flex items-center space-x-1.5 text-stone-900 font-bold">
+                          <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Delivery Address on Maps ↗</span>
+                        </div>
+                        <span className="text-[9px] text-stone-500 font-normal">
+                          (Customer's Stated Street / Home)
+                        </span>
+                      </a>
+                    </div>
+                  );
+                })()}
 
                 {/* 1-Click WhatsApp Quick Verification */}
                 <div className="pt-1">

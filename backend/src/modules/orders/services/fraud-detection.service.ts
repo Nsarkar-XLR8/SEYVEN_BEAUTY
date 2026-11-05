@@ -119,27 +119,47 @@ export class FraudDetectionService {
     let ipCoordinates: [number, number] | undefined;
     let ipMapsUrl: string | undefined;
 
-    // Build Address Google Maps URL
-    const addressSearchQuery = encodeURIComponent(`${rawAddress}, ${input.district || 'Bangladesh'}`);
+    // Build Clean Address Google Maps URL
+    const cleanAddrForMap = rawAddress
+      .replace(/[#&/\\;:]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    let resolvedDistrict = (input.district || '').trim();
+    if (resolvedDistrict === 'Inside Dhaka' || rawAddress.toLowerCase().includes('dhaka')) {
+      resolvedDistrict = 'Dhaka';
+    } else if (resolvedDistrict === 'Outside Dhaka') {
+      resolvedDistrict = '';
+    }
+
+    const mapQueryParts = [cleanAddrForMap, resolvedDistrict, 'Bangladesh'].filter(Boolean);
+    const addressSearchQuery = encodeURIComponent(mapQueryParts.join(', '));
     const addressMapsUrl = `https://www.google.com/maps/search/?api=1&query=${addressSearchQuery}`;
 
-    // Skip private / loopback IPs (e.g. 127.0.0.1, ::1, 192.168.x.x)
+    // Clean client IP (strip ports, proxies)
+    let sanitizedIp = cleanIp.split(',')[0].trim();
+    if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(sanitizedIp)) {
+      sanitizedIp = sanitizedIp.split(':')[0];
+    }
+
+    // Skip private / loopback IPs (e.g. 127.0.0.1, ::1, 10.x, 192.168.x)
     const isPrivateIp =
-      !cleanIp ||
-      cleanIp === '::1' ||
-      cleanIp.startsWith('127.') ||
-      cleanIp.startsWith('10.') ||
-      cleanIp.startsWith('192.168.') ||
-      cleanIp.startsWith('172.16.');
+      !sanitizedIp ||
+      sanitizedIp === '::1' ||
+      sanitizedIp.startsWith('127.') ||
+      sanitizedIp.startsWith('10.') ||
+      sanitizedIp.startsWith('192.168.') ||
+      sanitizedIp.startsWith('172.16.') ||
+      sanitizedIp.startsWith('fe80:');
 
     if (isPrivateIp) {
-      ipCountry = 'Local Development';
-      ipCity = 'Internal Network';
+      ipCountry = 'Internal / Local Network';
+      ipCity = 'Local Network';
     } else {
       try {
         const geoRes = await fetch(
-          `http://ip-api.com/json/${cleanIp}?fields=status,message,country,countryCode,regionName,city,lat,lon,isp`,
-          { signal: AbortSignal.timeout(2200) },
+          `http://ip-api.com/json/${sanitizedIp}?fields=status,message,country,countryCode,regionName,city,lat,lon,isp`,
+          { signal: AbortSignal.timeout(2500) },
         );
 
         if (geoRes.ok) {
@@ -163,7 +183,7 @@ export class FraudDetectionService {
             }
 
             // Location Mismatch Detection: Delivery District vs IP City
-            const normalizedDistrict = (input.district || '').toLowerCase();
+            const normalizedDistrict = (resolvedDistrict || input.district || '').toLowerCase();
             const normalizedCity = (geoData.city || '').toLowerCase();
             const normalizedRegion = (geoData.regionName || '').toLowerCase();
 
@@ -174,7 +194,6 @@ export class FraudDetectionService {
               !normalizedCity.includes(normalizedDistrict) &&
               !normalizedRegion.includes(normalizedDistrict)
             ) {
-              // Notable mismatch (e.g. Delivery in Dhaka, but IP in Chittagong or Sylhet)
               const majorDistricts = ['dhaka', 'chittagong', 'chattogram', 'sylhet', 'rajshahi', 'khulna', 'barisal', 'rangpur', 'mymensingh', 'cumilla', 'comilla'];
               const isMajorDistrictDelivery = majorDistricts.some((d) => normalizedDistrict.includes(d));
               const isMajorDistrictIp = majorDistricts.some((d) => normalizedCity.includes(d));
@@ -183,14 +202,13 @@ export class FraudDetectionService {
                 score += 25;
                 isLocationMismatch = true;
                 reasons.push(
-                  `Location Mismatch: Stated delivery district is "${input.district}", but device network is in "${geoData.city}" (${geoData.isp || 'Broadband'})`,
+                  `Location Mismatch: Delivery stated in "${resolvedDistrict || input.district}", but device network is in "${geoData.city}" (${geoData.isp || 'Broadband'})`,
                 );
               }
             }
           }
         }
       } catch (geoErr: any) {
-        // Non-blocking geo lookup error
         this.logger.debug(`IP Geo lookup skipped or timed out: ${geoErr?.message || geoErr}`);
       }
     }

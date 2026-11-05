@@ -117,8 +117,11 @@ export class OrdersController {
   @ApiResponse({ status: 201, description: 'Customer order placed and synced to admin desk' })
   async createDirectOrder(@Body() body: any, @Req() req: any) {
     const rawIp =
+      req.headers?.['render-client-ip']?.toString().trim() ||
+      req.headers?.['cf-connecting-ip']?.toString().trim() ||
+      req.headers?.['true-client-ip']?.toString().trim() ||
+      req.headers?.['x-real-ip']?.toString().trim() ||
       req.headers?.['x-forwarded-for']?.toString().split(',')[0].trim() ||
-      req.headers?.['cf-connecting-ip']?.toString() ||
       req.ip ||
       req.connection?.remoteAddress ||
       '';

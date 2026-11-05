@@ -48,7 +48,7 @@ export class NotificationQueueService {
    */
   async enqueueOrderAlert(orderData: OrderNotificationJobData): Promise<void> {
     try {
-      await this.orderQueue.add('send-order-alert', orderData, {
+      const enqueuePromise = this.orderQueue.add('send-order-alert', orderData, {
         attempts: 3,
         backoff: {
           type: 'exponential',
@@ -57,6 +57,12 @@ export class NotificationQueueService {
         removeOnComplete: true,
         removeOnFail: 50, // Keep at most 50 failed jobs for DLQ inspection without bloating memory
       });
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Redis enqueue timed out after 1500ms')), 1500),
+      );
+
+      await Promise.race([enqueuePromise, timeoutPromise]);
 
       this.logger.log(
         `⚡ [BullMQ Enqueued] Order #${orderData.orderNumber} successfully queued for async dispatch.`,

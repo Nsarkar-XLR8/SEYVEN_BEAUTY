@@ -49,6 +49,7 @@ import { AppController } from './app.controller';
                 tls: isTls ? { rejectUnauthorized: false } : undefined,
                 maxRetriesPerRequest: null,
                 enableReadyCheck: false,
+                enableOfflineQueue: false,
                 retryStrategy: (times: number) => {
                   // Exponential backoff up to 30s to prevent spamming Redis when limit reached
                   return Math.min(times * 2000, 30000);
@@ -65,6 +66,7 @@ import { AppController } from './app.controller';
             tls: config.get<string>('REDIS_TLS') === 'true' ? { rejectUnauthorized: false } : undefined,
             maxRetriesPerRequest: null,
             enableReadyCheck: false,
+            enableOfflineQueue: false,
             retryStrategy: (times: number) => {
               return Math.min(times * 2000, 30000);
             },

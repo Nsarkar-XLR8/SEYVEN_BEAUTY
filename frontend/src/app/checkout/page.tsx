@@ -158,13 +158,14 @@ export default function CheckoutPage() {
         supportWhatsApp: settings?.supportWhatsApp || '',
       };
 
-      // Dispatch live order to backend
+      // Dispatch live order to backend with strict 5s client-side timeout (guarantees zero UI freezing)
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
       try {
         await fetch(`${apiUrl}/orders/direct`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(successPayload),
+          signal: AbortSignal.timeout(5000),
         });
       } catch (err) {
         console.warn('Backend order dispatch notice:', err);

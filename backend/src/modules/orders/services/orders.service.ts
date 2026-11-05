@@ -177,9 +177,9 @@ export class OrdersService {
     this.logger.log(`[Direct Order] Processed live order ${orderId} (${newOrder.customerName})`);
 
     // 3. Ultra-Fast High-Throughput Notification Dispatch (BullMQ Job Queue with DLQ)
-    // Enqueue time is under 10ms. Customer HTTP response returns immediately without blocking.
+    // Completely non-blocking (0ms delay to customer): Dispatched in background without awaiting Redis.
     if (this.notificationQueueService) {
-      await this.notificationQueueService.enqueueOrderAlert({
+      this.notificationQueueService.enqueueOrderAlert({
         orderNumber: newOrder.orderNumber,
         customerName: newOrder.customerName,
         customerPhone: newOrder.customerPhone,
@@ -198,17 +198,17 @@ export class OrdersService {
         createdAt: newOrder.createdAt,
         supportPhone: newOrder.supportPhone,
         supportWhatsApp: newOrder.supportWhatsApp,
+      }).catch((err: any) => {
+        this.logger.warn(`[Order Notification Queue Notice] ${err?.message || err}`);
       });
     } else {
       // Direct resilient fallback if queue service was not injected
-      try {
-        await Promise.allSettled([
-          this.resendEmailService?.sendOrderNotificationEmail(newOrder),
-          this.telegramNotificationService?.sendOrderAlert(newOrder as any),
-        ]);
-      } catch (err: any) {
+      Promise.allSettled([
+        this.resendEmailService?.sendOrderNotificationEmail(newOrder),
+        this.telegramNotificationService?.sendOrderAlert(newOrder as any),
+      ]).catch((err: any) => {
         this.logger.warn(`[Order Notification Fallback Notice] ${err?.message || err}`);
-      }
+      });
     }
 
     // 4. Meta Conversions API (CAPI) Server-Side Purchase Event Dispatch

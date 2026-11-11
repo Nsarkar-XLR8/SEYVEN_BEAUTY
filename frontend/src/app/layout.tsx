@@ -116,7 +116,7 @@ const organizationJsonLd = {
               url: 'https://theseyven.com',
             },
             description:
-              'Founder & CEO steering SEYVEN with a vision to help women across Bangladesh solve real skin concerns through complimentary guidance and 100% authentic international curation.',
+              'Founder & CEO steering SEYVEN with a vision to empower every Bangladeshi woman by becoming their trusted sanctuary for authentic beauty and wellness — providing accessible, expert care tailored to their unique skin, hair, and body needs.',
           },
           {
             '@type': 'Role',

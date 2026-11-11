@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, ThermometerSnowflake, ArrowRight, Truck, HeartHandshake } from 'lucide-react';
+import { ShieldCheck, ThermometerSnowflake, ArrowRight, Truck, HeartHandshake, ArrowUpRight } from 'lucide-react';
 
 export default function AboutPage() {
   return (
@@ -158,7 +158,55 @@ export default function AboutPage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 4. INVITATION ACTION */}
+      {/* 4. STEWARDSHIP & FOUNDER'S VISION */}
+      {/* ========================================================================= */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          itemScope
+          itemType="https://schema.org/Person"
+          className="p-7 sm:p-9 bg-[#FAF8F5] border border-[#E6DFD5] relative overflow-hidden space-y-5"
+        >
+          {/* Subtle architectural gold accent line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#C7A97B] to-transparent" />
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E6DFD5]/70 pb-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono tracking-[0.28em] text-[#C7A97B] uppercase block font-medium">
+                04 // LEADERSHIP & VISION
+              </span>
+              <h3 itemProp="name" className="text-2xl sm:text-3xl font-serif uppercase tracking-[0.14em] font-light text-[#1C1917]">
+                NAYEM SARKAR
+              </h3>
+              <p itemProp="jobTitle" className="text-[10px] uppercase tracking-[0.2em] font-mono text-[#8C6D3B]">
+                Founder & CEO
+              </p>
+            </div>
+
+            <a
+              href="https://www.linkedin.com/in/nayemsarkar"
+              target="_blank"
+              rel="noopener noreferrer"
+              itemProp="sameAs"
+              className="inline-flex items-center space-x-2 text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 hover:text-[#8C6D3B] hover:border-[#C7A97B] transition-all py-2 px-3.5 border border-[#E6DFD5] bg-[#F9F6F0] self-start sm:self-auto shadow-xs"
+            >
+              <span>VERIFIED LINKEDIN</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-[#C7A97B]" />
+            </a>
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[9px] uppercase tracking-[0.25em] text-[#1C1917]/50 font-mono block">
+              OFFICIAL SEYVEN VISION
+            </span>
+            <blockquote className="text-xs sm:text-sm text-[#1C1917]/85 font-light leading-relaxed italic font-serif">
+              &ldquo;To empower every Bangladeshi woman by becoming their trusted sanctuary for authentic beauty and wellness — providing accessible, expert care tailored to their unique skin, hair, and body needs.&rdquo;
+            </blockquote>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. INVITATION ACTION */}
       {/* ========================================================================= */}
       <section className="max-w-3xl mx-auto px-4 text-center space-y-6 pt-4">
         <h3 className="text-xl sm:text-3xl font-serif uppercase tracking-[0.16em] font-light text-[#1C1917]">

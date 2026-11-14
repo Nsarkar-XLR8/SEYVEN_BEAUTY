@@ -71,12 +71,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const productRoutes: MetadataRoute.Sitemap = products
     .filter((p) => p && p.slug)
-    .map((p) => ({
-      url: `${BASE_URL}/products/${p.slug}`,
-      lastModified: (p as any).updatedAt ? new Date((p as any).updatedAt) : currentDate,
-      changeFrequency: 'daily',
-      priority: 0.9,
-    }));
+    .map((p) => {
+      const primaryImg = Array.isArray(p.images) && p.images[0]
+        ? (typeof p.images[0] === 'string' ? p.images[0] : p.images[0].url)
+        : undefined;
+
+      return {
+        url: `${BASE_URL}/products/${p.slug}`,
+        lastModified: (p as any).updatedAt ? new Date((p as any).updatedAt) : currentDate,
+        changeFrequency: 'daily' as const,
+        priority: 0.9,
+        ...(primaryImg ? { images: [primaryImg] } : {}),
+      };
+    });
 
   return [...staticRoutes, ...productRoutes];
 }

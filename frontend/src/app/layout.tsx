@@ -10,13 +10,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://theseyven.com'),
+  metadataBase: new URL('https://www.theseyven.com'),
   title: {
     default: 'SEYVEN — Free Skincare Consultation & 100% Authentic Imported Skincare in Bangladesh',
     template: '%s | SEYVEN',
   },
   description:
-    'Receive 100% free skin consultation for acne, pigmentation, barrier repair & dry skin via Facebook Messenger. Curating genuine, brand-sealed international imported skincare with express Cash on Delivery across Bangladesh.',
+    'Receive 100% free skin consultation for acne, pigmentation, barrier repair & dry skin via Facebook Messenger. Curating genuine, brand-sealed international imported skincare sourced through official brand distributors with express Cash on Delivery across Bangladesh.',
   keywords: [
     'free skincare consultation Bangladesh',
     'authentic international skincare brands BD',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     'Cash on delivery skincare BD',
     'skin problem advice Facebook Messenger',
   ],
-  authors: [{ name: 'SEYVEN — The Sanctuary of Beauty', url: 'https://theseyven.com' }],
+  authors: [{ name: 'SEYVEN — The Sanctuary of Beauty', url: 'https://www.theseyven.com' }],
   creator: 'SEYVEN',
   publisher: 'SEYVEN',
   formatDetection: {
@@ -39,10 +39,13 @@ export const metadata: Metadata = {
     telephone: true,
   },
   alternates: {
-    canonical: 'https://theseyven.com',
+    canonical: 'https://www.theseyven.com',
   },
   verification: {
     google: 'AH5hXxhOmon4hXqP9yEqSM2gexxkxkT2thyXdFTmho4',
+    other: {
+      'msvalidate.01': '493B42D78714E4A710E4E7FF7D501B32',
+    },
   },
   icons: {
     icon: [
@@ -56,8 +59,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'SEYVEN — Free Skincare Consultation & 100% Authentic Imported Skincare in Bangladesh',
-    description: 'Receive 100% free skin consultation via Facebook Messenger. Curating only genuine, brand-sealed international imported formulations with Cash on Delivery across Bangladesh.',
-    url: 'https://theseyven.com',
+    description: 'Receive 100% free skin consultation via Facebook Messenger. Curating only genuine, brand-sealed international imported formulations sourced through official authorized brand distributors with Cash on Delivery across Bangladesh.',
+    url: 'https://www.theseyven.com',
     siteName: 'SEYVEN — The Sanctuary of Beauty',
     locale: 'en_BD',
     type: 'website',
@@ -69,36 +72,37 @@ const organizationJsonLd = {
   '@graph': [
     {
       '@type': 'WebSite',
-      '@id': 'https://theseyven.com/#website',
-      url: 'https://theseyven.com',
+      '@id': 'https://www.theseyven.com/#website',
+      url: 'https://www.theseyven.com',
       name: 'SEYVEN — The Sanctuary of Beauty',
       description:
-        'The digital sanctuary of SEYVEN — dedicated to helping women and beauty seekers across Bangladesh solve their real skin and beauty concerns through 100% complimentary private Messenger consultations, alongside unconditionally authentic, sealed international skincare curations.',
+        'The digital sanctuary of SEYVEN — dedicated to helping women and beauty seekers across Bangladesh solve their real skin and beauty concerns through 100% complimentary private Messenger consultations, alongside unconditionally authentic, sealed international skincare curations sourced through authorized brand distributors.',
       inLanguage: ['en-BD', 'bn-BD'],
       potentialAction: {
         '@type': 'SearchAction',
-        target: 'https://theseyven.com/catalog?q={search_term_string}',
+        target: 'https://www.theseyven.com/catalog?q={search_term_string}',
         'query-input': 'required name=search_term_string',
       },
     },
     {
       '@type': 'Organization',
-      '@id': 'https://theseyven.com/#organization',
+      '@id': 'https://www.theseyven.com/#organization',
       name: 'SEYVEN — The Sanctuary of Beauty',
       alternateName: 'SEYVEN Beauty',
-      url: 'https://theseyven.com',
-      logo: 'https://theseyven.com/images/seyven-monogram.png',
+      url: 'https://www.theseyven.com',
+      logo: 'https://www.theseyven.com/images/seyven-monogram.png',
       slogan: 'Helping You Solve Real Skin Concerns First. Uncompromising Global Authenticity.',
       description:
-        'A purpose-driven luxury beauty house and skincare sanctuary in Bangladesh. Built on the conviction that helping women solve their real skin and beauty challenges comes before commercial selling — delivered through 100% complimentary, empathetic 1-on-1 consultations and guaranteed authentic international formulations imported direct from certified supply hubs in South Korea, the United States, and Europe.',
+        'A purpose-driven luxury beauty house and skincare sanctuary in Bangladesh. Built on the conviction that helping women solve their real skin and beauty challenges comes before commercial selling — delivered through 100% complimentary, empathetic 1-on-1 consultations and guaranteed authentic international formulations sourced through official authorized brand distributors and certified supply channels in South Korea, the United States, and Europe.',
       sameAs: [
         'https://www.facebook.com/seyvenofficial',
         'https://www.instagram.com/seyven_beauty/',
         'https://m.me/seyvenofficial',
+        'https://www.linkedin.com/in/nayemsarkar',
       ],
       founder: {
         '@type': 'Person',
-        '@id': 'https://theseyven.com/#founder',
+        '@id': 'https://www.theseyven.com/#founder',
         name: 'Nayem Sarkar',
         jobTitle: 'Founder & CEO',
         url: 'https://www.linkedin.com/in/nayemsarkar',
@@ -113,7 +117,7 @@ const organizationJsonLd = {
             affiliation: {
               '@type': 'Organization',
               name: 'SEYVEN — The Sanctuary of Beauty',
-              url: 'https://theseyven.com',
+              url: 'https://www.theseyven.com',
             },
             description:
               'Founder & CEO steering SEYVEN with a vision to empower every Bangladeshi woman by becoming their trusted sanctuary for authentic beauty and wellness — providing accessible, expert care tailored to their unique skin, hair, and body needs.',

@@ -31,13 +31,6 @@ export function PdpJsonLd({ product }: PdpJsonLdProps) {
           name: product.brand,
         },
         sku: product.variants[0]?.sku || product.id,
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: '4.9',
-          reviewCount: '128',
-          bestRating: '5',
-          worstRating: '1',
-        },
         offers: {
           '@type': 'Offer',
           url: productUrl,
@@ -84,10 +77,12 @@ export function PdpJsonLd({ product }: PdpJsonLdProps) {
           hasMerchantReturnPolicy: {
             '@type': 'MerchantReturnPolicy',
             applicableCountry: 'BD',
+            returnPolicyCountry: 'BD',
             returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-            merchantReturnDays: 7,
+            merchantReturnDays: 3,
             returnMethod: 'https://schema.org/ReturnByMail',
             returnFees: 'https://schema.org/FreeReturn',
+            refundType: 'https://schema.org/FullRefund',
           },
         },
       },

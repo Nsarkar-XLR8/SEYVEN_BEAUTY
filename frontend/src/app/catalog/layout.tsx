@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'All International Authentic Skincare Brands in Bangladesh | SEYVEN',
+  title: 'Authentic Imported Skincare Brands in Bangladesh',
   description:
-    'Browse 100% authentic international imported skincare in Bangladesh sourced through official brand distributors. Curating top icons from Korea, USA, France, UK & Japan with free Facebook Messenger skin consultation and express Cash on Delivery nationwide.',
+    'Shop 100% authentic imported skincare in Bangladesh from Korea, Japan, USA, India & France via official distributors. Free Messenger consultation with Cash on Delivery.',
   keywords: [
     'all international skincare brands Bangladesh',
     'authentic imported cosmetics Dhaka',
@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     canonical: 'https://www.theseyven.com/catalog',
   },
   openGraph: {
-    title: 'All International Authentic Skincare Brands in Bangladesh | SEYVEN',
-    description: 'Explore 100% original imported skincare brands from Korea, USA, France & UK sourced via official brand distributors with free skin consultation and Cash on Delivery across Bangladesh.',
+    title: 'Authentic Imported Skincare Brands in Bangladesh | SEYVEN',
+    description: 'Shop 100% authentic imported skincare in Bangladesh from Korea, USA & France via official distributors with free skin consultation and Cash on Delivery.',
     url: 'https://www.theseyven.com/catalog',
     siteName: 'SEYVEN — The Sanctuary of Beauty',
   },

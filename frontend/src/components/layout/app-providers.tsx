@@ -48,7 +48,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <LanguageProvider>
       <AuthProvider>
         <CartProvider>
-          <Suspense fallback={<div className="min-h-screen bg-[#F9F6F0]">{children}</div>}>
+          <Suspense fallback={<div className="min-h-screen bg-[#F9F6F0]" />}>
             <StorefrontChrome>{children}</StorefrontChrome>
           </Suspense>
         </CartProvider>

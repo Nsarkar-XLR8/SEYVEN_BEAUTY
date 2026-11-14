@@ -34,13 +34,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
     return {
-      title: `${cleanTitle} Price in Bangladesh | 100% Authentic — SEYVEN`,
+      title: `${cleanTitle} Price in Bangladesh`,
       description: `Buy authentic ${cleanTitle} in Bangladesh sourced through official brand distributors with free Messenger skin consultation & Cash on Delivery at SEYVEN.`,
       alternates: {
         canonical: `https://www.theseyven.com/products/${slug}`,
       },
       openGraph: {
-        title: `${cleanTitle} Price in Bangladesh | 100% Authentic — SEYVEN`,
+        title: `${cleanTitle} Price in Bangladesh | SEYVEN`,
         description: `Buy authentic ${cleanTitle} in Bangladesh with free Messenger consultation and express Cash on Delivery nationwide.`,
         url: `https://www.theseyven.com/products/${slug}`,
         siteName: 'SEYVEN — The Sanctuary of Beauty',
@@ -52,8 +52,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const volumeStr = product.variants?.[0]?.volume ? ` (${product.variants[0].volume})` : '';
   const priceFormatted = product.priceBdt ? `৳${product.priceBdt}` : '';
-  const pageTitle = `${product.brand} — ${product.titleEn}${volumeStr} Price in Bangladesh | 100% Authentic — SEYVEN`;
-  const pageDescription = `Buy original ${product.brand} ${product.titleEn} in Bangladesh${priceFormatted ? ` at ${priceFormatted}` : ''}. 100% genuine imported formulation sourced via official authorized brand distributors with free Messenger skin consultation & express Cash on Delivery nationwide.`;
+  const pageTitle = `${product.brand} — ${product.titleEn}${volumeStr} Price in Bangladesh`;
+  const pageDescription = `Buy authentic ${product.brand} ${product.titleEn}${priceFormatted ? ` (${priceFormatted})` : ''} in Bangladesh via official brand distributors. Express Cash on Delivery nationwide.`;
 
   const primaryImage = product.images?.[0]?.url;
 

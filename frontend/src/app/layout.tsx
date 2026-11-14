@@ -12,11 +12,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.theseyven.com'),
   title: {
-    default: 'SEYVEN — Free Skincare Consultation & 100% Authentic Imported Skincare in Bangladesh',
+    default: 'SEYVEN — Authentic Skincare & Free Consultation in Bangladesh',
     template: '%s | SEYVEN',
   },
   description:
-    'Receive 100% free skin consultation for acne, pigmentation, barrier repair & dry skin via Facebook Messenger. Curating genuine, brand-sealed international imported skincare sourced through official brand distributors with express Cash on Delivery across Bangladesh.',
+    '100% authentic international skincare in Bangladesh via official brand distributors. Free Messenger skin consultation & express Cash on Delivery nationwide.',
   keywords: [
     'free skincare consultation Bangladesh',
     'authentic international skincare brands BD',

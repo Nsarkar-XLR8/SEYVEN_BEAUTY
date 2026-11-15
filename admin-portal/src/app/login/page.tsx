@@ -15,7 +15,18 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [securityNotice, setSecurityNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const reason = sessionStorage.getItem('seyven_admin_logout_reason');
+      if (reason) {
+        setSecurityNotice(reason);
+        sessionStorage.removeItem('seyven_admin_logout_reason');
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +86,13 @@ export default function AdminLoginPage() {
               Enter your authorized executive credentials to access live order fulfillment and catalog governance.
             </p>
           </div>
+
+          {securityNotice && (
+            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2 rounded font-mono">
+              <Lock className="w-4 h-4 shrink-0 text-amber-700" />
+              <span>{securityNotice}</span>
+            </div>
+          )}
 
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs flex items-center space-x-2">

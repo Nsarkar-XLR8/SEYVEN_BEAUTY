@@ -26,6 +26,13 @@ export default function AdminWarehouseDeskPage() {
 
   const packQueue = orders.filter((o) => o.status === 'CONFIRMED' || o.status === 'PACKED');
 
+  // Automatically select the first order in queue if none selected
+  React.useEffect(() => {
+    if (!selectedOrderForPrint && packQueue.length > 0) {
+      setSelectedOrderForPrint(packQueue[0]);
+    }
+  }, [packQueue, selectedOrderForPrint]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -167,11 +174,21 @@ export default function AdminWarehouseDeskPage() {
               <button
                 type="button"
                 onClick={() => handlePrint(selectedOrderForPrint)}
-                className="w-full py-3 bg-[#1C1917] hover:bg-[#2A2623] text-[#F9F6F0] text-xs font-mono uppercase font-bold rounded flex items-center justify-center space-x-2 shadow-lg transition-colors"
+                className="w-full py-3 bg-[#1C1917] hover:bg-[#2A2623] text-[#F9F6F0] text-xs font-mono uppercase font-bold rounded flex items-center justify-center space-x-2 shadow-lg transition-colors cursor-pointer"
               >
                 <Printer className="w-4 h-4 text-[#C7A97B]" />
                 <span>Trigger Thermal Print (100mm × 150mm)</span>
               </button>
+
+              <div className="p-3 bg-[#FAF8F5] border border-[#E6DFD5] rounded text-[10px] text-[#1C1917]/75 font-mono space-y-1">
+                <div className="font-bold text-[#8C6D3B] flex items-center gap-1.5">
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Xprinter / Thermal Roll Settings (Pathao & Steadfast):</span>
+                </div>
+                <p>• Destination: <strong>Thermal Printer (100mm × 150mm / 4×6&quot;)</strong></p>
+                <p>• Margins: <strong>None</strong> (Zero margins prevent shrinking)</p>
+                <p>• Options: <strong>Uncheck &ldquo;Headers and footers&rdquo;</strong> to remove browser watermark</p>
+              </div>
             </div>
           ) : (
             <div className="p-8 bg-white border border-[#E6DFD5] rounded-lg text-center text-xs text-[#1C1917]/50 font-mono space-y-2">

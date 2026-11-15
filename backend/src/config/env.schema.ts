@@ -34,6 +34,7 @@ export const envSchema = z.object({
   SEYVEN_JWT_ACCESS_EXPIRATION: z.string().default('15m'),
   SEYVEN_JWT_REFRESH_TOKEN_SECRET: z.string().min(16).default('seyven_ultra_secure_jwt_refresh_secret_key_2026'),
   SEYVEN_JWT_REFRESH_EXPIRATION: z.string().default('7d'),
+  SEYVEN_JWT_ADMIN_REFRESH_EXPIRATION: z.string().default('8h'),
   SEYVEN_PREVIEW_TOKEN_SECRET: z.string().min(16).default('seyven_preview_token_secret_2026'),
 
   // Backward compatibility aliases

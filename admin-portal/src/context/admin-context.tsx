@@ -29,7 +29,7 @@ interface AdminContextType {
   isAuthenticated: boolean;
   isReady: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: (reason?: string) => void;
   switchRole: (role: StaffRole) => void;
   hasRole: (allowedRoles: StaffRole[]) => boolean;
 
@@ -98,6 +98,8 @@ const STORAGE_KEYS = {
   STAFF: 'seyven_admin_staff_profile_v3',
   TOKEN: 'seyven_admin_jwt_v3',
   REFRESH_TOKEN: 'seyven_admin_refresh_token_v3',
+  LOGIN_AT: 'seyven_admin_login_at_v3',
+  LAST_ACTIVE_AT: 'seyven_admin_last_active_at_v3',
   ORDERS: 'seyven_admin_orders_v3',
   CATEGORIES: 'seyven_admin_categories_v3',
   PRODUCTS: 'seyven_admin_products_v3',
@@ -106,6 +108,10 @@ const STORAGE_KEYS = {
   REDIRECTS: 'seyven_admin_redirects_v3',
   PURGED: 'seyven_admin_cache_purged_v3',
 };
+
+// Security Constraints: 1-hour Inactivity auto-logout & 8-hour Hard Shift Limit
+export const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000; // 1 Hour
+export const MAX_SESSION_LIFETIME_MS = 8 * 60 * 60 * 1000; // 8 Hours
 
 function safeStorageSet(key: string, value: string): boolean {
   if (typeof window === 'undefined') return false;
@@ -295,11 +301,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [lastPurgedAt, setLastPurgedAt] = useState<string | null>(null);
   const [isSyncingOrders, setIsSyncingOrders] = useState(false);
 
-  const logout = useCallback(() => {
+  const logout = useCallback((reason?: string) => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(STORAGE_KEYS.STAFF);
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.LOGIN_AT);
+      localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVE_AT);
+      if (reason) {
+        sessionStorage.setItem('seyven_admin_logout_reason', reason);
+      }
     }
     setStaffUser(null);
   }, []);
@@ -400,8 +411,31 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         const savedStaff = localStorage.getItem(STORAGE_KEYS.STAFF);
         const savedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
         const savedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+        const loginAtStr = localStorage.getItem(STORAGE_KEYS.LOGIN_AT);
+        const lastActiveStr = localStorage.getItem(STORAGE_KEYS.LAST_ACTIVE_AT);
+        const currentTime = Date.now();
 
-        // Security Guard: if staff or both tokens are missing, clean up and redirect to login
+        // Security Guard 1: Enforce 8-Hour Maximum Session Lifetime
+        if (loginAtStr) {
+          const loginAt = parseInt(loginAtStr, 10);
+          if (!isNaN(loginAt) && currentTime - loginAt >= MAX_SESSION_LIFETIME_MS) {
+            console.warn('[AdminSecurity] Session exceeded 8-hour shift. Enforcing logout on startup.');
+            logout('Maximum 8-hour shift expired. For security, please re-authenticate.');
+            return;
+          }
+        }
+
+        // Security Guard 2: Enforce 1-Hour Inactivity Auto-Logout
+        if (lastActiveStr) {
+          const lastActive = parseInt(lastActiveStr, 10);
+          if (!isNaN(lastActive) && currentTime - lastActive >= INACTIVITY_TIMEOUT_MS) {
+            console.warn('[AdminSecurity] Session timed out due to 1 hour of inactivity.');
+            logout('Session locked due to 1 hour of inactivity. Please log in again.');
+            return;
+          }
+        }
+
+        // Security Guard 3: if staff or both tokens are missing, clean up and redirect to login
         if (!savedStaff || (!savedToken && !savedRefreshToken)) {
           logout();
         } else {
@@ -411,6 +445,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
             if (fresh) {
               try {
                 setStaffUser(JSON.parse(savedStaff));
+                if (!loginAtStr) safeStorageSet(STORAGE_KEYS.LOGIN_AT, currentTime.toString());
+                safeStorageSet(STORAGE_KEYS.LAST_ACTIVE_AT, currentTime.toString());
               } catch {
                 logout();
               }
@@ -422,6 +458,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           } else {
             try {
               setStaffUser(JSON.parse(savedStaff));
+              if (!loginAtStr) safeStorageSet(STORAGE_KEYS.LOGIN_AT, currentTime.toString());
+              safeStorageSet(STORAGE_KEYS.LAST_ACTIVE_AT, currentTime.toString());
             } catch {
               logout();
             }
@@ -467,6 +505,57 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     };
   }, [logout]);
 
+  // User Activity Tracker for 1-hour Inactivity & 8-hour Hard Shift Session Limit
+  useEffect(() => {
+    if (!staffUser || typeof window === 'undefined') return;
+
+    let lastRecorded = Date.now();
+
+    const recordActivity = () => {
+      const now = Date.now();
+      // Throttle localStorage updates to at most once every 30 seconds
+      if (now - lastRecorded > 30000) {
+        lastRecorded = now;
+        safeStorageSet(STORAGE_KEYS.LAST_ACTIVE_AT, now.toString());
+      }
+    };
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach((evt) => window.addEventListener(evt, recordActivity, { passive: true }));
+
+    // Watchdog timer running every 15 seconds to enforce security cutoffs
+    const watchdogInterval = setInterval(() => {
+      const now = Date.now();
+
+      // 1. Enforce 8-Hour Absolute Lifetime
+      const loginAtStr = localStorage.getItem(STORAGE_KEYS.LOGIN_AT);
+      if (loginAtStr) {
+        const loginAt = parseInt(loginAtStr, 10);
+        if (!isNaN(loginAt) && now - loginAt >= MAX_SESSION_LIFETIME_MS) {
+          console.warn('[AdminSecurity] Maximum 8-hour shift expired. Enforcing logout.');
+          logout('Maximum 8-hour shift expired. For security, please re-authenticate.');
+          return;
+        }
+      }
+
+      // 2. Enforce 1-Hour Inactivity Timeout
+      const lastActiveStr = localStorage.getItem(STORAGE_KEYS.LAST_ACTIVE_AT);
+      if (lastActiveStr) {
+        const lastActive = parseInt(lastActiveStr, 10);
+        if (!isNaN(lastActive) && now - lastActive >= INACTIVITY_TIMEOUT_MS) {
+          console.warn('[AdminSecurity] Inactivity timeout (1 hour) exceeded. Enforcing logout.');
+          logout('Session locked due to 1 hour of inactivity. Please log in again.');
+          return;
+        }
+      }
+    }, 15000);
+
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, recordActivity));
+      clearInterval(watchdogInterval);
+    };
+  }, [staffUser, logout]);
+
   const login = async (identifier: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     const apiUrl = API_BASE_URL;
     const isDev = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production';
@@ -484,6 +573,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       setStaffUser(staff);
       safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(staff));
       safeStorageSet(STORAGE_KEYS.TOKEN, 'admin_jwt_' + staff.id);
+      const now = Date.now().toString();
+      safeStorageSet(STORAGE_KEYS.LOGIN_AT, now);
+      safeStorageSet(STORAGE_KEYS.LAST_ACTIVE_AT, now);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('seyven_admin_logout_reason');
+      }
       return { success: true };
     }
 
@@ -537,6 +632,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       if (data?.tokens?.refreshToken) {
         safeStorageSet(STORAGE_KEYS.REFRESH_TOKEN, data.tokens.refreshToken);
       }
+      const now = Date.now().toString();
+      safeStorageSet(STORAGE_KEYS.LOGIN_AT, now);
+      safeStorageSet(STORAGE_KEYS.LAST_ACTIVE_AT, now);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('seyven_admin_logout_reason');
+      }
       return { success: true };
     } catch {
       if (isDev) {
@@ -545,6 +646,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           setStaffUser(found);
           safeStorageSet(STORAGE_KEYS.STAFF, JSON.stringify(found));
           safeStorageSet(STORAGE_KEYS.TOKEN, 'admin_jwt_' + found.id);
+          const devNow = Date.now().toString();
+          safeStorageSet(STORAGE_KEYS.LOGIN_AT, devNow);
+          safeStorageSet(STORAGE_KEYS.LAST_ACTIVE_AT, devNow);
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('seyven_admin_logout_reason');
+          }
           return { success: true };
         }
       }

@@ -10,19 +10,65 @@ interface ThermalShippingLabelProps {
   isPrintOnly?: boolean;
 }
 
+/**
+ * Intelligent Bangladesh Courier Routing Parser.
+ * Prevents duplicate text like "INSIDE DHAKA • INSIDE DHAKA" and formats
+ * authentic Hub & Area routing matching Pathao & Steadfast logistics hubs.
+ */
+function parseCourierRouting(district?: string, zone?: string, address?: string) {
+  const d = (district || '').trim();
+  const z = (zone || '').trim();
+  const addr = (address || '').trim();
+
+  const isInsideDhaka = /inside\s*dhaka/i.test(d) || /inside\s*dhaka/i.test(z);
+  const isOutsideDhaka = /outside\s*dhaka/i.test(d) || /outside\s*dhaka/i.test(z);
+
+  let hub = 'DHAKA METRO';
+  if (isOutsideDhaka) {
+    hub = d && !/outside/i.test(d) ? d.toUpperCase() : 'NATIONWIDE (ALL BD)';
+  } else if (d && !/inside/i.test(d)) {
+    hub = d.toUpperCase();
+  }
+
+  // Extract clean sub-area without duplicate words
+  let area = '';
+  if (z && !/inside|outside/i.test(z) && z.toUpperCase() !== hub) {
+    area = z.toUpperCase();
+  } else if (addr) {
+    // Extract first segment from address (e.g. "Merul Badda, Dhaka" -> "MERUL BADDA")
+    const segments = addr.split(',').map((s) => s.trim()).filter(Boolean);
+    if (segments.length > 0) {
+      area = segments[0].toUpperCase();
+    }
+  }
+
+  return {
+    hubBadge: hub,
+    areaBadge: area || (isInsideDhaka ? 'DHAKA NORTH HUB' : 'OUTSTATION HUB'),
+  };
+}
+
 export function ThermalShippingLabel({ order, isPrintOnly = false }: ThermalShippingLabelProps) {
-  const carrierName = (order.courier || 'Pathao').toUpperCase();
-  const consignmentCode =
-    order.consignmentId ||
-    `${carrierName === 'STEADFAST' ? 'SF' : 'PT'}-${order.id.replace(/[^0-9]/g, '').slice(-6) || '991204'}`;
+  const isSteadfast = order.courier?.toLowerCase() === 'steadfast';
+  const carrierName = isSteadfast ? 'STEADFAST COURIER' : 'PATHAO EXPRESS';
+
+  const defaultPrefix = isSteadfast ? 'SF' : 'PT';
+  const numericSuffix = order.id.replace(/[^0-9]/g, '').slice(-6) || '991204';
+  const consignmentCode = order.consignmentId || `${defaultPrefix}-${numericSuffix}`;
+
   const isCod = order.paymentMethod === 'COD';
+  const routing = parseCourierRouting(order.district, order.zone, order.shippingAddress);
+
+  // Approximate weight calculation based on item quantity (average 250g per item + packaging)
+  const totalQty = order.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  const estWeightKg = Math.max(0.5, +(totalQty * 0.25).toFixed(1));
 
   return (
     <div
       className={`bg-white text-black font-mono select-none box-border flex flex-col justify-between ${
         isPrintOnly
           ? 'w-[100mm] h-[150mm] p-2 leading-tight'
-          : 'w-full max-w-[380px] min-h-[540px] p-3 border-2 border-black rounded shadow-md text-xs'
+          : 'w-full max-w-[380px] min-h-[560px] p-3 border-2 border-black rounded shadow-md text-xs'
       }`}
       style={{
         width: isPrintOnly ? '100mm' : undefined,
@@ -32,21 +78,21 @@ export function ThermalShippingLabel({ order, isPrintOnly = false }: ThermalShip
       }}
     >
       {/* ========================================================================= */}
-      {/* ZONE 1: BRAND HEADER & COURIER ROUTING HUB                                */}
+      {/* ZONE 1: BRAND HEADER & DYNAMIC COURIER ROUTING HUB (PATHAO / STEADFAST)    */}
       {/* ========================================================================= */}
-      <div className="border-b-2 border-black pb-1.5 mb-1.5 flex items-start justify-between">
+      <div className="border-b-2 border-black pb-1 mb-1 flex items-start justify-between">
         <div>
-          <div className="font-serif font-black text-xl tracking-[0.18em] leading-none">SEYVEN</div>
-          <div className="text-[8px] uppercase tracking-wider font-sans font-semibold text-black/90 mt-0.5">
+          <div className="font-serif font-black text-xl tracking-[0.16em] leading-none">SEYVEN</div>
+          <div className="text-[8px] uppercase tracking-wider font-sans font-semibold text-black/80 mt-0.5">
             The Sanctuary of Beauty
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[9px] font-bold uppercase tracking-wider bg-black text-white px-1.5 py-0.5 rounded-xs inline-block">
-            {carrierName} EXPRESS
+          <div className="text-[9px] font-black uppercase tracking-wider bg-black text-white px-2 py-0.5 rounded-xs inline-block">
+            {carrierName}
           </div>
-          <div className="text-[10px] font-black uppercase mt-0.5">
-            {order.district || 'DHAKA'} · {order.zone || 'METRO'}
+          <div className="text-[10px] font-black uppercase mt-0.5 text-black">
+            {routing.hubBadge} · {routing.areaBadge}
           </div>
         </div>
       </div>
@@ -54,12 +100,12 @@ export function ThermalShippingLabel({ order, isPrintOnly = false }: ThermalShip
       {/* ========================================================================= */}
       {/* ZONE 2: PRIMARY COURIER CONSIGNMENT CODE-128 BARCODE                      */}
       {/* ========================================================================= */}
-      <div className="border-b border-black pb-1 mb-1 text-center">
+      <div className="border-b-2 border-black pb-1 mb-1 text-center bg-white">
         <div className="flex justify-center items-center py-0.5 overflow-hidden">
           <Barcode128
             value={consignmentCode}
             width={isPrintOnly ? 1.7 : 1.5}
-            height={isPrintOnly ? 44 : 36}
+            height={isPrintOnly ? 40 : 34}
             fontSize={10}
             margin={0}
           />
@@ -69,21 +115,22 @@ export function ThermalShippingLabel({ order, isPrintOnly = false }: ThermalShip
       {/* ========================================================================= */}
       {/* ZONE 3: SHIP TO / RECIPIENT INFORMATION (HIGH-CONTRAST FOR RIDER)         */}
       {/* ========================================================================= */}
-      <div className="border-b-2 border-black pb-1.5 mb-1 text-[11px] space-y-0.5">
-        <div className="text-[8px] uppercase font-bold text-black/70 tracking-wider">
-          SHIP TO (RECIPIENT):
+      <div className="border-b-2 border-black pb-1 mb-1 text-[11px] space-y-0.5">
+        <div className="flex items-center justify-between text-[8px] uppercase font-bold text-black/70 tracking-wider">
+          <span>DELIVER TO (RECIPIENT):</span>
+          <span className="font-mono text-black font-semibold">REF: {order.referenceNo || order.id}</span>
         </div>
         <div className="text-sm font-black uppercase tracking-wide leading-tight">
           {order.customerName}
         </div>
-        <div className="text-sm font-black tracking-wider text-black bg-black/5 px-1 py-0.5 rounded-xs inline-block font-mono">
+        <div className="text-sm font-black tracking-wider text-black bg-black/10 px-1.5 py-0.5 rounded-xs inline-block font-mono">
           ☎ {order.customerPhone}
         </div>
-        <div className="text-[10px] font-medium leading-snug pt-0.5">
+        <div className="text-[10px] font-medium leading-snug pt-0.5 break-words">
           {order.shippingAddress}
         </div>
-        <div className="text-[9px] font-bold uppercase">
-          DESTINATION: <span className="font-black">{order.district || 'DHAKA'}</span> ({order.zone || 'METRO'})
+        <div className="text-[9px] font-bold uppercase text-black/90">
+          HUB ROUTE: <span className="font-black text-black">{routing.hubBadge}</span> · ZONE: <span className="font-black text-black">{routing.areaBadge}</span>
         </div>
       </div>
 
@@ -102,53 +149,57 @@ export function ThermalShippingLabel({ order, isPrintOnly = false }: ThermalShip
           {isCod ? `COLLECT: ${formatBdt(order.totalAmount)}` : 'DO NOT COLLECT CASH (৳0)'}
         </div>
         <div className="text-[8px] font-bold uppercase tracking-wider">
-          {isCod ? 'Rider: Collect exact BDT before handing over sealed parcel' : 'Payment verified online · Release to customer'}
+          {isCod ? 'Rider: Collect exact cash in BDT before releasing parcel' : 'Payment verified online · Release sealed parcel to customer'}
         </div>
       </div>
 
       {/* ========================================================================= */}
       {/* ZONE 5: ITEMIZED PACKAGE MANIFEST (PROVE CONTENTS TO CUSTOMER)            */}
       {/* ========================================================================= */}
-      <div className="border-b border-black pb-1 mb-1 text-[9px] flex-1">
-        <div className="flex items-center justify-between font-black uppercase text-[8px] border-b border-black/40 pb-0.5 mb-0.5">
-          <span>ITEM / FORMULATION</span>
-          <span>QTY</span>
+      <div className="border-b border-black pb-1 mb-1 text-[9px] flex-1 min-h-[70px]">
+        <div className="grid grid-cols-12 font-black uppercase text-[8px] border-b border-black/50 pb-0.5 mb-0.5">
+          <span className="col-span-10">PACKAGE CONTENTS & MANIFEST</span>
+          <span className="col-span-2 text-right">QTY</span>
         </div>
-        <div className="space-y-0.5 max-h-[85px] overflow-hidden">
-          {order.items.slice(0, 3).map((item, idx) => (
-            <div key={idx} className="flex items-start justify-between text-[9px] leading-tight">
-              <span className="truncate pr-2 font-medium">
+        <div className="space-y-0.5">
+          {order.items.slice(0, 4).map((item, idx) => (
+            <div key={idx} className="grid grid-cols-12 text-[9px] leading-tight items-start py-0.5">
+              <span className="col-span-10 truncate pr-1 font-medium">
                 {idx + 1}. {item.title} {item.variant ? `(${item.variant})` : ''}
               </span>
-              <span className="font-bold shrink-0">x{item.quantity}</span>
+              <span className="col-span-2 text-right font-bold shrink-0">x{item.quantity}</span>
             </div>
           ))}
-          {order.items.length > 3 && (
-            <div className="text-[8px] italic text-black/70">
-              + {order.items.length - 3} more formulation(s)...
+          {order.items.length > 4 && (
+            <div className="text-[8px] italic text-black/70 pt-0.5">
+              + {order.items.length - 4} more formulation(s)...
             </div>
           )}
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* ZONE 6: INTERNAL ORDER BARCODE & RETURN-TO-ORIGIN (RTO)                   */}
+      {/* ZONE 6: INTERNAL ORDER BARCODE & OFFICIAL SEYVEN RETURN (RTO)             */}
       {/* ========================================================================= */}
       <div className="pt-0.5 text-center">
+        <div className="flex items-center justify-between text-[8px] font-black uppercase px-1 border-b border-black/30 pb-0.5 mb-0.5">
+          <span>ORDER ID: {order.id}</span>
+          <span>EST. WEIGHT: {estWeightKg} KG</span>
+        </div>
         <div className="flex justify-center items-center py-0.5 overflow-hidden">
           <Barcode128
             value={order.id}
             width={isPrintOnly ? 1.3 : 1.1}
-            height={isPrintOnly ? 26 : 22}
+            height={isPrintOnly ? 24 : 20}
             fontSize={9}
             margin={0}
           />
         </div>
-        <div className="text-[7.5px] uppercase font-bold tracking-tight text-black/80 mt-0.5">
-          Return: SEYVEN Hub, Road 11, Tejgaon I/A, Dhaka-1208 · Helpline: 01700-000000
+        <div className="text-[8px] uppercase font-bold tracking-tight text-black mt-0.5 leading-tight">
+          RETURN (RTO): SEYVEN Hub, KB Saha Rd, Narayanganj 1400
         </div>
-        <div className="text-[7px] tracking-wider text-black/60 uppercase font-sans">
-          SEYVEN · The Sanctuary of Beauty
+        <div className="text-[7.5px] tracking-wider text-black/80 uppercase font-sans mt-0.5">
+          HELPLINE: 01999-181198 · SEYVEN — The Sanctuary of Beauty
         </div>
       </div>
     </div>

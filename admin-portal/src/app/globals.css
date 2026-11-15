@@ -70,6 +70,15 @@ h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea,
     size: 100mm 150mm;
     margin: 0mm;
   }
+  @page :left {
+    margin: 0mm;
+  }
+  @page :right {
+    margin: 0mm;
+  }
+  @page :first {
+    margin: 0mm;
+  }
 
   html,
   body {

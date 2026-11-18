@@ -175,7 +175,12 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
           <nav className="p-4 space-y-1.5 flex-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+              const isActive =
+                item.href === '/dispatch'
+                  ? pathname === '/dispatch'
+                  : item.href === '/'
+                    ? pathname === '/'
+                    : pathname === item.href || pathname.startsWith(item.href + '/');
 
               return (
                 <Link
@@ -328,7 +333,12 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
               <nav className="mt-6 space-y-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+                  const isActive =
+                    item.href === '/dispatch'
+                      ? pathname === '/dispatch'
+                      : item.href === '/'
+                        ? pathname === '/'
+                        : pathname === item.href || pathname.startsWith(item.href + '/');
 
                   return (
                     <Link

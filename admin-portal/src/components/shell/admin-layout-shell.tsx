@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   Send,
   ShieldCheck,
+  Users,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 import { StaffRole } from '@/types/admin';
@@ -59,6 +60,12 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
       href: '/orders',
       icon: ShoppingBag,
       badge: pendingOrdersCount > 0 ? `${pendingOrdersCount}` : undefined,
+    },
+    {
+      name: 'Customer Intelligence',
+      href: '/customers',
+      icon: Users,
+      allowedRoles: ['SUPER_ADMIN', 'FULFILLMENT_OPERATOR', 'SUPPORT_AGENT'],
     },
     {
       name: 'Warehouse & 4x6 Label',

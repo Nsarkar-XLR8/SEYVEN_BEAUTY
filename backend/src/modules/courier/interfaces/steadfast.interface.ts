@@ -71,19 +71,21 @@ export interface SteadfastBalanceResponse {
 export interface SteadfastFraudScoreResponse {
   status: number;
   phone: string;
-  delivery_ratio?: number;
-  cancellation_ratio?: number;
-  volume_band?: string;
-  volume_range?: string;
-  delivered_count?: number;
-  cancelled_count?: number;
-  total_reports?: number;
-  fraud_categories?: string[];
+  delivery_ratio?: number | null;
+  cancellation_ratio?: number | null;
+  volume_band?: string | null;
+  volume_range?: string | null;
+  delivered_count?: number | null;
+  cancelled_count?: number | null;
+  total_reports?: number | null;
+  fraud_categories?: any;
   score?: number | null;
   level?: string | null;
   reasons?: string[];
   scoring_disabled?: boolean;
   doubtful_reports?: boolean;
+  error?: boolean;
+  message?: string;
 }
 
 export interface SteadfastPickupPayload {

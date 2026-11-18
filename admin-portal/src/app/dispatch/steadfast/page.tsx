@@ -29,14 +29,16 @@ import { API_BASE_URL } from '@/lib/api-config';
 
 interface FraudCheckResult {
   phone: string;
-  delivery_ratio?: number;
-  cancellation_ratio?: number;
-  volume_band?: string;
-  volume_range?: string;
-  delivered_count?: number;
-  cancelled_count?: number;
-  total_reports?: number;
+  delivery_ratio?: number | null;
+  cancellation_ratio?: number | null;
+  volume_band?: string | null;
+  volume_range?: string | null;
+  delivered_count?: number | null;
+  cancelled_count?: number | null;
+  total_reports?: number | null;
   scoring_disabled?: boolean;
+  error?: boolean;
+  message?: string;
 }
 
 export default function SteadfastOperationsDeskPage() {
@@ -138,30 +140,38 @@ export default function SteadfastOperationsDeskPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data && !data.error) {
         setFraudResult(data);
       } else {
-        // Fallback demo result matching Steadfast API schema
         setFraudResult({
           phone: cleanPhone,
-          delivery_ratio: 92,
-          cancellation_ratio: 7,
-          volume_band: 'high',
-          volume_range: '50+',
-          delivered_count: 58,
-          cancelled_count: 5,
-          total_reports: 0,
+          error: true,
+          message:
+            data?.message ||
+            'Steadfast merchant account is inactive or unreachable. Please contact Steadfast Support.',
+          delivery_ratio: null,
+          cancellation_ratio: null,
+          volume_band: null,
+          volume_range: null,
+          delivered_count: null,
+          cancelled_count: null,
+          total_reports: null,
         });
       }
-    } catch {
+    } catch (err: any) {
       setFraudResult({
         phone: fraudPhone,
-        delivery_ratio: 90,
-        cancellation_ratio: 10,
-        delivered_count: 27,
-        cancelled_count: 3,
-        total_reports: 0,
+        error: true,
+        message: err?.message || 'Network error connecting to SEYVEN API gateway.',
+        delivery_ratio: null,
+        cancellation_ratio: null,
+        volume_band: null,
+        volume_range: null,
+        delivered_count: null,
+        cancelled_count: null,
+        total_reports: null,
       });
     } finally {
       setFraudLoading(false);
@@ -363,16 +373,51 @@ export default function SteadfastOperationsDeskPage() {
             </button>
           </form>
 
-          {/* Fraud Result Card */}
-          {fraudResult && (
+          {/* Fraud Result: 1. Error / Inactive Account State */}
+          {fraudResult && fraudResult.error && (
+            <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-amber-900 font-bold font-mono">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Steadfast API Notice: Account Inactive / Gateway Notice</span>
+              </div>
+              <p className="text-amber-800 text-[11px] leading-relaxed">
+                Steadfast gateway responded: &ldquo;{fraudResult.message || 'Your account is inactive. Please contact support.'}&rdquo;
+              </p>
+              <div className="text-[10px] text-amber-700 bg-amber-100/60 p-2 rounded border border-amber-200">
+                💡 <b>Action Required:</b> Please ask Steadfast Support / Merchant Helpline to activate API order creation &amp; fraud check permissions for merchant ID <b>80CNA1B2</b>.
+              </div>
+            </div>
+          )}
+
+          {/* Fraud Result: 2. New Customer (No finished deliveries in Steadfast network) */}
+          {fraudResult && !fraudResult.error && fraudResult.delivery_ratio === null && (
+            <div className="p-4 bg-sky-50 border border-sky-300 rounded-lg space-y-2 text-xs font-mono">
+              <div className="flex items-center justify-between">
+                <div className="font-bold text-[#1C1917]">{fraudResult.phone}</div>
+                <span className="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-900 font-bold text-[10px] border border-sky-300">
+                  ℹ️ NEW CUSTOMER (NO FINISHED HISTORY)
+                </span>
+              </div>
+              <p className="text-sky-800 text-[11px] font-sans">
+                No finished parcel records found for this phone number across the Steadfast logistics network.
+              </p>
+              <div className="text-[11px] text-[#1C1917]/70 flex items-center justify-between pt-1 border-t border-sky-200">
+                <span>Total Fraud Reports: <b>{fraudResult.total_reports ?? 0}</b></span>
+                <span>Volume Band: <b>{fraudResult.volume_band || 'None'}</b></span>
+              </div>
+            </div>
+          )}
+
+          {/* Fraud Result: 3. Real Active Data */}
+          {fraudResult && !fraudResult.error && fraudResult.delivery_ratio !== null && (
             <div className="p-4 bg-[#F9F6F0] border border-[#E6DFD5] rounded-lg space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <div className="font-mono font-bold text-[#1C1917]">{fraudResult.phone}</div>
-                {Number(fraudResult.delivery_ratio || 0) >= 80 ? (
+                {Number(fraudResult.delivery_ratio) >= 80 ? (
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-mono font-bold text-[10px] border border-emerald-300">
                     🟢 SAFE / LOW RISK
                   </span>
-                ) : Number(fraudResult.delivery_ratio || 0) >= 60 ? (
+                ) : Number(fraudResult.delivery_ratio) >= 60 ? (
                   <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-mono font-bold text-[10px] border border-amber-300">
                     🟡 MODERATE RISK
                   </span>
@@ -386,25 +431,25 @@ export default function SteadfastOperationsDeskPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono">
                 <div className="p-2 bg-white rounded border border-[#E6DFD5]">
                   <div className="text-[10px] text-[#1C1917]/60">Delivery Ratio</div>
-                  <div className="text-sm font-bold text-emerald-700">{fraudResult.delivery_ratio || 0}%</div>
+                  <div className="text-sm font-bold text-emerald-700">{fraudResult.delivery_ratio}%</div>
                 </div>
                 <div className="p-2 bg-white rounded border border-[#E6DFD5]">
                   <div className="text-[10px] text-[#1C1917]/60">Cancellation</div>
-                  <div className="text-sm font-bold text-rose-700">{fraudResult.cancellation_ratio || 0}%</div>
+                  <div className="text-sm font-bold text-rose-700">{fraudResult.cancellation_ratio ?? 0}%</div>
                 </div>
                 <div className="p-2 bg-white rounded border border-[#E6DFD5]">
                   <div className="text-[10px] text-[#1C1917]/60">Delivered</div>
-                  <div className="text-sm font-bold text-[#1C1917]">{fraudResult.delivered_count ?? 0} parcels</div>
+                  <div className="text-sm font-bold text-[#1C1917]">{fraudResult.delivered_count ?? 'N/A'} parcels</div>
                 </div>
                 <div className="p-2 bg-white rounded border border-[#E6DFD5]">
                   <div className="text-[10px] text-[#1C1917]/60">Cancelled</div>
-                  <div className="text-sm font-bold text-rose-600">{fraudResult.cancelled_count ?? 0} parcels</div>
+                  <div className="text-sm font-bold text-rose-600">{fraudResult.cancelled_count ?? 'N/A'} parcels</div>
                 </div>
               </div>
 
               <div className="text-[11px] text-[#1C1917]/70 font-light flex items-center justify-between pt-1 border-t border-[#E6DFD5]/60">
                 <span>Total Fraud Reports: <b>{fraudResult.total_reports ?? 0}</b></span>
-                <span>Volume Band: <b>{fraudResult.volume_band || 'Standard'}</b></span>
+                <span>Volume Band: <b>{fraudResult.volume_band || 'Standard'} ({fraudResult.volume_range || ''})</b></span>
               </div>
             </div>
           )}

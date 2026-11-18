@@ -229,12 +229,12 @@ export class SteadfastApiClient {
       return {
         status: 200,
         phone: cleanedPhone,
-        delivery_ratio: 92,
-        cancellation_ratio: 7,
-        volume_band: 'high',
-        volume_range: '50+',
-        delivered_count: 58,
-        cancelled_count: 5,
+        delivery_ratio: null,
+        cancellation_ratio: null,
+        volume_band: 'none',
+        volume_range: null,
+        delivered_count: null,
+        cancelled_count: null,
         total_reports: 0,
         fraud_categories: [],
         scoring_disabled: true,
@@ -256,14 +256,49 @@ export class SteadfastApiClient {
         signal: controller.signal,
       });
 
+      const responseText = await response.text();
+      let responseJson: any = null;
+      try {
+        responseJson = JSON.parse(responseText);
+      } catch {}
+
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Steadfast fraud score failed (HTTP ${response.status}): ${errorText}`,
-        );
+        return {
+          status: response.status,
+          phone: cleanedPhone,
+          error: true,
+          message:
+            responseJson?.message ||
+            (response.status === 403
+              ? 'Your Steadfast account is inactive. Please contact Steadfast support.'
+              : `Steadfast API returned HTTP ${response.status}`),
+          delivery_ratio: null,
+          cancellation_ratio: null,
+          volume_band: null,
+          volume_range: null,
+          delivered_count: null,
+          cancelled_count: null,
+          total_reports: null,
+          scoring_disabled: true,
+        };
       }
 
-      return (await response.json()) as SteadfastFraudScoreResponse;
+      return responseJson as SteadfastFraudScoreResponse;
+    } catch (err: any) {
+      return {
+        status: 500,
+        phone: cleanedPhone,
+        error: true,
+        message: err?.message || 'Network error reaching Steadfast API gateway',
+        delivery_ratio: null,
+        cancellation_ratio: null,
+        volume_band: null,
+        volume_range: null,
+        delivered_count: null,
+        cancelled_count: null,
+        total_reports: null,
+        scoring_disabled: true,
+      };
     } finally {
       clearTimeout(timeout);
     }

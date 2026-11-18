@@ -130,7 +130,7 @@ export default function AdminOverviewPage() {
             <CheckCircle2 className="w-4 h-4 text-[#C7A97B] group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-2xl font-sans font-bold text-[#1C1917] tabular-nums tracking-tight">
-            {formatBdt(totalDeliveredRevenue > 0 ? totalDeliveredRevenue : 43750)}
+            {formatBdt(totalDeliveredRevenue)}
           </div>
           <span className="text-[11px] text-emerald-800 font-mono block">
             Delivered & Paid Orders

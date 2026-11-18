@@ -31,8 +31,8 @@ export default function PlatformSettingsPage() {
   const [standardDeliveryDhakaBdt, setStandardDeliveryDhakaBdt] = useState<number>(70);
   const [standardDeliveryOutsideBdt, setStandardDeliveryOutsideBdt] = useState<number>(130);
   const [freeDeliveryThresholdBdt, setFreeDeliveryThresholdBdt] = useState<number>(3000);
-  const [supportPhone, setSupportPhone] = useState('+880 9612 000000');
-  const [supportWhatsApp, setSupportWhatsApp] = useState('+880 1700 000000');
+  const [supportPhone, setSupportPhone] = useState('+880 1999 181198');
+  const [supportWhatsApp, setSupportWhatsApp] = useState('+880 1999 181198');
   const [supportMessenger, setSupportMessenger] = useState('https://m.me/seyvenofficial');
   const [supportInstagram, setSupportInstagram] = useState('https://www.instagram.com/seyven_beauty/');
   const [primaryConciergeChannel, setPrimaryConciergeChannel] = useState<'MESSENGER' | 'WHATSAPP'>('MESSENGER');

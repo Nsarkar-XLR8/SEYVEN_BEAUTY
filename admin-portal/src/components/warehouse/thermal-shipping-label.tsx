@@ -8,6 +8,7 @@ import { Barcode128 } from '../barcode/barcode-128';
 interface ThermalShippingLabelProps {
   order: AdminOrder;
   isPrintOnly?: boolean;
+  courierOverride?: 'Pathao' | 'Steadfast';
 }
 
 /**
@@ -48,8 +49,14 @@ function parseCourierRouting(district?: string, zone?: string, address?: string)
   };
 }
 
-export function ThermalShippingLabel({ order, isPrintOnly = false }: ThermalShippingLabelProps) {
-  const isSteadfast = order.courier?.toLowerCase() === 'steadfast';
+export function ThermalShippingLabel({
+  order,
+  isPrintOnly = false,
+  courierOverride,
+}: ThermalShippingLabelProps) {
+  const effectiveCourier =
+    courierOverride || (order.courier?.toLowerCase() === 'steadfast' ? 'Steadfast' : 'Pathao');
+  const isSteadfast = effectiveCourier.toLowerCase() === 'steadfast';
   const carrierName = isSteadfast ? 'STEADFAST COURIER' : 'PATHAO EXPRESS';
 
   const defaultPrefix = isSteadfast ? 'SF' : 'PT';
@@ -62,6 +69,25 @@ export function ThermalShippingLabel({ order, isPrintOnly = false }: ThermalShip
   // Approximate weight calculation based on item quantity (average 250g per item + packaging)
   const totalQty = order.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const estWeightKg = Math.max(0.5, +(totalQty * 0.25).toFixed(1));
+
+  // Dynamic Support Helpline & Return Hub from Platform Settings
+  let supportPhone = '01999-181198';
+  let returnAddress = 'SEYVEN Hub, KB Saha Rd, Narayanganj 1400';
+
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('seyven_platform_settings');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.supportPhone && parsed.supportPhone.trim()) {
+          supportPhone = parsed.supportPhone.trim();
+        }
+        if (parsed.registeredAddress && parsed.registeredAddress.trim()) {
+          returnAddress = parsed.registeredAddress.trim();
+        }
+      }
+    } catch {}
+  }
 
   return (
     <div
@@ -196,10 +222,10 @@ export function ThermalShippingLabel({ order, isPrintOnly = false }: ThermalShip
           />
         </div>
         <div className="text-[8px] uppercase font-bold tracking-tight text-black mt-0.5 leading-tight">
-          RETURN (RTO): SEYVEN Hub, KB Saha Rd, Narayanganj 1400
+          RETURN (RTO): {returnAddress}
         </div>
         <div className="text-[7.5px] tracking-wider text-black/80 uppercase font-sans mt-0.5">
-          HELPLINE: 01999-181198 · SEYVEN — The Sanctuary of Beauty
+          HELPLINE: {supportPhone} · SEYVEN — The Sanctuary of Beauty
         </div>
       </div>
     </div>

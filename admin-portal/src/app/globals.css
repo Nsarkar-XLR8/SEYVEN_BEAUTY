@@ -64,6 +64,11 @@ h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea,
   background: #C7A97B;
 }
 
+/* Hide raw thermal print staging container on normal screen displays */
+#thermal-print-stage {
+  display: none;
+}
+
 /* 4x6 inch (100mm x 150mm) High-Density Thermal Shipping Label Stylesheet */
 @media print {
   @page {

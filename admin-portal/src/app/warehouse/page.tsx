@@ -22,6 +22,7 @@ export default function AdminWarehouseDeskPage() {
   const { orders, updateOrderStatus } = useAdmin();
 
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<AdminOrder | null>(null);
+  const [selectedCourier, setSelectedCourier] = useState<'Pathao' | 'Steadfast'>('Pathao');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const packQueue = orders.filter((o) => o.status === 'CONFIRMED' || o.status === 'PACKED');
@@ -32,6 +33,15 @@ export default function AdminWarehouseDeskPage() {
       setSelectedOrderForPrint(packQueue[0]);
     }
   }, [packQueue, selectedOrderForPrint]);
+
+  // Sync active courier with selected order preference
+  React.useEffect(() => {
+    if (selectedOrderForPrint?.courier?.toLowerCase() === 'steadfast') {
+      setSelectedCourier('Steadfast');
+    } else {
+      setSelectedCourier('Pathao');
+    }
+  }, [selectedOrderForPrint?.id]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -166,9 +176,48 @@ export default function AdminWarehouseDeskPage() {
 
           {selectedOrderForPrint ? (
             <div className="p-4 bg-white border border-[#1C1917] shadow-xl rounded-lg space-y-4">
+              {/* 1-Click Courier Failover Switcher (Pathao ⇄ Steadfast) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-[#FAF8F5] border border-[#E6DFD5] rounded-md">
+                <div>
+                  <div className="text-[11px] font-bold text-[#1C1917] uppercase tracking-wider">
+                    Dispatch Courier:
+                  </div>
+                  <div className="text-[9px] text-[#1C1917]/60">
+                    Switch courier instantly if server is down
+                  </div>
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCourier('Pathao')}
+                    className={`px-3 py-1.5 text-xs font-mono font-bold rounded cursor-pointer transition-all ${
+                      selectedCourier === 'Pathao'
+                        ? 'bg-[#1C1917] text-[#C7A97B] shadow-xs'
+                        : 'bg-white border border-[#E6DFD5] text-[#1C1917]/70 hover:bg-[#F2ECE1]'
+                    }`}
+                  >
+                    Pathao Express
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCourier('Steadfast')}
+                    className={`px-3 py-1.5 text-xs font-mono font-bold rounded cursor-pointer transition-all ${
+                      selectedCourier === 'Steadfast'
+                        ? 'bg-[#006A4E] text-white shadow-xs'
+                        : 'bg-white border border-[#E6DFD5] text-[#1C1917]/70 hover:bg-[#F2ECE1]'
+                    }`}
+                  >
+                    Steadfast
+                  </button>
+                </div>
+              </div>
+
               {/* Official SEYVEN 4x6 Thermal Label Live Preview */}
               <div className="flex justify-center bg-[#F9F6F0] p-3 rounded border border-[#E6DFD5]">
-                <ThermalShippingLabel order={selectedOrderForPrint} />
+                <ThermalShippingLabel
+                  order={selectedOrderForPrint}
+                  courierOverride={selectedCourier}
+                />
               </div>
 
               <button
@@ -203,8 +252,12 @@ export default function AdminWarehouseDeskPage() {
       {/* 4x6 THERMAL PRINT STAGE (RENDERED ONLY FOR PHYSICAL PRINTING)              */}
       {/* ========================================================================= */}
       {selectedOrderForPrint && (
-        <div id="thermal-print-stage">
-          <ThermalShippingLabel order={selectedOrderForPrint} isPrintOnly />
+        <div id="thermal-print-stage" className="hidden print:block">
+          <ThermalShippingLabel
+            order={selectedOrderForPrint}
+            courierOverride={selectedCourier}
+            isPrintOnly
+          />
         </div>
       )}
     </div>

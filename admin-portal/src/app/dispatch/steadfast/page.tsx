@@ -25,6 +25,7 @@ import {
 import { useAdmin } from '@/context/admin-context';
 import { AdminOrder } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface FraudCheckResult {
   phone: string;
@@ -95,7 +96,7 @@ export default function SteadfastOperationsDeskPage() {
     setIsFetchingBalance(true);
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_admin_token') : '';
-      const res = await fetch('https://api.theseyven.com/api/v1/courier/steadfast/balance', {
+      const res = await fetch(`${API_BASE_URL}/courier/steadfast/balance`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -122,7 +123,7 @@ export default function SteadfastOperationsDeskPage() {
     try {
       const cleanPhone = fraudPhone.replace(/[^\d]/g, '');
       const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_admin_token') : '';
-      const res = await fetch(`https://api.theseyven.com/api/v1/courier/steadfast/fraud-check/${cleanPhone}`, {
+      const res = await fetch(`${API_BASE_URL}/courier/steadfast/fraud-check/${cleanPhone}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -163,7 +164,7 @@ export default function SteadfastOperationsDeskPage() {
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_admin_token') : '';
-      const res = await fetch('https://api.theseyven.com/api/v1/courier/steadfast/pickup', {
+      const res = await fetch(`${API_BASE_URL}/courier/steadfast/pickup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

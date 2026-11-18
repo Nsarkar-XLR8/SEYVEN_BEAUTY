@@ -19,10 +19,7 @@ export class SteadfastApiClient {
   private readonly secretKey: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>(
-      'STEADFAST_BASE_URL',
-      'https://portal.packzy.com/api/v1',
-    );
+    this.baseUrl = this.configService.get<string>('STEADFAST_BASE_URL') || '';
     this.apiKey = this.configService.get<string>('STEADFAST_API_KEY') || '';
     this.secretKey = this.configService.get<string>('STEADFAST_SECRET_KEY') || '';
   }

@@ -43,7 +43,7 @@ export default function SteadfastOperationsDeskPage() {
   const { orders, updateOrderStatus } = useAdmin();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [balance, setBalance] = useState<number | null>(12450);
+  const [balance, setBalance] = useState<number | null>(null);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
 
   // Fraud Check State
@@ -59,16 +59,6 @@ export default function SteadfastOperationsDeskPage() {
   const [isRequestingPickup, setIsRequestingPickup] = useState(false);
   const [pickupSuccessId, setPickupSuccessId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const phoneParam = params.get('phone');
-      if (phoneParam) {
-        setFraudPhone(phoneParam);
-      }
-    }
-  }, []);
-
   // Filter orders assigned to Steadfast
   const steadfastInTransit = orders.filter(
     (o) =>
@@ -81,6 +71,22 @@ export default function SteadfastOperationsDeskPage() {
       o.status === 'DELIVERED' &&
       (o.courier || '').toLowerCase().includes('steadfast')
   );
+
+  const inTransitCodAmount = steadfastInTransit.reduce(
+    (sum, o) => sum + (o.totalAmount || 0),
+    0
+  );
+
+  useEffect(() => {
+    fetchBalance();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const phoneParam = params.get('phone');
+      if (phoneParam) {
+        setFraudPhone(phoneParam);
+      }
+    }
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -95,7 +101,10 @@ export default function SteadfastOperationsDeskPage() {
   const fetchBalance = async () => {
     setIsFetchingBalance(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_admin_token') : '';
+      const token =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('seyven_admin_jwt_v3') || localStorage.getItem('seyven_admin_token') || ''
+          : '';
       const res = await fetch(`${API_BASE_URL}/courier/steadfast/balance`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -109,7 +118,6 @@ export default function SteadfastOperationsDeskPage() {
       // Keep existing balance on network fail
     } finally {
       setIsFetchingBalance(false);
-      showToast('Steadfast COD Wallet balance refreshed.');
     }
   };
 
@@ -122,7 +130,10 @@ export default function SteadfastOperationsDeskPage() {
 
     try {
       const cleanPhone = fraudPhone.replace(/[^\d]/g, '');
-      const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_admin_token') : '';
+      const token =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('seyven_admin_jwt_v3') || localStorage.getItem('seyven_admin_token') || ''
+          : '';
       const res = await fetch(`${API_BASE_URL}/courier/steadfast/fraud-check/${cleanPhone}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -163,7 +174,10 @@ export default function SteadfastOperationsDeskPage() {
     setPickupSuccessId(null);
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_admin_token') : '';
+      const token =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('seyven_admin_jwt_v3') || localStorage.getItem('seyven_admin_token') || ''
+          : '';
       const res = await fetch(`${API_BASE_URL}/courier/steadfast/pickup`, {
         method: 'POST',
         headers: {
@@ -243,7 +257,7 @@ export default function SteadfastOperationsDeskPage() {
             <span>Refresh Balance</span>
           </button>
           <a
-            href="https://steadfast.com.bd/user/dashboard"
+            href="https://steadfast.com.bd/dashboard"
             target="_blank"
             rel="noopener noreferrer"
             className="px-3.5 py-2 rounded bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-colors"
@@ -262,8 +276,17 @@ export default function SteadfastOperationsDeskPage() {
             <span className="uppercase tracking-wider">Live COD Wallet Balance</span>
             <Wallet className="w-4 h-4 text-emerald-300" />
           </div>
-          <div className="text-3xl font-mono font-bold text-white tracking-tight">
-            {balance !== null ? formatBdt(balance) : 'Loading...'}
+          <div className="text-3xl font-mono font-bold text-white tracking-tight flex items-center gap-2">
+            {isFetchingBalance && balance === null ? (
+              <span className="flex items-center gap-2 text-base text-emerald-200">
+                <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
+                <span>Checking Gateway...</span>
+              </span>
+            ) : balance !== null ? (
+              formatBdt(balance)
+            ) : (
+              '৳0'
+            )}
           </div>
           <div className="text-[11px] font-mono text-emerald-200/80 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -284,17 +307,17 @@ export default function SteadfastOperationsDeskPage() {
           </div>
         </div>
 
-        {/* Card 3: Active Steadfast Consignments */}
+        {/* Card 3: Active Steadfast Consignments & In-Transit COD */}
         <div className="p-5 bg-white border border-[#E6DFD5] rounded-lg space-y-2 shadow-xs">
           <div className="flex items-center justify-between text-xs font-mono text-[#1C1917]/60">
-            <span className="uppercase tracking-wider">Active Shipments</span>
+            <span className="uppercase tracking-wider">In-Transit COD Cash</span>
             <Truck className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-mono font-bold text-[#1C1917]">
-            {steadfastInTransit.length} <span className="text-xs font-sans font-normal text-[#1C1917]/60">Parcels on the road</span>
+            {formatBdt(inTransitCodAmount)}
           </div>
           <div className="text-xs font-mono text-emerald-800">
-            Delivered Lifetime: {steadfastDelivered.length} parcels
+            {steadfastInTransit.length} parcels on the road ({steadfastDelivered.length} delivered)
           </div>
         </div>
       </div>
@@ -519,9 +542,24 @@ export default function SteadfastOperationsDeskPage() {
                     </div>
                   </div>
 
-                  <div className="text-xs text-[#1C1917]/80">
-                    <span className="font-medium text-[#1C1917]">{order.customerName}</span> ({order.customerPhone})
-                    <div className="text-[11px] text-[#1C1917]/60">{order.shippingAddress}</div>
+                  <div className="text-xs text-[#1C1917]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <div>
+                      <span className="font-medium text-[#1C1917]">{order.customerName}</span>{' '}
+                      <a href={`tel:${order.customerPhone}`} className="text-emerald-700 underline font-mono">
+                        ({order.customerPhone})
+                      </a>
+                      <div className="text-[11px] text-[#1C1917]/60">{order.shippingAddress}</div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 sm:mt-0">
+                      <a
+                        href={`https://wa.me/88${order.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Assalamu Alaikum ${order.customerName}, SEYVEN theke apnar order #${order.id} Steadfast Courier e pathano hoyeche. Tracking: ${order.courierTrackingUrl || trackingUrl}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded font-mono text-[10px] hover:bg-emerald-100 flex items-center gap-1"
+                      >
+                        <span>💬 WhatsApp</span>
+                      </a>
+                    </div>
                   </div>
 
                   <div className="pt-2 flex items-center justify-between border-t border-[#E6DFD5]/70">

@@ -40,6 +40,11 @@ export default function PathaoOperationsDeskPage() {
       ((o.courier || '').toLowerCase().includes('pathao') || !o.courier)
   );
 
+  const pathaoInTransitCod = pathaoInTransit.reduce(
+    (sum, o) => sum + (o.totalAmount || 0),
+    0
+  );
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
@@ -104,7 +109,7 @@ export default function PathaoOperationsDeskPage() {
             <span>Sync API</span>
           </button>
           <a
-            href="https://merchant.pathao.com"
+            href="https://merchant.pathao.com/courier/dashboard"
             target="_blank"
             rel="noopener noreferrer"
             className="px-3.5 py-2 rounded bg-rose-900 hover:bg-rose-800 text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-colors"
@@ -148,14 +153,14 @@ export default function PathaoOperationsDeskPage() {
         {/* Card 3: In-Transit Financials */}
         <div className="p-5 bg-white border border-[#E6DFD5] rounded-lg space-y-2 shadow-xs">
           <div className="flex items-center justify-between text-xs font-mono text-[#1C1917]/60">
-            <span className="uppercase tracking-wider">Active Shipments</span>
-            <Truck className="w-4 h-4 text-purple-600" />
+            <span className="uppercase tracking-wider">In-Transit COD Cash</span>
+            <Truck className="w-4 h-4 text-rose-600" />
           </div>
           <div className="text-2xl font-mono font-bold text-[#1C1917]">
-            {pathaoInTransit.length} <span className="text-xs font-sans font-normal text-[#1C1917]/60">Parcels on the road</span>
+            {formatBdt(pathaoInTransitCod)}
           </div>
-          <div className="text-xs font-mono text-purple-800">
-            Delivered Lifetime: {pathaoDelivered.length} parcels
+          <div className="text-xs font-mono text-rose-800">
+            {pathaoInTransit.length} parcels on the road ({pathaoDelivered.length} delivered)
           </div>
         </div>
       </div>
@@ -213,9 +218,24 @@ export default function PathaoOperationsDeskPage() {
                     </div>
                   </div>
 
-                  <div className="text-xs text-[#1C1917]/80">
-                    <span className="font-medium text-[#1C1917]">{order.customerName}</span> ({order.customerPhone})
-                    <div className="text-[11px] text-[#1C1917]/60">{order.shippingAddress}</div>
+                  <div className="text-xs text-[#1C1917]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <div>
+                      <span className="font-medium text-[#1C1917]">{order.customerName}</span>{' '}
+                      <a href={`tel:${order.customerPhone}`} className="text-rose-700 underline font-mono">
+                        ({order.customerPhone})
+                      </a>
+                      <div className="text-[11px] text-[#1C1917]/60">{order.shippingAddress}</div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 sm:mt-0">
+                      <a
+                        href={`https://wa.me/88${order.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Assalamu Alaikum ${order.customerName}, SEYVEN theke apnar order #${order.id} Pathao Courier e pathano hoyeche. Tracking: ${order.courierTrackingUrl || trackingUrl}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded font-mono text-[10px] hover:bg-emerald-100 flex items-center gap-1"
+                      >
+                        <span>💬 WhatsApp</span>
+                      </a>
+                    </div>
                   </div>
 
                   <div className="pt-2 flex items-center justify-between border-t border-[#E6DFD5]/70">

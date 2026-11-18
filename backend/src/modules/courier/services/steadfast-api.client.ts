@@ -183,7 +183,7 @@ export class SteadfastApiClient {
       this.configService.get<string>('NODE_ENV') === 'test';
 
     if (isMock) {
-      return { status: 200, current_balance: 12450 };
+      return { status: 200, current_balance: 0 };
     }
 
     const endpoint = `${this.baseUrl}/get_balance`;

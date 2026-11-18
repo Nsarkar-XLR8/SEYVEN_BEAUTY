@@ -767,12 +767,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify({ orderId }),
         }, handleUnauthorized);
         const data = await res.json();
-        if (res.ok && data?.consignment_id) {
-          finalConsignmentId = data.consignment_id;
+        const cid = data?.consignment?.consignment_id || data?.consignment_id || data?.data?.consignment_id;
+        if (res.ok && cid) {
+          finalConsignmentId = String(cid);
           trackingUrl = `https://steadfast.com.bd/tracking/${finalConsignmentId}`;
+        } else {
+          const errMsg = data?.message || 'Failed to book with Steadfast';
+          return { success: false, message: Array.isArray(errMsg) ? errMsg.join(', ') : String(errMsg) };
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error calling Steadfast booking API:', err);
+        return { success: false, message: err?.message || 'Network error reaching Steadfast API' };
       }
     }
 

@@ -93,6 +93,65 @@ export class CourierController {
     return this.steadfastService.getTrackingStatus(consignmentId);
   }
 
+  @Get('courier/steadfast/balance')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FULFILLMENT_OPERATOR, UserRole.FINANCE_OFFICER)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Query live Steadfast merchant COD wallet balance',
+    description: 'Fetches current withdrawable COD earnings ready for settlement.',
+  })
+  @ApiResponse({ status: 200, description: 'Steadfast balance fetched successfully' })
+  async getSteadfastBalance() {
+    return this.steadfastService.getBalance();
+  }
+
+  @Get('courier/steadfast/fraud-check/:phone')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FULFILLMENT_OPERATOR, UserRole.SUPPORT_AGENT)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Screen customer delivery risk and return history',
+    description: 'Queries Steadfast fraud API to fetch delivery ratio, cancellation ratio, and dispute reports.',
+  })
+  @ApiParam({ name: 'phone', description: 'Customer phone number (e.g. 01712345678)' })
+  @ApiResponse({ status: 200, description: 'Customer fraud score returned' })
+  async getSteadfastFraudScore(@Param('phone') phone: string) {
+    return this.steadfastService.getFraudScore(phone);
+  }
+
+  @Post('courier/steadfast/pickup')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FULFILLMENT_OPERATOR)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Request Steadfast rider pickup at Narayanganj warehouse hub',
+    description: 'Dispatches a pickup collection request to Steadfast API.',
+  })
+  @ApiResponse({ status: 200, description: 'Pickup request created successfully' })
+  async createSteadfastPickup(@Body() body: any) {
+    return this.steadfastService.createPickupRequest(body);
+  }
+
+  @Get('courier/steadfast/payments')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FULFILLMENT_OPERATOR, UserRole.FINANCE_OFFICER)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get Steadfast payout settlement history',
+    description: 'Fetches recent payment transactions settled to bKash or Bank.',
+  })
+  @ApiResponse({ status: 200, description: 'Payment records returned successfully' })
+  async getSteadfastPayments() {
+    return this.steadfastService.getPayments();
+  }
+
+  @Get('courier/steadfast/ping')
+  @ApiOperation({ summary: 'Health check ping for Steadfast API' })
+  async pingSteadfast() {
+    return this.steadfastService.ping();
+  }
+
   @Get('admin/courier/steadfast/dlq')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.FULFILLMENT_OPERATOR)

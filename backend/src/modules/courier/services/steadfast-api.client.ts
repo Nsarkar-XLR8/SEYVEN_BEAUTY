@@ -1,8 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  SteadfastBalanceResponse,
   SteadfastCreateOrderPayload,
   SteadfastCreateOrderResponse,
+  SteadfastFraudScoreResponse,
+  SteadfastPaymentsResponse,
+  SteadfastPickupPayload,
+  SteadfastPickupResponse,
   SteadfastTrackingResponse,
 } from '../interfaces/steadfast.interface';
 
@@ -142,4 +147,249 @@ export class SteadfastApiClient {
       clearTimeout(timeout);
     }
   }
+
+  /**
+   * Health ping to Steadfast API (/ping requires no API key)
+   */
+  async ping(): Promise<{ status: number; message: string }> {
+    const endpoint = `${this.baseUrl}/ping`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        return { status: response.status, message: 'Steadfast ping unreachable' };
+      }
+
+      const data = await response.json().catch(() => ({}));
+      return { status: 200, message: data?.message || 'Steadfast service online' };
+    } catch (err: any) {
+      return { status: 503, message: err?.message || 'Steadfast ping failed' };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Query live withdrawable merchant COD balance (/get_balance)
+   */
+  async getBalance(): Promise<SteadfastBalanceResponse> {
+    const isMock =
+      !this.apiKey ||
+      this.apiKey.startsWith('mock_') ||
+      this.apiKey === 'test' ||
+      this.configService.get<string>('NODE_ENV') === 'test';
+
+    if (isMock) {
+      return { status: 200, current_balance: 12450 };
+    }
+
+    const endpoint = `${this.baseUrl}/get_balance`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Api-Key': this.apiKey,
+          'Secret-Key': this.secretKey,
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Steadfast getBalance failed (HTTP ${response.status}): ${errorText}`,
+        );
+      }
+
+      return (await response.json()) as SteadfastBalanceResponse;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Screen customer delivery risk & fraud history (/fraud_check/score/{phone})
+   */
+  async getFraudScore(phone: string): Promise<SteadfastFraudScoreResponse> {
+    const cleanedPhone = phone.replace(/[^\d]/g, '');
+
+    const isMock =
+      !this.apiKey ||
+      this.apiKey.startsWith('mock_') ||
+      this.apiKey === 'test' ||
+      this.configService.get<string>('NODE_ENV') === 'test';
+
+    if (isMock) {
+      return {
+        status: 200,
+        phone: cleanedPhone,
+        delivery_ratio: 92,
+        cancellation_ratio: 7,
+        volume_band: 'high',
+        volume_range: '50+',
+        delivered_count: 58,
+        cancelled_count: 5,
+        total_reports: 0,
+        fraud_categories: [],
+        scoring_disabled: true,
+        doubtful_reports: false,
+      };
+    }
+
+    const endpoint = `${this.baseUrl}/fraud_check/score/${cleanedPhone}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Api-Key': this.apiKey,
+          'Secret-Key': this.secretKey,
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Steadfast fraud score failed (HTTP ${response.status}): ${errorText}`,
+        );
+      }
+
+      return (await response.json()) as SteadfastFraudScoreResponse;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Request a Steadfast rider to pick up packages from Narayanganj hub (/create_pickup_request)
+   */
+  async createPickupRequest(
+    payload: SteadfastPickupPayload,
+  ): Promise<SteadfastPickupResponse> {
+    const isMock =
+      !this.apiKey ||
+      this.apiKey.startsWith('mock_') ||
+      this.apiKey === 'test' ||
+      this.configService.get<string>('NODE_ENV') === 'test';
+
+    if (isMock) {
+      return {
+        message: 'Pickup request created successfully (Mock)',
+        data: {
+          id: Math.floor(1000 + Math.random() * 9000),
+          pickup_location: payload.address,
+          contact_number: payload.contact_number,
+          estim_qty: payload.estim_qty || 1,
+          req_status: 0,
+          created_at: new Date().toISOString(),
+        },
+      };
+    }
+
+    const endpoint = `${this.baseUrl}/create_pickup_request`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Api-Key': this.apiKey,
+          'Secret-Key': this.secretKey,
+        },
+        body: JSON.stringify({
+          address_id: payload.address_id || 42,
+          police_station_id: payload.police_station_id || 17,
+          address: payload.address,
+          contact_number: payload.contact_number,
+          note: payload.note,
+          estim_qty: payload.estim_qty || 1,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Steadfast pickup request failed (HTTP ${response.status}): ${errorText}`,
+        );
+      }
+
+      return (await response.json()) as SteadfastPickupResponse;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Fetch merchant payout settlement history (/payments)
+   */
+  async getPayments(): Promise<SteadfastPaymentsResponse> {
+    const isMock =
+      !this.apiKey ||
+      this.apiKey.startsWith('mock_') ||
+      this.apiKey === 'test' ||
+      this.configService.get<string>('NODE_ENV') === 'test';
+
+    if (isMock) {
+      return {
+        status: 1,
+        alertClass: 'success',
+        message: 'Fetched successfully (Mock)',
+        payments: [
+          {
+            payment_id: 'SFC-88213',
+            amount: 12450,
+            method: 'bKash',
+            due_bills: 0,
+            paid_bills: 3200,
+            charges: 124,
+            total: 12450,
+            status_label: 'Paid',
+            created_at: new Date().toISOString(),
+          },
+        ],
+      };
+    }
+
+    const endpoint = `${this.baseUrl}/payments`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Api-Key': this.apiKey,
+          'Secret-Key': this.secretKey,
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Steadfast getPayments failed (HTTP ${response.status}): ${errorText}`,
+        );
+      }
+
+      return (await response.json()) as SteadfastPaymentsResponse;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
 }

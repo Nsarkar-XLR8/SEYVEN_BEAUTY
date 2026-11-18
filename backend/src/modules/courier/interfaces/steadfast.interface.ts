@@ -62,3 +62,72 @@ export interface SteadfastDlqEntry {
   failedAt: string;
   payload: SteadfastCreateOrderPayload;
 }
+
+export interface SteadfastBalanceResponse {
+  status: number;
+  current_balance: number;
+}
+
+export interface SteadfastFraudScoreResponse {
+  status: number;
+  phone: string;
+  delivery_ratio?: number;
+  cancellation_ratio?: number;
+  volume_band?: string;
+  volume_range?: string;
+  delivered_count?: number;
+  cancelled_count?: number;
+  total_reports?: number;
+  fraud_categories?: string[];
+  score?: number | null;
+  level?: string | null;
+  reasons?: string[];
+  scoring_disabled?: boolean;
+  doubtful_reports?: boolean;
+}
+
+export interface SteadfastPickupPayload {
+  address_id?: number;
+  police_station_id?: number;
+  address: string;
+  contact_number: string;
+  note?: string;
+  estim_qty?: number;
+}
+
+export interface SteadfastPickupResponse {
+  message: string;
+  data?: {
+    id: number;
+    user_id?: number;
+    user_address_id?: number;
+    police_station_id?: number;
+    pickup_location?: string;
+    contact_number?: string;
+    note?: string | null;
+    estim_qty?: number;
+    req_status?: number;
+    created_at?: string;
+  };
+}
+
+export interface SteadfastPaymentItem {
+  payment_id: string;
+  amount: number;
+  method: string;
+  due_bills?: number;
+  paid_bills?: number;
+  charges?: number;
+  total?: number;
+  status_label?: string;
+  created_at?: string;
+  paid_at?: string;
+}
+
+export interface SteadfastPaymentsResponse {
+  status: number;
+  alertClass?: string;
+  message?: string;
+  payments: SteadfastPaymentItem[];
+}
+

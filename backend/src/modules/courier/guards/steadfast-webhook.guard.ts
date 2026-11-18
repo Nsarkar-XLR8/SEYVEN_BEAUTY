@@ -27,13 +27,20 @@ export class SteadfastWebhookGuard implements CanActivate {
       return true;
     }
 
-    // 2. Extract signature or secret from headers/query
-    const signature =
+    // 2. Extract signature and authorization from headers
+    const xSignature =
       request.headers['x-steadfast-signature'] ||
       request.headers['x-signature'] ||
-      request.query?.signature ||
+      request.query?.signature;
+
+    const authHeader =
       request.headers['authorization'] ||
-      request.headers['api-key'];
+      request.headers['api-key'] ||
+      request.headers['x-auth-token'];
+
+    const bearerToken = authHeader
+      ? String(authHeader).replace(/^Bearer\s+/i, '').trim()
+      : null;
 
     const webhookSecret =
       this.configService.get<string>('STEADFAST_WEBHOOK_SECRET') ||
@@ -47,31 +54,38 @@ export class SteadfastWebhookGuard implements CanActivate {
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
 
     // Allow mock/test bypass if test env and test header / default
-    if (nodeEnv === 'test' && (!signature || signature === 'test-valid-sig')) {
+    if (
+      nodeEnv === 'test' &&
+      (!xSignature || xSignature === 'test-valid-sig' || bearerToken === 'test-valid-sig')
+    ) {
       return true;
     }
 
-    if (!signature) {
-      this.logger.warn('[Steadfast Webhook] Missing X-Steadfast-Signature header');
-      throw new UnauthorizedException('Missing Steadfast webhook signature');
+    if (!xSignature && !bearerToken) {
+      this.logger.warn('[Steadfast Webhook] Missing X-Signature or Authorization header');
+      throw new UnauthorizedException('Missing Steadfast webhook authentication');
     }
 
-    // 3. Compute HMAC-SHA256 digest over raw or JSON stringified body
-    const rawBody =
-      request.rawBody ||
-      (typeof request.body === 'string' ? request.body : JSON.stringify(request.body));
+    // 3. Check direct Auth Token match if present
+    const isValidToken = bearerToken ? this.safeCompare(webhookSecret, bearerToken) : false;
 
-    const computedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(rawBody)
-      .digest('hex');
+    // 4. Compute HMAC-SHA256 digest over raw or JSON stringified body
+    let isValidHmac = false;
+    if (xSignature) {
+      const rawBody =
+        request.rawBody ||
+        (typeof request.body === 'string' ? request.body : JSON.stringify(request.body));
 
-    // Compare with constant time equality
-    const isValidHmac = this.safeCompare(computedSignature, String(signature));
-    const isValidToken = this.safeCompare(webhookSecret, String(signature));
+      const computedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex');
+
+      isValidHmac = this.safeCompare(computedSignature, String(xSignature));
+    }
 
     if (!isValidHmac && !isValidToken) {
-      this.logger.warn('[Steadfast Webhook] Signature verification failed');
+      this.logger.warn('[Steadfast Webhook] Signature and token verification both failed');
       throw new UnauthorizedException('Invalid Steadfast webhook signature');
     }
 

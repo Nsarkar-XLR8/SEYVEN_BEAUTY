@@ -17,6 +17,8 @@ import {
   Clock,
   ChevronDown,
   SlidersHorizontal,
+  Send,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 import { StaffRole } from '@/types/admin';
@@ -68,6 +70,18 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
       name: 'Smart Dispatch',
       href: '/dispatch',
       icon: Truck,
+      allowedRoles: ['SUPER_ADMIN', 'FULFILLMENT_OPERATOR'],
+    },
+    {
+      name: 'Pathao Express',
+      href: '/dispatch/pathao',
+      icon: Send,
+      allowedRoles: ['SUPER_ADMIN', 'FULFILLMENT_OPERATOR'],
+    },
+    {
+      name: 'Steadfast Courier',
+      href: '/dispatch/steadfast',
+      icon: ShieldCheck,
       allowedRoles: ['SUPER_ADMIN', 'FULFILLMENT_OPERATOR'],
     },
     {

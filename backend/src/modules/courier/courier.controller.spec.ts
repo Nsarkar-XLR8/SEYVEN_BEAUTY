@@ -138,7 +138,7 @@ describe('CourierController', () => {
       merchant_order_id: 'SYV-1',
       order_status: 'Delivered',
     };
-    await controller.handlePathaoWebhook(dto);
+    await controller.handlePathaoWebhook(dto, { status: jest.fn(), setHeader: jest.fn() } as any);
     expect(pathaoService.handleInboundWebhook).toHaveBeenCalledWith(dto);
   });
 

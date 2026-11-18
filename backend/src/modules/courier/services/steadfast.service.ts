@@ -13,8 +13,13 @@ import { SteadfastBookingWorker } from '../workers/steadfast-booking.worker';
 import { BookSteadfastConsignmentDto } from '../dto/book-steadfast-consignment.dto';
 import { SteadfastWebhookDto } from '../dto/steadfast-webhook.dto';
 import {
+  SteadfastBalanceResponse,
   SteadfastCreateOrderPayload,
   SteadfastCreateOrderResponse,
+  SteadfastFraudScoreResponse,
+  SteadfastPaymentsResponse,
+  SteadfastPickupPayload,
+  SteadfastPickupResponse,
   SteadfastTrackingResponse,
 } from '../interfaces/steadfast.interface';
 import { OrderStatus } from '@prisma/client';
@@ -299,6 +304,43 @@ export class SteadfastService {
     consignmentId: string | number,
   ): Promise<SteadfastTrackingResponse> {
     return this.steadfastApiClient.getTrackingStatus(consignmentId);
+  }
+
+  /**
+   * Health ping to Steadfast API
+   */
+  async ping(): Promise<{ status: number; message: string }> {
+    return this.steadfastApiClient.ping();
+  }
+
+  /**
+   * Query live withdrawable merchant COD balance
+   */
+  async getBalance(): Promise<SteadfastBalanceResponse> {
+    return this.steadfastApiClient.getBalance();
+  }
+
+  /**
+   * Screen customer delivery risk & fraud score by phone
+   */
+  async getFraudScore(phone: string): Promise<SteadfastFraudScoreResponse> {
+    return this.steadfastApiClient.getFraudScore(phone);
+  }
+
+  /**
+   * Summon Steadfast rider pickup at Narayanganj warehouse hub
+   */
+  async createPickupRequest(
+    payload: SteadfastPickupPayload,
+  ): Promise<SteadfastPickupResponse> {
+    return this.steadfastApiClient.createPickupRequest(payload);
+  }
+
+  /**
+   * Retrieve payout settlement payment records
+   */
+  async getPayments(): Promise<SteadfastPaymentsResponse> {
+    return this.steadfastApiClient.getPayments();
   }
 
   /**

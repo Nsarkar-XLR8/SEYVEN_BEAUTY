@@ -358,9 +358,18 @@ export default function AdminOrdersDeskPage() {
                 </td>
                 <td className="p-3.5">
                   <div className="font-medium text-[#1C1917]">{o.customerName}</div>
-                  <a href={`tel:${o.customerPhone}`} className="text-[10px] text-[#C7A97B] font-mono hover:underline">
-                    {o.customerPhone}
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <a href={`tel:${o.customerPhone}`} className="text-[10px] text-[#C7A97B] font-mono hover:underline">
+                      {o.customerPhone}
+                    </a>
+                    <Link
+                      href={`/dispatch/steadfast?phone=${o.customerPhone}`}
+                      className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 font-semibold"
+                      title="Check delivery success ratio and fraud score on Steadfast"
+                    >
+                      🛡️ Risk
+                    </Link>
+                  </div>
                 </td>
                 <td className="p-3.5">
                   <div className="truncate max-w-xs">{o.items[0]?.title}</div>
@@ -532,9 +541,17 @@ export default function AdminOrdersDeskPage() {
                   <span>Recipient & Delivery Address</span>
                 </div>
                 <div className="font-semibold text-[#1C1917]">{selectedOrder.customerName}</div>
-                <a href={`tel:${selectedOrder.customerPhone}`} className="text-[#C7A97B] font-mono block">
-                  {selectedOrder.customerPhone}
-                </a>
+                <div className="flex items-center gap-2">
+                  <a href={`tel:${selectedOrder.customerPhone}`} className="text-[#C7A97B] font-mono block">
+                    {selectedOrder.customerPhone}
+                  </a>
+                  <Link
+                    href={`/dispatch/steadfast?phone=${selectedOrder.customerPhone}`}
+                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 flex items-center gap-1 font-semibold"
+                  >
+                    🛡️ Check Delivery Risk
+                  </Link>
+                </div>
                 <div className="text-[11px] text-[#1C1917]/70 leading-relaxed">
                   {selectedOrder.shippingAddress} · {selectedOrder.district}
                 </div>

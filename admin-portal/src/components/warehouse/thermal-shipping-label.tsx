@@ -11,6 +11,38 @@ interface ThermalShippingLabelProps {
   courierOverride?: 'Pathao' | 'Steadfast';
 }
 
+const BD_DISTRICT_KEYWORDS: Array<{ en: string; bn: string; hub: string }> = [
+  { en: 'manikganj', bn: 'মানিকগঞ্জ', hub: 'MANIKGANJ HUB' },
+  { en: 'gazipur', bn: 'গাজীপুর', hub: 'GAZIPUR HUB' },
+  { en: 'narayanganj', bn: 'নারায়ণগঞ্জ', hub: 'NARAYANGANJ HUB' },
+  { en: 'chattogram', bn: 'চট্টগ্রাম', hub: 'CHATTOGRAM HUB' },
+  { en: 'sylhet', bn: 'সিলেট', hub: 'SYLHET HUB' },
+  { en: 'rajshahi', bn: 'রাজশাহী', hub: 'RAJSHAHI HUB' },
+  { en: 'khulna', bn: 'খুলনা', hub: 'KHULNA HUB' },
+  { en: 'barishal', bn: 'বরিশাল', hub: 'BARISHAL HUB' },
+  { en: 'rangpur', bn: 'রংপুর', hub: 'RANGPUR HUB' },
+  { en: 'mymensingh', bn: 'ময়মনসিংহ', hub: 'MYMENSINGH HUB' },
+  { en: 'cumilla', bn: 'কুমিল্লা', hub: 'CUMILLA HUB' },
+  { en: 'bogura', bn: 'বগুড়া', hub: 'BOGURA HUB' },
+  { en: 'tangail', bn: 'টাঙ্গাইল', hub: 'TANGAIL HUB' },
+  { en: 'faridpur', bn: 'ফরিদপুর', hub: 'FARIDPUR HUB' },
+  { en: 'feni', bn: 'ফেনী', hub: 'FENI HUB' },
+  { en: 'noakhali', bn: 'নোয়াখালী', hub: 'NOAKHALI HUB' },
+  { en: 'pabna', bn: 'পাবনা', hub: 'PABNA HUB' },
+  { en: 'jashore', bn: 'যশোর', hub: 'JASHORE HUB' },
+  { en: 'kushtia', bn: 'কুষ্টিয়া', hub: 'KUSHTIA HUB' },
+  { en: 'savar', bn: 'সাভার', hub: 'SAVAR HUB' },
+  { en: 'keraniganj', bn: 'কেরানীগঞ্জ', hub: 'KERANIGANJ HUB' },
+  { en: 'uttara', bn: 'উত্তরা', hub: 'DHAKA NORTH HUB' },
+  { en: 'mirpur', bn: 'মিরপুর', hub: 'DHAKA NORTH HUB' },
+  { en: 'gulshan', bn: 'গুলশান', hub: 'DHAKA NORTH HUB' },
+  { en: 'banani', bn: 'বনানী', hub: 'DHAKA NORTH HUB' },
+  { en: 'dhanmondi', bn: 'ধানমন্ডি', hub: 'DHAKA SOUTH HUB' },
+  { en: 'badda', bn: 'বাড্ডা', hub: 'DHAKA NORTH HUB' },
+  { en: 'mohammadpur', bn: 'মোহাম্মদপুর', hub: 'DHAKA WEST HUB' },
+  { en: 'old dhaka', bn: 'পুরান ঢাকা', hub: 'DHAKA SOUTH HUB' },
+];
+
 /**
  * Intelligent Bangladesh Courier Routing Parser.
  * Prevents duplicate text like "INSIDE DHAKA • INSIDE DHAKA" and formats
@@ -20,26 +52,35 @@ function parseCourierRouting(district?: string, zone?: string, address?: string)
   const d = (district || '').trim();
   const z = (zone || '').trim();
   const addr = (address || '').trim();
+  const fullText = `${d} ${z} ${addr}`.toLowerCase();
 
   const isInsideDhaka = /inside\s*dhaka/i.test(d) || /inside\s*dhaka/i.test(z);
-  const isOutsideDhaka = /outside\s*dhaka/i.test(d) || /outside\s*dhaka/i.test(z);
 
-  let hub = 'DHAKA METRO';
-  if (isOutsideDhaka) {
-    hub = d && !/outside/i.test(d) ? d.toUpperCase() : 'NATIONWIDE (ALL BD)';
-  } else if (d && !/inside/i.test(d)) {
-    hub = d.toUpperCase();
+  // Check for specific BD district hub match
+  let detectedDistrictHub = '';
+  for (const item of BD_DISTRICT_KEYWORDS) {
+    if (fullText.includes(item.en) || fullText.includes(item.bn)) {
+      detectedDistrictHub = item.hub;
+      break;
+    }
   }
 
-  // Extract clean sub-area without duplicate words
+  let hub = detectedDistrictHub || (isInsideDhaka ? 'DHAKA METRO' : 'NATIONWIDE (ALL BD)');
+  if (!detectedDistrictHub && d && !/inside|outside/i.test(d)) {
+    hub = `${d.toUpperCase()} HUB`;
+  }
+
+  // Detect Sub-Zone / Thana (e.g. "Sadar", "Savar", etc.)
   let area = '';
-  if (z && !/inside|outside/i.test(z) && z.toUpperCase() !== hub) {
+  if (/সদর|sadar/i.test(fullText)) {
+    const hubBase = hub.replace(/\s+HUB$/i, '');
+    area = `${hubBase} SADAR`;
+  } else if (z && !/inside|outside/i.test(z) && z.toUpperCase() !== hub) {
     area = z.toUpperCase();
   } else if (addr) {
-    // Extract first segment from address (e.g. "Merul Badda, Dhaka" -> "MERUL BADDA")
     const segments = addr.split(',').map((s) => s.trim()).filter(Boolean);
     if (segments.length > 0) {
-      area = segments[0].toUpperCase();
+      area = segments[segments.length - 1].toUpperCase();
     }
   }
 
@@ -127,11 +168,11 @@ export function ThermalShippingLabel({
       {/* ZONE 2: PRIMARY COURIER CONSIGNMENT CODE-128 BARCODE                      */}
       {/* ========================================================================= */}
       <div className="border-b-2 border-black pb-1 mb-1 text-center bg-white">
-        <div className="flex justify-center items-center py-0.5 overflow-hidden">
+        <div className="flex justify-center items-center py-1 px-3 overflow-hidden">
           <Barcode128
             value={consignmentCode}
             width={isPrintOnly ? 1.7 : 1.5}
-            height={isPrintOnly ? 40 : 34}
+            height={isPrintOnly ? 42 : 36}
             fontSize={10}
             margin={0}
           />
@@ -149,7 +190,7 @@ export function ThermalShippingLabel({
         <div className="text-sm font-black uppercase tracking-wide leading-tight">
           {order.customerName}
         </div>
-        <div className="text-sm font-black tracking-wider text-black bg-black/10 px-1.5 py-0.5 rounded-xs inline-block font-mono">
+        <div className="text-sm font-black tracking-wider text-black bg-black/10 px-2 py-0.5 rounded border border-black/30 inline-block font-mono">
           ☎ {order.customerPhone}
         </div>
         <div className="text-[10px] font-medium leading-snug pt-0.5 break-words">
@@ -171,7 +212,7 @@ export function ThermalShippingLabel({
         <div className="text-[9px] font-black uppercase tracking-wider">
           {isCod ? '★ CASH ON DELIVERY (COD) ★' : '✓ 100% PREPAID SHIPMENT'}
         </div>
-        <div className="text-xl font-black tracking-tight leading-none my-0.5">
+        <div className="text-2xl font-black tracking-tight leading-none my-1 font-mono">
           {isCod ? `COLLECT: ${formatBdt(order.totalAmount)}` : 'DO NOT COLLECT CASH (৳0)'}
         </div>
         <div className="text-[8px] font-bold uppercase tracking-wider">

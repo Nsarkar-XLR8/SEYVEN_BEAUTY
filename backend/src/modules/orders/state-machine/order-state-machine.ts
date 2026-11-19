@@ -18,6 +18,7 @@ export class OrderStateMachine {
     ],
     [OrderStatus.PACKED]: [
       OrderStatus.BOOKED,
+      OrderStatus.SHIPPED,
       OrderStatus.CANCELLED,
     ],
     [OrderStatus.BOOKED]: [

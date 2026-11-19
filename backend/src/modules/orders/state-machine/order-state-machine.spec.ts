@@ -8,6 +8,7 @@ describe('OrderStateMachine', () => {
       expect(OrderStateMachine.canTransition(OrderStatus.PLACED, OrderStatus.CONFIRMED)).toBe(true);
       expect(OrderStateMachine.canTransition(OrderStatus.CONFIRMED, OrderStatus.PACKED)).toBe(true);
       expect(OrderStateMachine.canTransition(OrderStatus.PACKED, OrderStatus.BOOKED)).toBe(true);
+      expect(OrderStateMachine.canTransition(OrderStatus.PACKED, OrderStatus.SHIPPED)).toBe(true);
       expect(OrderStateMachine.canTransition(OrderStatus.BOOKED, OrderStatus.SHIPPED)).toBe(true);
       expect(OrderStateMachine.canTransition(OrderStatus.SHIPPED, OrderStatus.DELIVERED)).toBe(true);
       expect(OrderStateMachine.canTransition(OrderStatus.SHIPPED, OrderStatus.PARTIALLY_DELIVERED)).toBe(true);

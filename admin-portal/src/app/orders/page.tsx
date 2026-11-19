@@ -25,6 +25,8 @@ import {
   Send,
   ExternalLink,
   Trash2,
+  Edit2,
+  Check,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 import { AdminOrder, OrderStatus, CODVerificationStatus } from '@/types/admin';
@@ -46,6 +48,11 @@ export default function AdminOrdersDeskPage() {
   const [verifyingOrder, setVerifyingOrder] = useState<AdminOrder | null>(null);
   const [callNotes, setCallNotes] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Manual Consignment / Tracking Attachment State
+  const [isEditingConsignment, setIsEditingConsignment] = useState(false);
+  const [editConsignmentId, setEditConsignmentId] = useState('');
+  const [editCourier, setEditCourier] = useState<'Pathao' | 'Steadfast'>('Pathao');
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -98,6 +105,34 @@ export default function AdminOrdersDeskPage() {
     } finally {
       setIsBookingPathao(false);
     }
+  };
+
+  const handleSaveConsignment = (order: AdminOrder) => {
+    const trimmed = editConsignmentId.trim();
+    if (!trimmed) {
+      setIsEditingConsignment(false);
+      return;
+    }
+    const nextStatus = order.status === 'PACKED' || order.status === 'CONFIRMED' ? 'SHIPPED' : order.status;
+    const trackingUrl = editCourier === 'Steadfast'
+      ? `https://steadfast.com.bd/tracking/${trimmed}`
+      : `https://merchant.pathao.com/tracking?consignment_id=${trimmed}`;
+
+    updateOrderStatus(order.id, nextStatus, `Consignment ID attached: ${trimmed}`, trimmed, editCourier);
+    setSelectedOrder((prev) =>
+      prev && prev.id === order.id
+        ? {
+            ...prev,
+            status: nextStatus,
+            courier: editCourier,
+            consignmentId: trimmed,
+            courierTrackingUrl: trackingUrl,
+          }
+        : prev
+    );
+    showToast(`✓ Consignment #${trimmed} saved for ${order.id}.`);
+    setIsEditingConsignment(false);
+    setEditConsignmentId('');
   };
 
   const statusTabs: { label: string; value: string; count: number; isAlert?: boolean }[] = [
@@ -727,26 +762,124 @@ export default function AdminOrdersDeskPage() {
                 </div>
               </div>
 
-              {/* Courier Consignment Tracking Badge */}
-              {selectedOrder.consignmentId && (
-                <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded flex items-center justify-between text-xs font-mono">
-                  <div>
-                    <span className="text-[10px] text-emerald-800 uppercase block font-bold">
-                      {selectedOrder.courier || 'Pathao'} Consignment
-                    </span>
-                    <span className="font-bold text-emerald-950">#{selectedOrder.consignmentId}</span>
+              {/* Courier Consignment Tracking Badge & Manual Attachment */}
+              <div className="space-y-2">
+                {isEditingConsignment ? (
+                  <div className="p-3 bg-white border border-[#C7A97B] rounded text-xs font-mono space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase text-[#1C1917]">
+                        Attach / Edit Courier Consignment ID
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingConsignment(false)}
+                        className="text-stone-400 hover:text-stone-700"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditCourier('Pathao')}
+                        className={`py-1 px-2 text-[10px] font-bold rounded ${
+                          editCourier === 'Pathao' ? 'bg-rose-900 text-white' : 'bg-stone-100 text-stone-700'
+                        }`}
+                      >
+                        Pathao
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditCourier('Steadfast')}
+                        className={`py-1 px-2 text-[10px] font-bold rounded ${
+                          editCourier === 'Steadfast' ? 'bg-emerald-900 text-white' : 'bg-stone-100 text-stone-700'
+                        }`}
+                      >
+                        Steadfast
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={editConsignmentId}
+                      onChange={(e) => setEditConsignmentId(e.target.value)}
+                      placeholder="Paste Consignment ID (e.g. 68XXXXXX)"
+                      className="w-full px-2.5 py-1.5 border border-[#E6DFD5] rounded text-xs font-mono focus:outline-none focus:border-[#C7A97B]"
+                      autoFocus
+                    />
+
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingConsignment(false)}
+                        className="px-3 py-1 bg-stone-100 text-stone-700 text-[11px] rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveConsignment(selectedOrder)}
+                        className="px-3.5 py-1 bg-[#1C1917] text-[#C7A97B] text-[11px] font-bold rounded flex items-center gap-1"
+                      >
+                        <Check className="w-3 h-3" />
+                        <span>Save Tracking</span>
+                      </button>
+                    </div>
                   </div>
-                  <a
-                    href={selectedOrder.courierTrackingUrl || `https://merchant.pathao.com/tracking?consignment_id=${selectedOrder.consignmentId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[11px] font-semibold flex items-center gap-1 transition-colors"
-                  >
-                    <span>Track</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              )}
+                ) : selectedOrder.consignmentId ? (
+                  <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded flex items-center justify-between text-xs font-mono">
+                    <div>
+                      <span className="text-[10px] text-emerald-800 uppercase block font-bold">
+                        {selectedOrder.courier || 'Pathao'} Consignment
+                      </span>
+                      <span className="font-bold text-emerald-950">#{selectedOrder.consignmentId}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingConsignment(true);
+                          setEditConsignmentId(selectedOrder.consignmentId || '');
+                          setEditCourier((selectedOrder.courier?.toLowerCase().includes('steadfast') ? 'Steadfast' : 'Pathao') as any);
+                        }}
+                        className="px-2 py-1 bg-white hover:bg-stone-100 border border-emerald-300 text-stone-700 rounded text-[10px] font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Edit2 className="w-2.5 h-2.5 text-[#C7A97B]" />
+                        <span>Edit ID</span>
+                      </button>
+                      <a
+                        href={selectedOrder.courierTrackingUrl || `https://merchant.pathao.com/tracking?consignment_id=${selectedOrder.consignmentId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                      >
+                        <span>Track</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-[#FAF8F5] border border-[#E6DFD5] rounded flex items-center justify-between text-xs font-mono">
+                    <div>
+                      <span className="text-[10px] text-stone-600 uppercase block font-bold">Courier Tracking ID</span>
+                      <span className="text-stone-400">Not attached yet</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingConsignment(true);
+                        setEditConsignmentId('');
+                        setEditCourier((selectedOrder.courier?.toLowerCase().includes('steadfast') ? 'Steadfast' : 'Pathao') as any);
+                      }}
+                      className="px-2.5 py-1 bg-[#1C1917] hover:bg-[#2A2623] text-[#C7A97B] rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      <span>+ Attach Consignment ID</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Items List */}
               <div className="space-y-2">

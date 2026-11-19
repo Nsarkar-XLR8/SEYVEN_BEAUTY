@@ -35,7 +35,13 @@ interface AdminContextType {
 
   // Orders
   orders: AdminOrder[];
-  updateOrderStatus: (orderId: string, nextStatus: OrderStatus, notes?: string) => void;
+  updateOrderStatus: (
+    orderId: string,
+    nextStatus: OrderStatus,
+    notes?: string,
+    trackingCode?: string,
+    courier?: 'Pathao' | 'Steadfast',
+  ) => void;
   updateCODVerification: (orderId: string, status: CODVerificationStatus, notes?: string) => void;
   assignCourier: (
     orderId: string,
@@ -743,14 +749,28 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Orders
-  const updateOrderStatus = (orderId: string, nextStatus: OrderStatus, notes?: string) => {
+  const updateOrderStatus = (
+    orderId: string,
+    nextStatus: OrderStatus,
+    notes?: string,
+    trackingCode?: string,
+    courier?: 'Pathao' | 'Steadfast',
+  ) => {
     const apiUrl = API_BASE_URL;
+    const trackingUrl = courier === 'Steadfast'
+      ? `https://steadfast.com.bd/tracking/${trackingCode || ''}`
+      : `https://merchant.pathao.com/tracking?consignment_id=${trackingCode || ''}`;
+
     adminFetch(`${apiUrl}/admin/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ status: nextStatus, notes }),
+      body: JSON.stringify({
+        status: nextStatus,
+        notes,
+        ...(trackingCode ? { trackingCode } : {}),
+      }),
     }, handleUnauthorized).catch(() => {});
 
     setOrders((prev) => {
@@ -759,6 +779,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           ? {
               ...o,
               status: nextStatus,
+              ...(trackingCode ? { consignmentId: trackingCode, courierTrackingUrl: trackingUrl } : {}),
+              ...(courier ? { courier } : {}),
               agentNotes: notes ? `${o.agentNotes ? o.agentNotes + ' | ' : ''}${notes}` : o.agentNotes,
               updatedAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' BST',
             }
@@ -794,7 +816,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     const apiUrl = API_BASE_URL;
 
     let finalConsignmentId = consignmentId;
-    let trackingUrl = `https://${courier.toLowerCase()}.com/track/${finalConsignmentId || ''}`;
+    let trackingUrl = courier === 'Pathao'
+      ? `https://merchant.pathao.com/tracking?consignment_id=${finalConsignmentId || ''}`
+      : `https://steadfast.com.bd/tracking/${finalConsignmentId || ''}`;
 
     if (courier === 'Pathao' && !consignmentId) {
       try {

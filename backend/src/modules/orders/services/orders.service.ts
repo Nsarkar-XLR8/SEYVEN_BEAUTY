@@ -571,8 +571,8 @@ export class OrdersService {
       });
 
       if (order) {
-        // 1. Idempotency Check
-        if (order.status === dto.status) {
+        // 1. Idempotency Check (Allow tracking code updates even if status matches)
+        if (order.status === dto.status && !dto.trackingCode && !dto.courierBookingId && !dto.notes) {
           this.logger.debug(`[Order ${order.orderNumber}] Status is already '${dto.status}'. No-op.`);
           return {
             ...order,
@@ -580,10 +580,12 @@ export class OrdersService {
           };
         }
 
-        // 2. Validate Monotonic Forward Transition Guard
-        OrderStateMachine.validateTransition(order.status, dto.status);
+        // 2. Validate Monotonic Forward Transition Guard if status is transitioning
+        if (order.status !== dto.status) {
+          OrderStateMachine.validateTransition(order.status, dto.status);
+        }
 
-        // 3. Commit Transition in DB Transaction
+        // 3. Commit Transition or Tracking Code update in DB Transaction
         return await this.prisma.$transaction(async (tx) => {
           const updateData: Prisma.OrderUpdateInput = {
             status: dto.status,

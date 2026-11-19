@@ -105,12 +105,34 @@ export class PathaoService {
     }
 
     // Ensure address meets Pathao's 10-220 character constraint
-    let recipientAddress = (
+    // Robust extraction: supports Direct order address, online streetAddress, fullAddress, or raw string
+    const rawStreet = (
+      shippingAddress.address ||
       shippingAddress.streetAddress ||
-      `${shippingAddress.thanaArea || ''}, ${shippingAddress.district || ''}`
+      shippingAddress.fullAddress ||
+      (typeof order.shippingAddress === 'string' ? order.shippingAddress : '') ||
+      ''
     ).trim();
+
+    let recipientAddress = rawStreet;
+    const district = (shippingAddress.district || shippingAddress.zone || '').trim();
+    const thana = (shippingAddress.thanaArea || '').trim();
+
+    if (!recipientAddress) {
+      recipientAddress = [thana, district].filter(Boolean).join(', ');
+    } else {
+      const lowerAddr = recipientAddress.toLowerCase();
+      if (thana && !lowerAddr.includes(thana.toLowerCase())) {
+        recipientAddress = `${recipientAddress}, ${thana}`;
+      }
+      if (district && !lowerAddr.includes(district.toLowerCase())) {
+        recipientAddress = `${recipientAddress}, ${district}`;
+      }
+    }
+
+    recipientAddress = recipientAddress.trim().replace(/^,*\s*/, '').replace(/,\s*,/g, ', ');
     if (recipientAddress.length < 10) {
-      recipientAddress = `${recipientAddress}, ${shippingAddress.district || 'Dhaka, Bangladesh'}`;
+      recipientAddress = `${recipientAddress}, ${district || 'Dhaka, Bangladesh'}`.replace(/^,*\s*/, '');
     }
     recipientAddress = recipientAddress.slice(0, 220);
 
@@ -122,9 +144,21 @@ export class PathaoService {
     ).trim().slice(0, 100);
 
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0) || 1;
-    const itemDescription =
-      order.items.map((i) => `${i.title} (${i.sku}) x${i.quantity}`).join(', ') ||
-      'SEYVEN Cosmetics Care Package';
+    const cleanItemDescriptions = order.items
+      .map((i: any) => {
+        // Strip technical internal SKUs (e.g., custom-173199..., SKU-0, it-0) from parcel description
+        const isInternalSku =
+          !i.sku ||
+          /^custom-\d+/i.test(i.sku) ||
+          /^sku-\d+/i.test(i.sku) ||
+          /^it-\d+/i.test(i.sku);
+
+        const skuPart = !isInternalSku && i.sku ? ` (${i.sku})` : '';
+        return `${i.title}${skuPart} x${i.quantity}`;
+      })
+      .join(', ');
+
+    const itemDescription = (cleanItemDescriptions || 'SEYVEN Cosmetics Care Package').slice(0, 255);
 
     // Strictly pass cod_amount = order.codDueBdt (0 if prepaid)
     const amountToCollect = Math.max(0, Math.round(Number(order.codDueBdt || 0)));

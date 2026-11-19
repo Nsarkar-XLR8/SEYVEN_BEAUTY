@@ -91,6 +91,27 @@ function parseCourierRouting(district?: string, zone?: string, address?: string)
   };
 }
 
+/**
+ * Formats a clean item manifest label by removing generic default variants
+ * and avoiding duplicate bracket clutter.
+ */
+function formatItemManifestLabel(item: { title: string; variant?: string }): string {
+  const title = (item.title || 'Product Item').trim();
+  const v = (item.variant || '').trim();
+  if (!v) return title;
+
+  const lowerV = v.toLowerCase();
+  const lowerTitle = title.toLowerCase();
+
+  // If variant is generic default (Standard, Default, Regular, etc.) or already in title
+  const isGeneric = ['standard', 'default', 'default title', 'regular', 'none', 'n/a', 'single'].includes(lowerV);
+  if (isGeneric || lowerTitle.includes(lowerV)) {
+    return title;
+  }
+
+  return `${title} (${v})`;
+}
+
 export function ThermalShippingLabel({
   order,
   isPrintOnly = false,
@@ -250,8 +271,8 @@ export function ThermalShippingLabel({
         <div className="space-y-0.5">
           {order.items.slice(0, 4).map((item, idx) => (
             <div key={idx} className="grid grid-cols-12 text-[8.5px] leading-tight items-start py-0.5">
-              <span className="col-span-10 truncate pr-1 font-medium">
-                {idx + 1}. {item.title} {item.variant ? `(${item.variant})` : ''}
+              <span className="col-span-10 truncate pr-1 font-medium" title={item.title}>
+                {idx + 1}. {formatItemManifestLabel(item)}
               </span>
               <span className="col-span-2 text-right font-bold shrink-0">x{item.quantity}</span>
             </div>

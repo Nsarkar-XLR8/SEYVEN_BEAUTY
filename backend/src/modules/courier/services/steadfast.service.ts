@@ -83,15 +83,49 @@ export class SteadfastService {
     }
 
     // 2. Prepare Steadfast Consignment Payload
-    const shippingAddress = order.shippingAddress as Record<string, any>;
-    const recipientAddress =
+    const shippingAddress = (order.shippingAddress as Record<string, any>) || {};
+    const rawStreet = (
+      shippingAddress.address ||
       shippingAddress.streetAddress ||
-      `${shippingAddress.thanaArea || ''}, ${shippingAddress.district || ''}`.trim() ||
-      'Customer Address';
+      shippingAddress.fullAddress ||
+      (typeof order.shippingAddress === 'string' ? order.shippingAddress : '') ||
+      ''
+    ).trim();
+
+    let recipientAddress = rawStreet;
+    const district = (shippingAddress.district || shippingAddress.zone || '').trim();
+    const thana = (shippingAddress.thanaArea || '').trim();
+
+    if (!recipientAddress) {
+      recipientAddress = [thana, district].filter(Boolean).join(', ');
+    } else {
+      const lowerAddr = recipientAddress.toLowerCase();
+      if (thana && !lowerAddr.includes(thana.toLowerCase())) {
+        recipientAddress = `${recipientAddress}, ${thana}`;
+      }
+      if (district && !lowerAddr.includes(district.toLowerCase())) {
+        recipientAddress = `${recipientAddress}, ${district}`;
+      }
+    }
+
+    recipientAddress =
+      recipientAddress.trim().replace(/^,*\s*/, '').replace(/,\s*,/g, ', ') || 'Customer Address';
+
+    const cleanItemDescriptions = order.items
+      .map((i: any) => {
+        const isInternalSku =
+          !i.sku ||
+          /^custom-\d+/i.test(i.sku) ||
+          /^sku-\d+/i.test(i.sku) ||
+          /^it-\d+/i.test(i.sku);
+
+        const skuPart = !isInternalSku && i.sku ? ` (${i.sku})` : '';
+        return `${i.title}${skuPart} x${i.quantity}`;
+      })
+      .join(', ');
 
     const itemDescription =
-      order.items.map((i) => `${i.title} (${i.sku}) x${i.quantity}`).join(', ') ||
-      'SEYVEN Cosmetics Care Package';
+      (cleanItemDescriptions || 'SEYVEN Cosmetics Care Package').slice(0, 255);
 
     // Strictly pass cod_amount = order.codDueBdt (0 for prepaid)
     const amountToCollect = Math.max(0, Math.round(Number(order.codDueBdt)));

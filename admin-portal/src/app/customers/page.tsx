@@ -608,7 +608,7 @@ export default function CustomerIntelligencePage() {
                                   <div key={idx} className="flex items-center justify-between">
                                     <span>
                                       • {item.title || (item as any).productName || 'Cosmetics Item'}{' '}
-                                      {item.variant ? `(${item.variant})` : ''} × {item.quantity}
+                                      {item.variant && !['standard', 'default', 'none', 'regular'].includes(item.variant.toLowerCase()) && !((item.title || '').toLowerCase().includes(item.variant.toLowerCase())) ? `(${item.variant}) ` : ''}× {item.quantity}
                                     </span>
                                     <span className="text-[#1C1917]/60">
                                       {formatBdt(item.totalPrice || item.unitPrice * item.quantity)}

@@ -221,19 +221,29 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
                 className="w-full flex items-center justify-between p-2 rounded hover:bg-[#201D1A] transition-colors text-left"
               >
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-full bg-[#C7A97B] text-[#141211] font-bold text-xs flex items-center justify-center font-mono">
-                    {staffUser?.avatar || 'SO'}
-                  </div>
-                  <div className="overflow-hidden">
-                    <div className="text-xs text-[#F9F6F0] font-medium truncate">
-                      {staffUser?.name || 'Farah Rahman'}
+                {isReady && staffUser ? (
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#C7A97B] text-[#141211] font-bold text-xs flex items-center justify-center font-mono">
+                      {staffUser.avatar || staffUser.name?.slice(0, 2).toUpperCase() || 'NS'}
                     </div>
-                    <div className="text-[10px] text-[#C7A97B] font-mono tracking-wider truncate">
-                      {staffUser?.role?.replace('_', ' ')}
+                    <div className="overflow-hidden">
+                      <div className="text-xs text-[#F9F6F0] font-medium truncate">
+                        {staffUser.name}
+                      </div>
+                      <div className="text-[10px] text-[#C7A97B] font-mono tracking-wider truncate">
+                        {staffUser.role?.replace('_', ' ')}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center space-x-2.5 animate-pulse">
+                    <div className="w-8 h-8 rounded-full bg-[#292524] shrink-0" />
+                    <div className="space-y-1.5 overflow-hidden w-full">
+                      <div className="h-3 w-24 bg-[#292524] rounded" />
+                      <div className="h-2 w-16 bg-[#292524]/60 rounded" />
+                    </div>
+                  </div>
+                )}
                 <ChevronDown className="w-3.5 h-3.5 text-[#E6DFD5]/50 shrink-0" />
               </button>
 
@@ -299,7 +309,7 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex items-center space-x-2">
           <div className="w-7 h-7 rounded-full bg-[#C7A97B] text-[#141211] font-bold text-[10px] flex items-center justify-center font-mono">
-            {staffUser?.avatar || 'SO'}
+            {staffUser?.avatar || (isReady && staffUser ? (staffUser as any).name?.slice(0, 2).toUpperCase() : 'NS')}
           </div>
         </div>
       </header>

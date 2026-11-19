@@ -38,7 +38,7 @@ export default function AdminOverviewPage() {
             <span>Operations Console · Live</span>
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl text-[#1C1917] tracking-wide font-light">
-            Welcome, <span className="font-normal">{staffUser?.name || 'Operator'}</span>
+            Welcome, <span className="font-normal">{staffUser?.name || 'Administrator'}</span>
           </h1>
           <p className="text-xs text-[#1C1917]/60 font-light mt-0.5">
             Orders fulfillment pipeline, courier dispatch, and catalog synchronization are active.

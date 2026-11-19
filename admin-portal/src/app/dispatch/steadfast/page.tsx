@@ -42,7 +42,7 @@ interface FraudCheckResult {
 }
 
 export default function SteadfastOperationsDeskPage() {
-  const { orders, updateOrderStatus } = useAdmin();
+  const { orders, updateOrderStatus, platformSettings } = useAdmin();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
@@ -55,11 +55,17 @@ export default function SteadfastOperationsDeskPage() {
 
   // Rider Pickup Form State
   const [pickupAddress, setPickupAddress] = useState('SEYVEN Hub, KB Saha Road, Narayanganj 1400');
-  const [pickupPhone, setPickupPhone] = useState('01999181198');
+  const [pickupPhone, setPickupPhone] = useState(platformSettings?.supportPhone || '01999181198');
   const [pickupQty, setPickupQty] = useState('5');
   const [pickupNote, setPickupNote] = useState('Call before arrival. Fragile luxury cosmetics.');
   const [isRequestingPickup, setIsRequestingPickup] = useState(false);
   const [pickupSuccessId, setPickupSuccessId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (platformSettings?.supportPhone) {
+      setPickupPhone(platformSettings.supportPhone);
+    }
+  }, [platformSettings?.supportPhone]);
 
   // Filter orders assigned to Steadfast
   const steadfastInTransit = orders.filter(

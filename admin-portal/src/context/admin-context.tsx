@@ -90,6 +90,23 @@ interface AdminContextType {
   deleteRedirect: (id: string) => void;
   lastPurgedAt: string | null;
   purgeEdgeCache: (scope: string) => void;
+
+  // Platform Settings (Single Source of Truth)
+  platformSettings: AdminPlatformSettings;
+  updatePlatformSettings: (settings: Partial<AdminPlatformSettings>) => void;
+}
+
+export interface AdminPlatformSettings {
+  supportPhone: string;
+  supportWhatsApp: string;
+  supportMessenger?: string;
+  supportInstagram?: string;
+  supportFacebook?: string;
+  standardDeliveryDhakaBdt?: number;
+  standardDeliveryOutsideBdt?: number;
+  freeDeliveryThresholdBdt?: number;
+  isVatEnabled?: boolean;
+  vatRatePercent?: number;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -289,6 +306,19 @@ function sanitizeProductsForStorage(prods: AdminProduct[]): AdminProduct[] {
   });
 }
 
+const DEFAULT_ADMIN_SETTINGS: AdminPlatformSettings = {
+  supportPhone: '+880 1999 181198',
+  supportWhatsApp: '+880 1999 181198',
+  supportMessenger: 'https://m.me/seyvenofficial',
+  supportInstagram: 'https://www.instagram.com/seyven_beauty/',
+  supportFacebook: 'https://www.facebook.com/seyvenofficial',
+  standardDeliveryDhakaBdt: 70,
+  standardDeliveryOutsideBdt: 130,
+  freeDeliveryThresholdBdt: 3000,
+  isVatEnabled: false,
+  vatRatePercent: 5,
+};
+
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [staffUser, setStaffUser] = useState<StaffUser | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -298,8 +328,19 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [qrBatches, setQrBatches] = useState<QRBatch[]>(INITIAL_QR_BATCHES);
   const [anomalies, setAnomalies] = useState<ScanAnomaly[]>(INITIAL_ANOMALIES);
   const [redirects, setRedirects] = useState<RedirectRule[]>(INITIAL_REDIRECTS);
+  const [platformSettings, setPlatformSettings] = useState<AdminPlatformSettings>(DEFAULT_ADMIN_SETTINGS);
   const [lastPurgedAt, setLastPurgedAt] = useState<string | null>(null);
   const [isSyncingOrders, setIsSyncingOrders] = useState(false);
+
+  const updatePlatformSettings = useCallback((newSettings: Partial<AdminPlatformSettings>) => {
+    setPlatformSettings((prev) => {
+      const merged = { ...prev, ...newSettings };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('seyven_platform_settings', JSON.stringify(merged));
+      }
+      return merged;
+    });
+  }, []);
 
   const logout = useCallback((reason?: string) => {
     if (typeof window !== 'undefined') {
@@ -487,6 +528,26 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
         // Initial live sync directly from PostgreSQL database
         await Promise.allSettled([refreshCatalog(), refreshOrders()]);
+
+        // Sync platform settings from localStorage & backend (Single Source of Truth)
+        try {
+          const cachedSettings = localStorage.getItem('seyven_platform_settings');
+          if (cachedSettings) {
+            setPlatformSettings((prev) => ({ ...prev, ...JSON.parse(cachedSettings) }));
+          }
+        } catch {}
+
+        fetch('/api/settings')
+          .then((res) => (res.ok ? res.json() : null))
+          .then((json) => {
+            if (json?.data) {
+              setPlatformSettings((prev) => ({ ...prev, ...json.data }));
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('seyven_platform_settings', JSON.stringify(json.data));
+              }
+            }
+          })
+          .catch(() => {});
 
         orderPollInterval = setInterval(() => {
           refreshOrders();
@@ -1262,6 +1323,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         deleteRedirect,
         lastPurgedAt,
         purgeEdgeCache,
+        platformSettings,
+        updatePlatformSettings,
       }}
     >
       {children}

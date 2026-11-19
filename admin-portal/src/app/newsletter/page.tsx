@@ -22,6 +22,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api-config';
+import { useAdmin } from '@/context/admin-context';
 
 interface Subscriber {
   id: string;
@@ -60,6 +61,7 @@ interface DlqItem {
 }
 
 export default function AdminNewsletterPage() {
+  const { platformSettings } = useAdmin();
   const [activeTab, setActiveTab] = useState<'compose' | 'dlq' | 'subscribers' | 'history'>('compose');
 
   // Form State
@@ -82,13 +84,6 @@ export default function AdminNewsletterPage() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [searchSubscriber, setSearchSubscriber] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [platformSettings, setPlatformSettings] = useState<{
-    supportPhone: string;
-    supportWhatsApp: string;
-  }>({
-    supportPhone: '+880 9612 000000',
-    supportWhatsApp: '+880 1700 000000',
-  });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -115,19 +110,6 @@ export default function AdminNewsletterPage() {
       if (campRes && Array.isArray(campRes)) {
         setCampaigns(campRes);
       }
-
-      // Settings
-      fetch('/api/settings')
-        .then((r) => (r.ok ? r.json() : null))
-        .then((json) => {
-          if (json?.data) {
-            setPlatformSettings({
-              supportPhone: json.data.supportPhone || '+880 9612 000000',
-              supportWhatsApp: json.data.supportWhatsApp || '+880 1700 000000',
-            });
-          }
-        })
-        .catch(() => {});
 
       // DLQ
       const dlqRes = await fetch(`${apiUrl}/newsletter/dlq`).then((r) => (r.ok ? r.json() : null));

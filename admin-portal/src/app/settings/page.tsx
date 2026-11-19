@@ -22,7 +22,7 @@ import { useAdmin } from '@/context/admin-context';
 import { API_BASE_URL } from '@/lib/api-config';
 
 export default function PlatformSettingsPage() {
-  const { staffUser } = useAdmin();
+  const { staffUser, updatePlatformSettings } = useAdmin();
 
   // Settings State
   const [isVatEnabled, setIsVatEnabled] = useState(true);
@@ -188,6 +188,7 @@ export default function PlatformSettingsPage() {
     };
 
     try {
+      updatePlatformSettings(payload);
       try {
         localStorage.setItem('seyven_platform_settings', JSON.stringify(payload));
       } catch {}

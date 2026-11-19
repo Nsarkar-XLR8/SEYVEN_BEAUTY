@@ -131,7 +131,7 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
     }
   }, [isReady, isAuthenticated, pathname, router]);
 
-  if (pathname === '/login') {
+  if (pathname === '/login' || pathname?.startsWith('/warehouse/print')) {
     return <>{children}</>;
   }
 

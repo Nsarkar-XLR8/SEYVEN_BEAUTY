@@ -1019,8 +1019,11 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     autoBookPathao?: boolean;
   }): Promise<AdminOrder> => {
     const now = new Date();
-    const cleanParentId = data.sourceOrderId.replace(/-REP$/i, '');
-    const replacementId = `${cleanParentId}-REP`;
+    const cleanParentId = data.sourceOrderId.replace(/-REP(\d*)$/i, '');
+    const existingReps = orders.filter(
+      (o) => o.id === `${cleanParentId}-REP` || o.id.startsWith(`${cleanParentId}-REP`),
+    );
+    const replacementId = existingReps.length === 0 ? `${cleanParentId}-REP` : `${cleanParentId}-REP${existingReps.length + 1}`;
     const refNo = `REP-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const combinedNotes = [

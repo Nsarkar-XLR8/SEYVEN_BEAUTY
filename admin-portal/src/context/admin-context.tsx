@@ -77,6 +77,7 @@ interface AdminContextType {
     district: string;
     defectReason: string;
     agentNotes?: string;
+    initialStatus?: 'CONFIRMED' | 'PACKED';
     autoBookPathao?: boolean;
   }) => Promise<AdminOrder>;
   refreshOrders: () => Promise<void>;
@@ -1014,6 +1015,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     district: string;
     defectReason: string;
     agentNotes?: string;
+    initialStatus?: 'CONFIRMED' | 'PACKED';
     autoBookPathao?: boolean;
   }): Promise<AdminOrder> => {
     const now = new Date();
@@ -1028,6 +1030,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     ]
       .filter(Boolean)
       .join(' | ');
+
+    const targetStatus = data.initialStatus || 'CONFIRMED';
 
     const newOrder: AdminOrder = {
       id: replacementId,
@@ -1044,7 +1048,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       discount: 0,
       totalAmount: 0,
       paymentMethod: 'COD',
-      status: 'PACKED',
+      status: targetStatus,
       codVerification: 'VERIFIED',
       source: 'Warranty Replacement',
       advancePaid: 0,
@@ -1102,7 +1106,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           discountBdt: 0,
           paymentMethod: 'COD',
           source: 'REPLACEMENT',
-          status: 'PACKED',
+          status: targetStatus,
           advancePaid: 0,
           agentNotes: combinedNotes,
         }),

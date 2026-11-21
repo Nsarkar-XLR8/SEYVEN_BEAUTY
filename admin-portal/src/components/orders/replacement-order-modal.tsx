@@ -7,11 +7,11 @@ import {
   Gift,
   ShieldCheck,
   AlertCircle,
-  Truck,
-  CheckCircle2,
   Package,
   Plus,
   Trash2,
+  Box,
+  CheckCircle,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 import { AdminOrder, OrderItem } from '@/types/admin';
@@ -25,10 +25,18 @@ interface ReplacementOrderModalProps {
 }
 
 const DEFECT_REASONS = [
-  { id: 'FACTORY_SEALED_DEFECT', label: 'Factory Defect inside Seal (Broken/Molten Stick/Mechanism)' },
-  { id: 'TRANSIT_DAMAGE', label: 'Transit Damage / Leakage in Parcel' },
-  { id: 'WRONG_ITEM', label: 'Wrong Item / Formulation Dispatched' },
+  { id: 'FACTORY_SEALED_DEFECT', label: 'Factory Defect inside Seal (Damaged/Molten inside unopened packaging)' },
+  { id: 'TRANSIT_DAMAGE', label: 'Transit Damage / Crushed / Leaked in Transit' },
+  { id: 'WRONG_PRODUCT', label: 'Incorrect Product / Shade / Variant Dispatched' },
+  { id: 'BATCH_QUALITY_ISSUE', label: 'Formula / Texture / Quality Discrepancy' },
   { id: 'VIP_COURTESY', label: 'VIP Executive Courtesy Reshipment' },
+];
+
+const POPULAR_GIFTS = [
+  { title: 'MARS Eyeliner (Waterproof Deep Black)', brand: 'MARS', regularPrice: 80 },
+  { title: 'Bio-Cellulose Hydrating Sheet Mask', brand: 'Curated K-Beauty', regularPrice: 120 },
+  { title: 'Exfoliating Berry Lip Scrub', brand: 'SEYVEN Courtesy', regularPrice: 150 },
+  { title: 'Soft Velvet Beauty Blender Sponge', brand: 'SEYVEN Courtesy', regularPrice: 90 },
 ];
 
 export function ReplacementOrderModal({
@@ -37,15 +45,14 @@ export function ReplacementOrderModal({
   sourceOrder,
   onSuccess,
 }: ReplacementOrderModalProps) {
-  const { createReplacementOrder, products } = useAdmin();
+  const { createReplacementOrder } = useAdmin();
 
-  // Selection of items from source order
+  // 1. Dynamic Item Selection from any order
   const [selectedItemIds, setSelectedItemIds] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    // Pre-select items (if WishCare or any, let admin pick)
+    // If order has only 1 item, auto-select it; if multiple, select the first or let user choose
     sourceOrder.items.forEach((it, idx) => {
-      // If title includes wishcare or lip balm, pre-select it
-      if (it.title.toLowerCase().includes('wishcare') || it.title.toLowerCase().includes('lip balm') || idx === 0) {
+      if (sourceOrder.items.length === 1 || idx === 0) {
         initial[it.id] = true;
       }
     });
@@ -55,26 +62,28 @@ export function ReplacementOrderModal({
   const [quantities, setQuantities] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
     sourceOrder.items.forEach((it) => {
-      initial[it.id] = 1;
+      initial[it.id] = it.quantity || 1;
     });
     return initial;
   });
 
-  // Complimentary Gift State
-  const [includeMarsGift, setIncludeMarsGift] = useState<boolean>(true);
+  // 2. Complimentary Gift State (100% flexible for any gift)
+  const [hasGift, setHasGift] = useState<boolean>(true);
+  const [selectedGift, setSelectedGift] = useState<string>(POPULAR_GIFTS[0].title);
   const [customGiftTitle, setCustomGiftTitle] = useState<string>('');
   const [extraGifts, setExtraGifts] = useState<Array<{ id: string; title: string; quantity: number }>>([]);
 
-  // Defect details
-  const [defectReason, setDefectReason] = useState<string>(
-    'Factory Defect inside Seal (Broken/Molten Stick/Mechanism)',
-  );
+  // 3. Defect details & QA agreement
+  const [defectReason, setDefectReason] = useState<string>(DEFECT_REASONS[0].label);
   const [staffNote, setStaffNote] = useState<string>(
-    'Customer informed of factory lip balm defect. Customer keeps defective unit. Replacement unsealed and QA-inspected with customer consent before packing.',
+    'Customer reported defect. Replacement approved. QA seal inspected per client consent before packing.',
   );
   const [qaInspectionAgreed, setQaInspectionAgreed] = useState<boolean>(true);
 
-  // Address (default to original order address, editable)
+  // 4. Initial Pipeline Status Control (Answers user: CONFIRMED vs PACKED)
+  const [initialStatus, setInitialStatus] = useState<'CONFIRMED' | 'PACKED'>('CONFIRMED');
+
+  // 5. Address (defaults to original order address, editable)
   const [shippingAddress, setShippingAddress] = useState<string>(sourceOrder.shippingAddress || '');
   const [customerPhone, setCustomerPhone] = useState<string>(sourceOrder.customerPhone || '');
   const [district, setDistrict] = useState<string>(sourceOrder.district || 'Dhaka');
@@ -124,13 +133,13 @@ export function ReplacementOrderModal({
       }
     });
 
-    if (includeMarsGift) {
+    if (hasGift && selectedGift) {
       replacementItems.push({
-        id: `gift-mars-eyeliner-${Date.now()}`,
-        sku: 'GIFT-MARS-EYELINER',
-        title: 'MARS Eyeliner (Complimentary Apology Gift)',
-        brand: 'MARS',
-        variant: 'Black',
+        id: `gift-apology-${Date.now()}`,
+        sku: 'GIFT-APOLOGY',
+        title: `${selectedGift} (Complimentary Apology Gift)`,
+        brand: 'SEYVEN Courtesy',
+        variant: 'Standard',
         quantity: 1,
         unitPrice: 0,
         totalPrice: 0,
@@ -182,6 +191,7 @@ export function ReplacementOrderModal({
         district: district,
         defectReason,
         agentNotes: combinedNotes,
+        initialStatus,
         autoBookPathao,
       });
 
@@ -207,7 +217,7 @@ export function ReplacementOrderModal({
             </div>
             <div>
               <span className="text-[10px] uppercase font-mono tracking-widest text-[#C7A97B]">
-                Luxury Brand Recovery Desk
+                Universal Brand Recovery Desk
               </span>
               <h3 className="font-serif text-lg font-bold">Issue Complimentary Replacement</h3>
             </div>
@@ -238,8 +248,7 @@ export function ReplacementOrderModal({
                 White-Glove Customer Recovery Protocol
               </strong>
               <p className="text-[#1C1917]/70 text-[11px] leading-relaxed">
-                Replacement parcel will be created at <strong>৳0 COD</strong> with immediate warehouse priority.
-                Customer keeps the defective product. Zero delivery fees applied to customer.
+                Universal recovery engine for any product. Customer keeps defective unit with <strong>৳0 COD</strong> reshipment.
               </p>
             </div>
           </div>
@@ -256,11 +265,16 @@ export function ReplacementOrderModal({
             </div>
           </div>
 
-          {/* Select Items from Original Order to Replace */}
+          {/* 1. Dynamic Product Selection from whatever the customer purchased */}
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block font-mono">
-              1. Select Defective Product(s) to Replace:
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917] font-mono">
+                1. Select Defective Product(s) to Replace:
+              </label>
+              <span className="text-[10px] text-stone-500 font-mono">
+                ({sourceOrder.items.length} items on file)
+              </span>
+            </div>
             <div className="border border-[#E6DFD5] rounded-lg divide-y divide-[#E6DFD5] bg-white">
               {sourceOrder.items.map((it) => {
                 const isSelected = !!selectedItemIds[it.id];
@@ -269,7 +283,7 @@ export function ReplacementOrderModal({
                     key={it.id}
                     onClick={() => toggleItem(it.id)}
                     className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${
-                      isSelected ? 'bg-amber-50/50' : 'hover:bg-stone-50'
+                      isSelected ? 'bg-amber-50/60 border-l-4 border-amber-600' : 'hover:bg-stone-50'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
@@ -281,8 +295,8 @@ export function ReplacementOrderModal({
                       />
                       <div>
                         <div className="font-medium text-xs text-[#1C1917]">{it.title}</div>
-                        <div className="text-[10px] text-[#1C1917]/50 font-mono">
-                          Original Qty: {it.quantity} · Normal Price: {formatBdt(it.unitPrice)}
+                        <div className="text-[10px] text-[#1C1917]/60 font-mono">
+                          Purchased: {it.quantity} unit(s) {it.variant ? `(${it.variant})` : ''} · Original: {formatBdt(it.unitPrice)}
                         </div>
                       </div>
                     </div>
@@ -293,12 +307,12 @@ export function ReplacementOrderModal({
                         <input
                           type="number"
                           min={1}
-                          max={5}
+                          max={10}
                           value={quantities[it.id] || 1}
                           onChange={(e) =>
                             setQuantities({ ...quantities, [it.id]: Math.max(1, parseInt(e.target.value) || 1) })
                           }
-                          className="w-12 px-2 py-1 border border-[#E6DFD5] rounded text-xs text-center font-mono"
+                          className="w-12 px-2 py-1 border border-[#E6DFD5] rounded text-xs text-center font-mono font-bold"
                         />
                       </div>
                     )}
@@ -308,76 +322,154 @@ export function ReplacementOrderModal({
             </div>
           </div>
 
-          {/* Complimentary Apology Gift Card */}
+          {/* 2. Complimentary Apology Gift Selection (Preset chips + Custom input) */}
           <div className="p-3.5 bg-gradient-to-r from-emerald-50/60 to-amber-50/60 border border-emerald-300/60 rounded-lg space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasGift}
+                  onChange={(e) => setHasGift(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-700 rounded"
+                />
                 <Gift className="w-4 h-4 text-emerald-700" />
                 <span className="text-xs font-bold text-[#1C1917]">
-                  2. Complimentary Goodwill / Apology Gift
+                  2. Include Complimentary Apology / Goodwill Gift
                 </span>
-              </div>
+              </label>
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
                 100% SEYVEN Courtesy (৳0)
               </span>
             </div>
 
-            {/* MARS Eyeliner Quick Toggle */}
-            <label className="flex items-start space-x-3 p-2.5 bg-white border border-emerald-200 rounded-md cursor-pointer hover:bg-emerald-50/30 transition-colors">
-              <input
-                type="checkbox"
-                checked={includeMarsGift}
-                onChange={(e) => setIncludeMarsGift(e.target.checked)}
-                className="w-4 h-4 accent-emerald-700 rounded mt-0.5"
-              />
-              <div className="flex-1 text-xs">
-                <div className="font-semibold text-emerald-950 flex items-center justify-between">
-                  <span>MARS Eyeliner (Waterproof Deep Black)</span>
-                  <span className="font-mono text-emerald-800 line-through text-[11px]">৳80</span>
+            {hasGift && (
+              <div className="space-y-2.5 pt-1">
+                <span className="text-[10px] uppercase font-mono font-bold text-stone-600 block">
+                  Quick Select Apology Gift:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {POPULAR_GIFTS.map((g) => {
+                    const isChosen = selectedGift === g.title;
+                    return (
+                      <button
+                        key={g.title}
+                        type="button"
+                        onClick={() => setSelectedGift(g.title)}
+                        className={`p-2.5 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${
+                          isChosen
+                            ? 'bg-white border-emerald-600 shadow-xs ring-1 ring-emerald-600'
+                            : 'bg-white/80 border-stone-200 hover:border-emerald-300'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-semibold text-[#1C1917] text-[11px] leading-tight">{g.title}</div>
+                          <div className="text-[10px] text-stone-500 font-mono">{g.brand}</div>
+                        </div>
+                        <span className="text-[10px] font-mono text-emerald-800 line-through shrink-0 ml-2">
+                          ৳{g.regularPrice}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="text-[11px] text-stone-600">
-                  Complimentary brand recovery gift placed inside parcel with luxury tissue wrap.
+
+                {/* Additional custom gifts */}
+                {extraGifts.map((gift) => (
+                  <div
+                    key={gift.id}
+                    className="flex items-center justify-between p-2 bg-white border border-[#E6DFD5] rounded text-xs font-mono"
+                  >
+                    <span>🎁 {gift.title}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExtraGift(gift.id)}
+                      className="text-stone-400 hover:text-rose-600"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Or type other custom gift (e.g. Lip Mask, Hydrating Serum)..."
+                    value={customGiftTitle}
+                    onChange={(e) => setCustomGiftTitle(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-xs border border-[#E6DFD5] rounded bg-white focus:outline-none focus:border-[#C7A97B]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddExtraGift}
+                    className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium rounded flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* 3. Initial Pipeline Stage Selector (Answers user: CONFIRMED vs PACKED) */}
+          <div className="p-3.5 bg-white border border-[#E6DFD5] rounded-lg space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917] font-mono block">
+              3. Initial Fulfillment Pipeline Stage:
             </label>
-
-            {/* Additional custom gifts */}
-            {extraGifts.map((gift) => (
-              <div
-                key={gift.id}
-                className="flex items-center justify-between p-2 bg-white border border-[#E6DFD5] rounded text-xs font-mono"
+            <div className="grid grid-cols-2 gap-3">
+              <label
+                className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start space-x-2.5 ${
+                  initialStatus === 'CONFIRMED'
+                    ? 'bg-amber-50/50 border-[#C7A97B] ring-1 ring-[#C7A97B]'
+                    : 'bg-[#FAF8F5] border-[#E6DFD5] hover:bg-white'
+                }`}
               >
-                <span>🎁 {gift.title}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveExtraGift(gift.id)}
-                  className="text-stone-400 hover:text-rose-600"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+                <input
+                  type="radio"
+                  name="initialStatus"
+                  value="CONFIRMED"
+                  checked={initialStatus === 'CONFIRMED'}
+                  onChange={() => setInitialStatus('CONFIRMED')}
+                  className="mt-0.5 accent-[#C7A97B]"
+                />
+                <div className="text-xs">
+                  <strong className="block text-[#1C1917] font-semibold">
+                    CONFIRMED (Recommended)
+                  </strong>
+                  <span className="text-[10px] text-stone-500 leading-tight block mt-0.5">
+                    Queued for warehouse team to pick, unseal/inspect with customer consent, then click Pack.
+                  </span>
+                </div>
+              </label>
 
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Or add other gift item (e.g. Lip Scrub, Sheet Mask)..."
-                value={customGiftTitle}
-                onChange={(e) => setCustomGiftTitle(e.target.value)}
-                className="flex-1 px-3 py-1.5 text-xs border border-[#E6DFD5] rounded bg-white focus:outline-none focus:border-[#C7A97B]"
-              />
-              <button
-                type="button"
-                onClick={handleAddExtraGift}
-                className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium rounded flex items-center gap-1"
+              <label
+                className={`p-3 rounded-lg border cursor-pointer transition-all flex items-start space-x-2.5 ${
+                  initialStatus === 'PACKED'
+                    ? 'bg-amber-50/50 border-[#C7A97B] ring-1 ring-[#C7A97B]'
+                    : 'bg-[#FAF8F5] border-[#E6DFD5] hover:bg-white'
+                }`}
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add</span>
-              </button>
+                <input
+                  type="radio"
+                  name="initialStatus"
+                  value="PACKED"
+                  checked={initialStatus === 'PACKED'}
+                  onChange={() => setInitialStatus('PACKED')}
+                  className="mt-0.5 accent-[#C7A97B]"
+                />
+                <div className="text-xs">
+                  <strong className="block text-[#1C1917] font-semibold">
+                    PACKED (Direct Boxed)
+                  </strong>
+                  <span className="text-[10px] text-stone-500 leading-tight block mt-0.5">
+                    Already inspected and boxed up. Ready for immediate thermal label printing & dispatch.
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
 
-          {/* Defect Reason & Pre-Dispatch QA Agreement */}
+          {/* 4. Defect Category & Pre-Dispatch QA Agreement */}
           <div className="space-y-3 p-3 bg-[#FAF8F5] border border-[#E6DFD5] rounded-lg text-xs">
             <div>
               <label className="text-[10px] uppercase font-mono font-bold text-[#1C1917]/70 block mb-1">
@@ -409,13 +501,13 @@ export function ReplacementOrderModal({
                   Customer consented to pre-dispatch seal inspection by SEYVEN Concierge
                 </strong>
                 <span className="text-stone-500">
-                  Ensures zero defect on the replacement stick while maintaining complete customer transparency.
+                  Ensures flawless product quality before packaging while respecting customer trust.
                 </span>
               </div>
             </label>
           </div>
 
-          {/* Delivery Destination Address */}
+          {/* 5. Delivery Destination Address */}
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block font-mono">
               Delivery Destination (Bangladeshi Address)
@@ -460,7 +552,7 @@ export function ReplacementOrderModal({
             <div className="text-xs">
               <span className="font-semibold text-[#1C1917]">Auto-Book with Pathao Express immediately</span>
               <span className="block text-[10px] text-stone-500 font-mono">
-                Will create consignment with COD: ৳0 and print-ready label in Smart Dispatch.
+                Will book with Pathao API at COD: ৳0 with complimentary replacement instruction.
               </span>
             </div>
           </label>
@@ -502,7 +594,13 @@ export function ReplacementOrderModal({
             className="px-5 py-2.5 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] text-xs font-bold rounded-lg flex items-center space-x-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
           >
             <RotateCcw className={`w-3.5 h-3.5 ${isSubmitting ? 'animate-spin' : ''}`} />
-            <span>{isSubmitting ? 'Issuing Replacement...' : 'Dispatch ৳0 Replacement Parcel'}</span>
+            <span>
+              {isSubmitting
+                ? 'Issuing Replacement...'
+                : initialStatus === 'CONFIRMED'
+                ? 'Queue for Warehouse QA (CONFIRMED)'
+                : 'Dispatch ৳0 Parcel (PACKED)'}
+            </span>
           </button>
         </div>
       </div>

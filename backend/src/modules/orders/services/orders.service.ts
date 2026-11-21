@@ -83,8 +83,8 @@ export class OrdersService {
             brand: it.brand || 'SEYVEN',
             variant: it.volume || it.variant || 'Standard',
             quantity: it.quantity || 1,
-            unitPrice: it.priceBdt || it.unitPrice || 2450,
-            totalPrice: (it.priceBdt || it.unitPrice || 2450) * (it.quantity || 1),
+            unitPrice: it.priceBdt !== undefined ? Number(it.priceBdt) : (it.unitPrice !== undefined ? Number(it.unitPrice) : 2450),
+            totalPrice: it.totalPrice !== undefined ? Number(it.totalPrice) : ((it.priceBdt !== undefined ? Number(it.priceBdt) : (it.unitPrice !== undefined ? Number(it.unitPrice) : 2450)) * (it.quantity || 1)),
           }))
         : [],
       subtotal: dto.subtotalBdt !== undefined ? Number(dto.subtotalBdt) : (dto.subtotal !== undefined ? Number(dto.subtotal) : (dto.totalBdt !== undefined ? Number(dto.totalBdt) : 2450)),
@@ -134,8 +134,8 @@ export class OrdersService {
             title: it.title || 'Curated Formulation',
             sku: it.sku || resolvedVariant?.sku || 'SKU-001',
             quantity: Number(it.quantity) || 1,
-            unitPriceBdt: Number(it.unitPrice) || 2450,
-            lineTotalBdt: Number(it.totalPrice) || Number(it.unitPrice || 2450) * Number(it.quantity || 1),
+            unitPriceBdt: it.unitPrice !== undefined ? Number(it.unitPrice) : (it.priceBdt !== undefined ? Number(it.priceBdt) : 2450),
+            lineTotalBdt: it.totalPrice !== undefined ? Number(it.totalPrice) : ((it.unitPrice !== undefined ? Number(it.unitPrice) : (it.priceBdt !== undefined ? Number(it.priceBdt) : 2450)) * (Number(it.quantity) || 1)),
           };
         }),
       );

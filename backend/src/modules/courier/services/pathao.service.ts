@@ -151,7 +151,8 @@ export class PathaoService {
           !i.sku ||
           /^custom-\d+/i.test(i.sku) ||
           /^sku-\d+/i.test(i.sku) ||
-          /^it-\d+/i.test(i.sku);
+          /^it-\d+/i.test(i.sku) ||
+          /^gift/i.test(i.sku);
 
         const skuPart = !isInternalSku && i.sku ? ` (${i.sku})` : '';
         return `${i.title}${skuPart} x${i.quantity}`;

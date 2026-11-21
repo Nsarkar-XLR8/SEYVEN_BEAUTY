@@ -45,13 +45,28 @@ export class SteadfastService {
     dto: BookSteadfastConsignmentDto,
     staffUserId?: string,
   ): Promise<SteadfastCreateOrderResponse> {
-    const order = await this.prisma.order.findUnique({
-      where: { id: dto.orderId },
-      include: { items: true },
-    });
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dto.orderId);
+    let order = isUuid
+      ? await this.prisma.order.findUnique({
+          where: { id: dto.orderId },
+          include: { items: true },
+        })
+      : await this.prisma.order.findFirst({
+          where: { orderNumber: dto.orderId },
+          include: { items: true },
+        });
+
+    if (!order && !isUuid) {
+      try {
+        order = await this.prisma.order.findUnique({
+          where: { id: dto.orderId },
+          include: { items: true },
+        });
+      } catch {}
+    }
 
     if (!order) {
-      throw new NotFoundException(`Order with ID '${dto.orderId}' not found`);
+      throw new NotFoundException(`Order with ID or Order Number '${dto.orderId}' not found`);
     }
 
     // 1. Guard against double-booking or terminal states
@@ -117,7 +132,8 @@ export class SteadfastService {
           !i.sku ||
           /^custom-\d+/i.test(i.sku) ||
           /^sku-\d+/i.test(i.sku) ||
-          /^it-\d+/i.test(i.sku);
+          /^it-\d+/i.test(i.sku) ||
+          /^gift/i.test(i.sku);
 
         const skuPart = !isInternalSku && i.sku ? ` (${i.sku})` : '';
         return `${i.title}${skuPart} x${i.quantity}`;

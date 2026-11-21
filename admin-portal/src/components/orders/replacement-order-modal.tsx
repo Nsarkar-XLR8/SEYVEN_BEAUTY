@@ -50,9 +50,9 @@ export function ReplacementOrderModal({
   // 1. Dynamic Item Selection from any order
   const [selectedItemIds, setSelectedItemIds] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    // If order has only 1 item, auto-select it; if multiple, select the first or let user choose
-    sourceOrder.items.forEach((it, idx) => {
-      if (sourceOrder.items.length === 1 || idx === 0) {
+    const items = sourceOrder?.items || [];
+    items.forEach((it, idx) => {
+      if (items.length === 1 || idx === 0) {
         initial[it.id] = true;
       }
     });
@@ -61,7 +61,8 @@ export function ReplacementOrderModal({
 
   const [quantities, setQuantities] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
-    sourceOrder.items.forEach((it) => {
+    const items = sourceOrder?.items || [];
+    items.forEach((it) => {
       initial[it.id] = it.quantity || 1;
     });
     return initial;
@@ -83,10 +84,17 @@ export function ReplacementOrderModal({
   // 4. Initial Pipeline Status Control (Answers user: CONFIRMED vs PACKED)
   const [initialStatus, setInitialStatus] = useState<'CONFIRMED' | 'PACKED'>('CONFIRMED');
 
-  // 5. Address (defaults to original order address, editable)
-  const [shippingAddress, setShippingAddress] = useState<string>(sourceOrder.shippingAddress || '');
-  const [customerPhone, setCustomerPhone] = useState<string>(sourceOrder.customerPhone || '');
-  const [district, setDistrict] = useState<string>(sourceOrder.district || 'Dhaka');
+  // 5. Address (defaults to original order address, editable, defensive against object/string)
+  const [shippingAddress, setShippingAddress] = useState<string>(() => {
+    if (typeof sourceOrder?.shippingAddress === 'string') return sourceOrder.shippingAddress;
+    if (typeof sourceOrder?.shippingAddress === 'object' && sourceOrder?.shippingAddress) {
+      const a = sourceOrder.shippingAddress as any;
+      return a.address || a.streetAddress || a.fullAddress || '';
+    }
+    return '';
+  });
+  const [customerPhone, setCustomerPhone] = useState<string>(sourceOrder?.customerPhone || '');
+  const [district, setDistrict] = useState<string>(sourceOrder?.district || 'Dhaka');
 
   // Auto courier booking toggle
   const [autoBookPathao, setAutoBookPathao] = useState<boolean>(false);
@@ -122,7 +130,7 @@ export function ReplacementOrderModal({
     // Validate that at least one replacement item or gift is selected
     const replacementItems: OrderItem[] = [];
 
-    sourceOrder.items.forEach((it) => {
+    (sourceOrder?.items || []).forEach((it) => {
       if (selectedItemIds[it.id]) {
         replacementItems.push({
           ...it,
@@ -272,11 +280,11 @@ export function ReplacementOrderModal({
                 1. Select Defective Product(s) to Replace:
               </label>
               <span className="text-[10px] text-stone-500 font-mono">
-                ({sourceOrder.items.length} items on file)
+                ({(sourceOrder?.items || []).length} items on file)
               </span>
             </div>
             <div className="border border-[#E6DFD5] rounded-lg divide-y divide-[#E6DFD5] bg-white">
-              {sourceOrder.items.map((it) => {
+              {(sourceOrder?.items || []).map((it) => {
                 const isSelected = !!selectedItemIds[it.id];
                 return (
                   <div

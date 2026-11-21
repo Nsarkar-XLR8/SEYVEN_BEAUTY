@@ -134,7 +134,8 @@ export function ThermalShippingLabel({
   const numericSuffix = order.id.replace(/[^0-9]/g, '').slice(-6) || '991204';
   const consignmentCode = order.consignmentId || `${defaultPrefix}-${numericSuffix}`;
 
-  const isCod = order.paymentMethod === 'COD';
+  const isZeroCash = Number(order.totalAmount || 0) <= 0;
+  const isCod = order.paymentMethod === 'COD' && !isZeroCash;
   const routing = parseCourierRouting(order.district, order.zone, order.shippingAddress);
 
   // Approximate weight calculation based on item quantity
@@ -250,13 +251,21 @@ export function ThermalShippingLabel({
         }`}
       >
         <div className="text-[8.5px] font-black uppercase tracking-wider">
-          {isCod ? '★ CASH ON DELIVERY (COD) ★' : '✓ 100% PREPAID SHIPMENT'}
+          {isCod
+            ? '★ CASH ON DELIVERY (COD) ★'
+            : isZeroCash
+            ? '✓ COMPLIMENTARY REPLACEMENT (৳0)'
+            : '✓ 100% PREPAID SHIPMENT'}
         </div>
         <div className={`${is80mm ? 'text-xl' : 'text-2xl'} font-black tracking-tight leading-none my-1 font-mono`}>
           {isCod ? `COLLECT: ${formatBdt(order.totalAmount)}` : 'DO NOT COLLECT CASH (৳0)'}
         </div>
         <div className="text-[7.5px] font-bold uppercase tracking-wider">
-          {isCod ? 'Rider: Collect exact cash in BDT before releasing parcel' : 'Payment verified online · Release sealed parcel to customer'}
+          {isCod
+            ? 'Rider: Collect exact cash in BDT before releasing parcel'
+            : isZeroCash
+            ? 'Rider: 100% Complimentary Replacement · Do not collect any cash'
+            : 'Payment verified online · Release sealed parcel to customer'}
         </div>
       </div>
 

@@ -221,9 +221,16 @@ export default function AdminDispatchDeskPage() {
                 return (
                   <div key={order.id} className="p-4 bg-[#F9F6F0] border border-[#E6DFD5] rounded space-y-2.5 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-[#1C1917]">{order.id}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-[#1C1917]">{order.id}</span>
+                        {(order.isReplacement || order.id.endsWith('-REP')) && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                            REPLACEMENT
+                          </span>
+                        )}
+                      </div>
                       <span className="font-mono font-bold text-[#1C1917]">
-                        COD: {formatBdt(order.totalAmount)}
+                        {Number(order.totalAmount || 0) <= 0 ? 'PREPAID (৳0)' : `COD: ${formatBdt(order.totalAmount)}`}
                       </span>
                     </div>
 

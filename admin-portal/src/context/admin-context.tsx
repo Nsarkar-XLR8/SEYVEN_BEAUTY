@@ -66,6 +66,19 @@ interface AdminContextType {
     advancePaid?: number;
     agentNotes?: string;
   }) => Promise<AdminOrder>;
+  createReplacementOrder: (data: {
+    sourceOrderId: string;
+    items: import('../types/admin').OrderItem[];
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    shippingAddress: string;
+    zone: string;
+    district: string;
+    defectReason: string;
+    agentNotes?: string;
+    autoBookPathao?: boolean;
+  }) => Promise<AdminOrder>;
   refreshOrders: () => Promise<void>;
   isSyncingOrders: boolean;
   deleteOrder: (orderId: string) => Promise<{ success: boolean; message?: string }>;
@@ -990,6 +1003,124 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     return newOrder;
   };
 
+  const createReplacementOrder = async (data: {
+    sourceOrderId: string;
+    items: import('../types/admin').OrderItem[];
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    shippingAddress: string;
+    zone: string;
+    district: string;
+    defectReason: string;
+    agentNotes?: string;
+    autoBookPathao?: boolean;
+  }): Promise<AdminOrder> => {
+    const now = new Date();
+    const cleanParentId = data.sourceOrderId.replace(/-REP$/i, '');
+    const replacementId = `${cleanParentId}-REP`;
+    const refNo = `REP-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const combinedNotes = [
+      `[COMPLIMENTARY REPLACEMENT for #${data.sourceOrderId}]`,
+      `Reason: ${data.defectReason}`,
+      data.agentNotes?.trim() || null,
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
+    const newOrder: AdminOrder = {
+      id: replacementId,
+      referenceNo: refNo,
+      customerName: data.customerName.trim(),
+      customerPhone: data.customerPhone.trim(),
+      customerEmail: data.customerEmail?.trim() || '',
+      shippingAddress: data.shippingAddress.trim(),
+      zone: data.zone,
+      district: data.district,
+      items: data.items,
+      subtotal: 0,
+      deliveryFee: 0,
+      discount: 0,
+      totalAmount: 0,
+      paymentMethod: 'COD',
+      status: 'PACKED',
+      codVerification: 'VERIFIED',
+      source: 'Warranty Replacement',
+      advancePaid: 0,
+      agentNotes: combinedNotes,
+      parentOrderId: data.sourceOrderId,
+      isReplacement: true,
+      defectReason: data.defectReason,
+      createdAt: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' BST',
+      updatedAt: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' BST',
+    };
+
+    setOrders((prev) => {
+      const updated = prev.map((ord) => {
+        if (ord.id === data.sourceOrderId) {
+          return {
+            ...ord,
+            replacementOrderId: replacementId,
+            agentNotes: [ord.agentNotes, `[REPLACEMENT DISPATCHED: #${replacementId}]`]
+              .filter(Boolean)
+              .join(' | '),
+          };
+        }
+        return ord;
+      });
+      const finalOrders = [newOrder, ...updated];
+      safeStorageSet(STORAGE_KEYS.ORDERS, JSON.stringify(finalOrders));
+      return finalOrders;
+    });
+
+    const apiUrl = API_BASE_URL;
+    adminFetch(
+      `${apiUrl}/orders/direct`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: replacementId,
+          customerName: newOrder.customerName,
+          phone: newOrder.customerPhone,
+          email: newOrder.customerEmail,
+          address: newOrder.shippingAddress,
+          districtName: newOrder.district,
+          items: newOrder.items.map((it) => ({
+            id: it.id,
+            sku: it.sku,
+            titleEn: it.title,
+            brand: it.brand,
+            volume: it.variant,
+            quantity: it.quantity,
+            priceBdt: 0,
+          })),
+          totalBdt: 0,
+          subtotalBdt: 0,
+          deliveryFeeBdt: 0,
+          discountBdt: 0,
+          paymentMethod: 'COD',
+          source: 'REPLACEMENT',
+          status: 'PACKED',
+          advancePaid: 0,
+          agentNotes: combinedNotes,
+        }),
+      },
+      handleUnauthorized,
+    ).catch(() => {});
+
+    if (data.autoBookPathao) {
+      try {
+        await assignCourier(replacementId, 'Pathao');
+      } catch (e) {
+        console.error('Auto-Pathao booking error for replacement:', e);
+      }
+    }
+
+    return newOrder;
+  };
+
   const deleteOrder = async (orderId: string): Promise<{ success: boolean; message?: string }> => {
     const apiUrl = API_BASE_URL;
     try {
@@ -1323,6 +1454,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         updateCODVerification,
         assignCourier,
         addManualOrder,
+        createReplacementOrder,
         refreshOrders,
         isSyncingOrders,
         deleteOrder,

@@ -172,7 +172,9 @@ export class PathaoService {
       delivery_type: 48, // Standard 48 Hours
       item_type: 2, // Parcel
       special_instruction: (
-        dto.specialInstruction || shippingAddress.notes || 'Fragile Cosmetic Packaging - Handle with Care'
+        amountToCollect === 0
+          ? `[PREPAID / ZERO-CASH REPLACEMENT · DO NOT COLLECT CASH (৳0)] ${dto.specialInstruction || shippingAddress.notes || 'Handle with Care'}`
+          : (dto.specialInstruction || shippingAddress.notes || 'Fragile Cosmetic Packaging - Handle with Care')
       ).slice(0, 255),
       item_quantity: totalQuantity,
       item_weight: dto.itemWeightKg ? Math.max(0.5, Math.min(10, dto.itemWeightKg)) : 0.5,

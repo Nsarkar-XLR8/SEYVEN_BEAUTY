@@ -52,6 +52,7 @@ export interface OrderItem {
   unitPrice: number;
   totalPrice: number;
   image?: string;
+  isGwp?: boolean;
 }
 
 export interface AdminOrder {
@@ -79,6 +80,10 @@ export interface AdminOrder {
   agentNotes?: string;
   source?: string;
   advancePaid?: number;
+  replacementOrderId?: string;
+  parentOrderId?: string;
+  isReplacement?: boolean;
+  defectReason?: string;
   createdAt: string;
   updatedAt: string;
 }

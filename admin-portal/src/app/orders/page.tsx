@@ -27,11 +27,14 @@ import {
   Trash2,
   Edit2,
   Check,
+  RotateCcw,
+  Gift,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
 import { AdminOrder, OrderStatus, CODVerificationStatus } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
 import { ManualOrderModal } from '@/components/orders/manual-order-modal';
+import { ReplacementOrderModal } from '@/components/orders/replacement-order-modal';
 
 export default function AdminOrdersDeskPage() {
   const { orders, updateOrderStatus, updateCODVerification, assignCourier, deleteOrder, refreshOrders, isSyncingOrders } = useAdmin();
@@ -40,6 +43,7 @@ export default function AdminOrdersDeskPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [isManualOrderOpen, setIsManualOrderOpen] = useState(false);
+  const [isReplacementModalOpen, setIsReplacementModalOpen] = useState(false);
   const [isBookingPathao, setIsBookingPathao] = useState(false);
   const [confirmDeleteOrder, setConfirmDeleteOrder] = useState<AdminOrder | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -386,10 +390,22 @@ export default function AdminOrdersDeskPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedOrder(o)}
-                    className="hover:text-[#C7A97B] text-left"
+                    className="hover:text-[#C7A97B] text-left block"
                   >
                     {o.id}
                   </button>
+                  {o.replacementOrderId && (
+                    <span className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-mono bg-amber-100 text-amber-900 border border-amber-300 font-bold">
+                      <RotateCcw className="w-2.5 h-2.5 text-amber-700" />
+                      <span>REPLACED</span>
+                    </span>
+                  )}
+                  {(o.isReplacement || o.id.endsWith('-REP')) && (
+                    <span className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-mono bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold">
+                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-700" />
+                      <span>REPLACEMENT (৳0)</span>
+                    </span>
+                  )}
                 </td>
                 <td className="p-3.5">
                   <div className="font-medium text-[#1C1917]">{o.customerName}</div>
@@ -591,6 +607,36 @@ export default function AdminOrdersDeskPage() {
                   {selectedOrder.shippingAddress} · {selectedOrder.district}
                 </div>
               </div>
+
+              {/* Linked Replacement Badges */}
+              {selectedOrder.replacementOrderId && (
+                <div className="p-3 bg-amber-50 border border-amber-300 rounded text-xs font-mono flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <RotateCcw className="w-4 h-4 text-amber-700 shrink-0" />
+                    <div>
+                      <span className="font-bold text-amber-950 block">Replacement Parcel Issued</span>
+                      <span className="text-[10px] text-amber-800">Linked Order: #{selectedOrder.replacementOrderId}</span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-bold text-[10px]">
+                    ৳0 COD
+                  </span>
+                </div>
+              )}
+              {selectedOrder.parentOrderId && (
+                <div className="p-3 bg-emerald-50 border border-emerald-300 rounded text-xs font-mono flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <div>
+                      <span className="font-bold text-emerald-950 block">Complimentary Replacement Parcel</span>
+                      <span className="text-[10px] text-emerald-800">Original Order: #{selectedOrder.parentOrderId}</span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 font-bold text-[10px]">
+                    WARRANTY
+                  </span>
+                </div>
+              )}
 
               {/* Security & Geolocation Intelligence Card */}
               <div className="p-4 bg-white border border-[#E6DFD5] rounded-lg space-y-3 text-xs shadow-xs">
@@ -977,6 +1023,16 @@ export default function AdminOrdersDeskPage() {
                     Mark Delivered
                   </button>
                 )}
+                {(selectedOrder.status === 'DELIVERED' || selectedOrder.status === 'SHIPPED') && (
+                  <button
+                    type="button"
+                    onClick={() => setIsReplacementModalOpen(true)}
+                    className="w-full py-2.5 bg-[#1C1917] hover:bg-[#2A2623] text-[#C7A97B] border border-[#C7A97B]/50 font-bold rounded flex items-center justify-center space-x-1.5 transition-all shadow-sm col-span-2 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Issue Complimentary Replacement</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1131,6 +1187,20 @@ export default function AdminOrdersDeskPage() {
           refreshOrders();
         }}
       />
+
+      {/* Complimentary Replacement & Brand Recovery Desk */}
+      {selectedOrder && (
+        <ReplacementOrderModal
+          isOpen={isReplacementModalOpen}
+          onClose={() => setIsReplacementModalOpen(false)}
+          sourceOrder={selectedOrder}
+          onSuccess={(newOrder) => {
+            showToast(`✅ Complimentary Replacement #${newOrder.id} dispatched to Warehouse (৳0 COD)!`);
+            setSelectedOrder(null);
+            refreshOrders();
+          }}
+        />
+      )}
     </div>
   );
 }

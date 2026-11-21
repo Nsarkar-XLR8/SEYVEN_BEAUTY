@@ -137,9 +137,9 @@ export class SteadfastService {
       recipient_address: recipientAddress,
       cod_amount: amountToCollect,
       note:
-        dto.specialInstruction ||
-        shippingAddress.notes ||
-        'Fragile Luxury Cosmetic Packaging',
+        amountToCollect === 0
+          ? `[PREPAID / ZERO-CASH REPLACEMENT · DO NOT COLLECT CASH (৳0)] ${dto.specialInstruction || shippingAddress.notes || 'Fragile Luxury Packaging'}`
+          : (dto.specialInstruction || shippingAddress.notes || 'Fragile Luxury Cosmetic Packaging'),
       item_description: itemDescription.slice(0, 255),
     };
 

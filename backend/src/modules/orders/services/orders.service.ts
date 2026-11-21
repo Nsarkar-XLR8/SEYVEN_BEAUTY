@@ -87,13 +87,13 @@ export class OrdersService {
             totalPrice: (it.priceBdt || it.unitPrice || 2450) * (it.quantity || 1),
           }))
         : [],
-      subtotal: dto.subtotalBdt !== undefined ? dto.subtotalBdt : (dto.subtotal !== undefined ? dto.subtotal : (dto.totalBdt || 2450)),
-      deliveryFee: dto.deliveryFeeBdt !== undefined ? dto.deliveryFeeBdt : (dto.deliveryFee !== undefined ? dto.deliveryFee : 70),
-      discount: dto.discountBdt || dto.discount || 0,
-      totalAmount: dto.totalBdt || dto.totalAmount || 2520,
+      subtotal: dto.subtotalBdt !== undefined ? Number(dto.subtotalBdt) : (dto.subtotal !== undefined ? Number(dto.subtotal) : (dto.totalBdt !== undefined ? Number(dto.totalBdt) : 2450)),
+      deliveryFee: dto.deliveryFeeBdt !== undefined ? Number(dto.deliveryFeeBdt) : (dto.deliveryFee !== undefined ? Number(dto.deliveryFee) : 70),
+      discount: dto.discountBdt !== undefined ? Number(dto.discountBdt) : (dto.discount !== undefined ? Number(dto.discount) : 0),
+      totalAmount: dto.totalBdt !== undefined ? Number(dto.totalBdt) : (dto.totalAmount !== undefined ? Number(dto.totalAmount) : 2520),
       paymentMethod: dto.paymentMethod || 'COD',
       status: dto.status || 'PLACED',
-      codVerification: dto.status === 'CONFIRMED' ? 'VERIFIED' : 'PENDING',
+      codVerification: (dto.status === 'CONFIRMED' || dto.status === 'PACKED') ? 'VERIFIED' : 'PENDING',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -105,10 +105,10 @@ export class OrdersService {
       }).catch(() => null);
 
       const orderUuid = uuidv4();
-      const isManual = (dto.source && typeof dto.source === 'string' && dto.source.toLowerCase().includes('manual')) || dto.status === 'CONFIRMED';
-      const orderStatusEnum = isManual ? OrderStatus.CONFIRMED : OrderStatus.PLACED;
+      const isManual = (dto.source && typeof dto.source === 'string' && (dto.source.toLowerCase().includes('manual') || dto.source.toLowerCase().includes('replacement') || dto.source.toLowerCase().includes('warranty'))) || dto.status === 'CONFIRMED' || dto.status === 'PACKED';
+      const orderStatusEnum = dto.status === 'PACKED' ? OrderStatus.PACKED : (isManual ? OrderStatus.CONFIRMED : OrderStatus.PLACED);
       const orderSourceEnum = dto.source === 'WHATSAPP' ? OrderSource.WHATSAPP : (dto.source === 'PHONE' ? OrderSource.PHONE : (isManual ? OrderSource.MANUAL_ASSISTED : OrderSource.STOREFRONT));
-      const payStatusEnum = newOrder.paymentMethod === 'COD' ? PaymentStatus.PENDING : PaymentStatus.PAID;
+      const payStatusEnum = (newOrder.paymentMethod === 'COD' && newOrder.totalAmount > 0) ? PaymentStatus.PENDING : PaymentStatus.PAID;
 
       const preparedItems = await Promise.all(
         (newOrder.items || []).map(async (it: any) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   X,
   RotateCcw,
@@ -12,9 +12,15 @@ import {
   Trash2,
   Box,
   CheckCircle,
+  Search,
+  Sparkles,
+  Star,
+  BookmarkPlus,
+  Check,
+  RotateCcw as ResetIcon,
 } from 'lucide-react';
 import { useAdmin } from '@/context/admin-context';
-import { AdminOrder, OrderItem } from '@/types/admin';
+import { AdminOrder, OrderItem, AdminProduct } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
 import { detectDistrictFromAddress, BD_ALL_DISTRICTS } from '@/data/bangladesh-districts';
 
@@ -33,12 +39,31 @@ const DEFECT_REASONS = [
   { id: 'VIP_COURTESY', label: 'VIP Executive Courtesy Reshipment' },
 ];
 
-const POPULAR_GIFTS = [
-  { title: 'MARS Eyeliner (Waterproof Deep Black)', brand: 'MARS', regularPrice: 80 },
-  { title: 'Bio-Cellulose Hydrating Sheet Mask', brand: 'Curated K-Beauty', regularPrice: 120 },
-  { title: 'Exfoliating Berry Lip Scrub', brand: 'SEYVEN Courtesy', regularPrice: 150 },
-  { title: 'Soft Velvet Beauty Blender Sponge', brand: 'SEYVEN Courtesy', regularPrice: 90 },
+export interface GiftVaultItem {
+  id: string;
+  title: string;
+  brand: string;
+  regularPrice?: number;
+  imageUrl?: string;
+  isCustom?: boolean;
+}
+
+const DEFAULT_GIFT_VAULT: GiftVaultItem[] = [
+  { id: 'vault-mars-eyeliner', title: 'MARS Eyeliner (Waterproof Deep Black)', brand: 'MARS', regularPrice: 80 },
+  { id: 'vault-sheet-mask', title: 'Bio-Cellulose Hydrating Sheet Mask', brand: 'Curated K-Beauty', regularPrice: 120 },
+  { id: 'vault-lip-scrub', title: 'Exfoliating Berry Lip Scrub', brand: 'SEYVEN Courtesy', regularPrice: 150 },
+  { id: 'vault-blender-sponge', title: 'Soft Velvet Beauty Blender Sponge', brand: 'SEYVEN Courtesy', regularPrice: 90 },
 ];
+
+const VAULT_STORAGE_KEY = 'seyven_owner_gift_vault';
+
+export interface ActiveGift {
+  id: string;
+  title: string;
+  brand: string;
+  quantity: number;
+  regularPrice?: number;
+}
 
 export function ReplacementOrderModal({
   isOpen,
@@ -46,7 +71,7 @@ export function ReplacementOrderModal({
   sourceOrder,
   onSuccess,
 }: ReplacementOrderModalProps) {
-  const { createReplacementOrder, platformSettings } = useAdmin();
+  const { createReplacementOrder, platformSettings, products } = useAdmin();
 
   const dynamicFeeConfig = {
     insideDhakaFee: Number(platformSettings?.standardDeliveryDhakaBdt) || 70,
@@ -75,11 +100,145 @@ export function ReplacementOrderModal({
     return initial;
   });
 
-  // 2. Complimentary Gift State (100% flexible for any gift)
+  // 2. Persistent Owner Gift Vault & Active Gifts (100% Owner Freedom)
+  const [giftVault, setGiftVault] = useState<GiftVaultItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(VAULT_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (err) {
+        console.error('Failed to load gift vault from localStorage:', err);
+      }
+    }
+    return DEFAULT_GIFT_VAULT;
+  });
+
+  const saveVault = (newVault: GiftVaultItem[]) => {
+    setGiftVault(newVault);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(newVault));
+      } catch (err) {
+        console.error('Failed to persist gift vault:', err);
+      }
+    }
+  };
+
+  const handleAddToVault = (item: Omit<GiftVaultItem, 'id'>) => {
+    const exists = giftVault.some((v) => v.title.toLowerCase().trim() === item.title.toLowerCase().trim());
+    if (exists) return;
+    const newEntry: GiftVaultItem = {
+      ...item,
+      id: `vault-${Date.now()}`,
+      isCustom: true,
+    };
+    saveVault([...giftVault, newEntry]);
+  };
+
+  const handleRemoveFromVault = (id: string) => {
+    const next = giftVault.filter((v) => v.id !== id);
+    saveVault(next.length > 0 ? next : DEFAULT_GIFT_VAULT);
+  };
+
+  const handleResetVault = () => {
+    saveVault(DEFAULT_GIFT_VAULT);
+  };
+
+  // Active gifts to be dispatched with this replacement
   const [hasGift, setHasGift] = useState<boolean>(true);
-  const [selectedGift, setSelectedGift] = useState<string>(POPULAR_GIFTS[0].title);
+  const [activeGifts, setActiveGifts] = useState<ActiveGift[]>([
+    {
+      id: `gift-${Date.now()}`,
+      title: 'MARS Eyeliner (Waterproof Deep Black)',
+      brand: 'MARS',
+      quantity: 1,
+      regularPrice: 80,
+    },
+  ]);
+
+  const addGiftToActive = (gift: { title: string; brand: string; regularPrice?: number }) => {
+    const cleanTitle = gift.title.trim();
+    if (!cleanTitle) return;
+    const existingIndex = activeGifts.findIndex((g) => g.title.toLowerCase() === cleanTitle.toLowerCase());
+    if (existingIndex >= 0) {
+      setActiveGifts((prev) =>
+        prev.map((g, idx) => (idx === existingIndex ? { ...g, quantity: g.quantity + 1 } : g)),
+      );
+    } else {
+      setActiveGifts((prev) => [
+        ...prev,
+        {
+          id: `gift-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          title: cleanTitle,
+          brand: gift.brand || 'SEYVEN Courtesy',
+          quantity: 1,
+          regularPrice: gift.regularPrice,
+        },
+      ]);
+    }
+    setHasGift(true);
+  };
+
+  const updateActiveGiftQuantity = (giftId: string, quantity: number) => {
+    setActiveGifts((prev) =>
+      prev.map((g) => (g.id === giftId ? { ...g, quantity: Math.max(1, quantity) } : g)),
+    );
+  };
+
+  const removeActiveGift = (giftId: string) => {
+    setActiveGifts((prev) => prev.filter((g) => g.id !== giftId));
+  };
+
+  // Live Catalog Search & Custom Gift Builder
+  const [catalogSearch, setCatalogSearch] = useState<string>('');
+  const [isSearchingCatalog, setIsSearchingCatalog] = useState<boolean>(false);
   const [customGiftTitle, setCustomGiftTitle] = useState<string>('');
-  const [extraGifts, setExtraGifts] = useState<Array<{ id: string; title: string; quantity: number }>>([]);
+  const [customGiftBrand, setCustomGiftBrand] = useState<string>('');
+  const [saveCustomToVault, setSaveCustomToVault] = useState<boolean>(true);
+
+  const filteredProducts = useMemo(() => {
+    if (!catalogSearch.trim()) return [];
+    const q = catalogSearch.toLowerCase().trim();
+    return (products || [])
+      .filter((p) => {
+        const titleEn = (p.titleEn || '').toLowerCase();
+        const titleBn = (p.titleBn || '').toLowerCase();
+        const brand = (p.brand || '').toLowerCase();
+        return titleEn.includes(q) || titleBn.includes(q) || brand.includes(q);
+      })
+      .slice(0, 6);
+  }, [catalogSearch, products]);
+
+  const handleSelectCatalogProduct = (p: AdminProduct) => {
+    addGiftToActive({
+      title: p.titleEn,
+      brand: p.brand || 'SEYVEN',
+      regularPrice: p.priceBdt || (p.variants?.[0]?.priceBdt) || 0,
+    });
+    setCatalogSearch('');
+    setIsSearchingCatalog(false);
+  };
+
+  const handleAddCustomGift = () => {
+    const title = customGiftTitle.trim();
+    if (!title) return;
+    const brand = customGiftBrand.trim() || 'SEYVEN Courtesy';
+    addGiftToActive({
+      title,
+      brand,
+    });
+    if (saveCustomToVault) {
+      handleAddToVault({
+        title,
+        brand,
+      });
+    }
+    setCustomGiftTitle('');
+    setCustomGiftBrand('');
+  };
 
   // 3. Defect details & QA agreement
   const [defectReason, setDefectReason] = useState<string>(DEFECT_REASONS[0].label);
@@ -88,7 +247,7 @@ export function ReplacementOrderModal({
   );
   const [qaInspectionAgreed, setQaInspectionAgreed] = useState<boolean>(true);
 
-  // 4. Initial Pipeline Status Control (Answers user: CONFIRMED vs PACKED)
+  // 4. Initial Pipeline Status Control
   const [initialStatus, setInitialStatus] = useState<'CONFIRMED' | 'PACKED'>('CONFIRMED');
 
   // 5. Address (defaults to original order address, editable, defensive against object/string)
@@ -138,19 +297,6 @@ export function ReplacementOrderModal({
     }));
   };
 
-  const handleAddExtraGift = () => {
-    if (!customGiftTitle.trim()) return;
-    setExtraGifts((prev) => [
-      ...prev,
-      { id: `gift-${Date.now()}`, title: customGiftTitle.trim(), quantity: 1 },
-    ]);
-    setCustomGiftTitle('');
-  };
-
-  const handleRemoveExtraGift = (giftId: string) => {
-    setExtraGifts((prev) => prev.filter((g) => g.id !== giftId));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -169,33 +315,23 @@ export function ReplacementOrderModal({
       }
     });
 
-    if (hasGift && selectedGift) {
-      replacementItems.push({
-        id: `gift-apology-${Date.now()}`,
-        sku: 'GIFT-APOLOGY',
-        title: `${selectedGift} (Complimentary Apology Gift)`,
-        brand: 'SEYVEN Courtesy',
-        variant: 'Standard',
-        quantity: 1,
-        unitPrice: 0,
-        totalPrice: 0,
-        isGwp: true,
+    // Add clean-titled complimentary gifts (NO administrative bracket clutter!)
+    if (hasGift) {
+      activeGifts.forEach((g, idx) => {
+        if (!g.title.trim()) return;
+        replacementItems.push({
+          id: g.id || `gift-courtesy-${idx}-${Date.now()}`,
+          sku: `GIFT-${idx + 1}`,
+          title: g.title.trim(), // CLEAN PRODUCT NAME ONLY: Thermal labels print cleanly!
+          brand: g.brand || 'SEYVEN Courtesy',
+          variant: 'Courtesy',
+          quantity: g.quantity || 1,
+          unitPrice: 0,
+          totalPrice: 0,
+          isGwp: true,
+        });
       });
     }
-
-    extraGifts.forEach((g, idx) => {
-      replacementItems.push({
-        id: g.id || `extra-gift-${idx}`,
-        sku: `GIFT-EXTRA-${idx + 1}`,
-        title: `${g.title} (Complimentary Gift)`,
-        brand: 'SEYVEN Courtesy',
-        variant: 'Standard',
-        quantity: g.quantity || 1,
-        unitPrice: 0,
-        totalPrice: 0,
-        isGwp: true,
-      });
-    });
 
     if (replacementItems.length === 0) {
       setError('Please select at least one item or gift to dispatch.');
@@ -261,7 +397,7 @@ export function ReplacementOrderModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded text-[#F9F6F0]/70 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded text-[#F9F6F0]/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -358,8 +494,8 @@ export function ReplacementOrderModal({
             </div>
           </div>
 
-          {/* 2. Complimentary Apology Gift Selection (Preset chips + Custom input) */}
-          <div className="p-3.5 bg-gradient-to-r from-emerald-50/60 to-amber-50/60 border border-emerald-300/60 rounded-lg space-y-3">
+          {/* 2. DYNAMIC OWNER GIFT VAULT & CATALOG PICKER */}
+          <div className="p-4 bg-gradient-to-r from-emerald-50/70 to-amber-50/70 border border-emerald-300/70 rounded-xl space-y-3.5">
             <div className="flex items-center justify-between">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
@@ -370,84 +506,279 @@ export function ReplacementOrderModal({
                 />
                 <Gift className="w-4 h-4 text-emerald-700" />
                 <span className="text-xs font-bold text-[#1C1917]">
-                  2. Include Complimentary Apology / Goodwill Gift
+                  2. Include Complimentary Courtesy Gift(s)
                 </span>
               </label>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                100% SEYVEN Courtesy (৳0)
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                  100% SEYVEN Courtesy (৳0)
+                </span>
+                <button
+                  type="button"
+                  onClick={handleResetVault}
+                  title="Reset Quick-Pick Vault to defaults"
+                  className="text-[10px] font-mono text-stone-500 hover:text-stone-800 p-1 rounded hover:bg-stone-200/60"
+                >
+                  <ResetIcon className="w-3 h-3" />
+                </button>
+              </div>
             </div>
 
             {hasGift && (
-              <div className="space-y-2.5 pt-1">
-                <span className="text-[10px] uppercase font-mono font-bold text-stone-600 block">
-                  Quick Select Apology Gift:
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {POPULAR_GIFTS.map((g) => {
-                    const isChosen = selectedGift === g.title;
-                    return (
-                      <button
-                        key={g.title}
-                        type="button"
-                        onClick={() => setSelectedGift(g.title)}
-                        className={`p-2.5 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${
-                          isChosen
-                            ? 'bg-white border-emerald-600 shadow-xs ring-1 ring-emerald-600'
-                            : 'bg-white/80 border-stone-200 hover:border-emerald-300'
-                        }`}
-                      >
-                        <div>
-                          <div className="font-semibold text-[#1C1917] text-[11px] leading-tight">{g.title}</div>
-                          <div className="text-[10px] text-stone-500 font-mono">{g.brand}</div>
+              <div className="space-y-3 pt-1">
+                {/* Active Gift List (What will be packed and printed) */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-mono font-bold text-stone-700 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-amber-600" />
+                      Active Gifts for this Parcel ({activeGifts.length}):
+                    </span>
+                    <span className="text-[9px] text-stone-500 font-mono">
+                      (Printed cleanly on label without ugly bracket suffixes)
+                    </span>
+                  </div>
+
+                  {activeGifts.length === 0 ? (
+                    <div className="p-3 bg-white/80 border border-dashed border-stone-300 rounded-lg text-center text-xs text-stone-500 font-mono">
+                      No gift selected. Pick from quick-picks, store catalog, or type custom gift below.
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {activeGifts.map((gift) => (
+                        <div
+                          key={gift.id}
+                          className="flex items-center justify-between p-2.5 bg-white border border-emerald-200/80 rounded-lg text-xs shadow-xs"
+                        >
+                          <div className="flex items-center space-x-2.5 min-w-0">
+                            <span className="text-base shrink-0">🎁</span>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-[#1C1917] truncate text-xs">
+                                {gift.title}
+                              </div>
+                              <div className="text-[10px] text-stone-500 font-mono flex items-center gap-2">
+                                <span>{gift.brand}</span>
+                                {gift.regularPrice ? (
+                                  <span className="line-through text-emerald-700">৳{gift.regularPrice}</span>
+                                ) : null}
+                                <span className="text-emerald-700 font-bold">৳0 Courtesy</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2 shrink-0">
+                            <div className="flex items-center border border-stone-200 rounded bg-stone-50">
+                              <button
+                                type="button"
+                                onClick={() => updateActiveGiftQuantity(gift.id, gift.quantity - 1)}
+                                className="px-2 py-0.5 text-xs text-stone-600 hover:bg-stone-200"
+                              >
+                                -
+                              </button>
+                              <span className="px-2 text-xs font-mono font-bold text-[#1C1917]">
+                                {gift.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => updateActiveGiftQuantity(gift.id, gift.quantity + 1)}
+                                className="px-2 py-0.5 text-xs text-stone-600 hover:bg-stone-200"
+                              >
+                                +
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeActiveGift(gift.id)}
+                              className="p-1 text-stone-400 hover:text-rose-600 transition-colors"
+                              title="Remove gift"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                        <span className="text-[10px] font-mono text-emerald-800 line-through shrink-0 ml-2">
-                          ৳{g.regularPrice}
-                        </span>
-                      </button>
-                    );
-                  })}
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Additional custom gifts */}
-                {extraGifts.map((gift) => (
-                  <div
-                    key={gift.id}
-                    className="flex items-center justify-between p-2 bg-white border border-[#E6DFD5] rounded text-xs font-mono"
-                  >
-                    <span>🎁 {gift.title}</span>
+                {/* Owner's Quick-Pick Gift Vault */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-mono font-bold text-stone-600 flex items-center gap-1">
+                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      Owner Quick-Picks Vault (Saved Presets):
+                    </span>
+                    <span className="text-[9px] text-stone-500 font-mono">
+                      Click to add · Hover to delete
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {giftVault.map((g) => {
+                      const isAlreadyActive = activeGifts.some(
+                        (ag) => ag.title.toLowerCase() === g.title.toLowerCase(),
+                      );
+                      return (
+                        <div
+                          key={g.id}
+                          className={`group relative p-2.5 rounded-lg border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${
+                            isAlreadyActive
+                              ? 'bg-emerald-50/70 border-emerald-500 shadow-xs ring-1 ring-emerald-500'
+                              : 'bg-white/90 border-stone-200 hover:border-emerald-400 hover:bg-white'
+                          }`}
+                          onClick={() => addGiftToActive(g)}
+                        >
+                          <div className="min-w-0 pr-2">
+                            <div className="font-semibold text-[#1C1917] text-[11px] leading-tight truncate">
+                              {g.title}
+                            </div>
+                            <div className="text-[10px] text-stone-500 font-mono">{g.brand}</div>
+                          </div>
+                          <div className="flex items-center space-x-1.5 shrink-0">
+                            {g.regularPrice ? (
+                              <span className="text-[10px] font-mono text-emerald-800 line-through">
+                                ৳{g.regularPrice}
+                              </span>
+                            ) : null}
+                            {isAlreadyActive ? (
+                              <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                                <Check className="w-2.5 h-2.5" />
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100 px-1 rounded">
+                                +Add
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveFromVault(g.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-rose-600 transition-opacity ml-1"
+                              title="Delete preset from vault"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Live Store Catalog Search & Picker */}
+                <div className="relative pt-1">
+                  <span className="text-[10px] uppercase font-mono font-bold text-stone-600 block mb-1">
+                    Or Pick ANY Product from Live Store Catalog:
+                  </span>
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
+                    <input
+                      type="text"
+                      placeholder="Search store inventory (e.g. Centella, Lip Balm, Serum, Cleanser)..."
+                      value={catalogSearch}
+                      onChange={(e) => {
+                        setCatalogSearch(e.target.value);
+                        setIsSearchingCatalog(true);
+                      }}
+                      onFocus={() => setIsSearchingCatalog(true)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs border border-[#E6DFD5] rounded-lg bg-white focus:outline-none focus:border-[#C7A97B]"
+                    />
+                    {catalogSearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCatalogSearch('');
+                          setIsSearchingCatalog(false);
+                        }}
+                        className="absolute right-2.5 top-2 text-stone-400 hover:text-stone-600 text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown Results */}
+                  {isSearchingCatalog && catalogSearch.trim().length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-[#E6DFD5] rounded-lg shadow-xl z-20 max-h-48 overflow-y-auto divide-y divide-stone-100">
+                      {filteredProducts.length === 0 ? (
+                        <div className="p-3 text-center text-xs text-stone-500 font-mono">
+                          No products found matching &quot;{catalogSearch}&quot;
+                        </div>
+                      ) : (
+                        filteredProducts.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => handleSelectCatalogProduct(p)}
+                            className="p-2.5 hover:bg-emerald-50/60 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <div className="font-semibold text-[#1C1917] truncate">{p.titleEn}</div>
+                              <div className="text-[10px] text-stone-500 font-mono">
+                                {p.brand} {p.category ? `· ${p.category}` : ''}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-[11px] font-mono font-bold text-emerald-700 block">
+                                + Pick as Gift
+                              </span>
+                              <span className="text-[9px] font-mono text-stone-400 line-through">
+                                ৳{p.priceBdt || p.variants?.[0]?.priceBdt || 'Regular'}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Custom Gift Builder (With Optional Save to Vault) */}
+                <div className="pt-2 border-t border-emerald-200/50 space-y-2">
+                  <span className="text-[10px] uppercase font-mono font-bold text-stone-600 block">
+                    Or Type Free-Form Custom Gift:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Gift item name (e.g. Snail Essence Deluxe Sample)..."
+                      value={customGiftTitle}
+                      onChange={(e) => setCustomGiftTitle(e.target.value)}
+                      className="sm:col-span-3 px-3 py-1.5 text-xs border border-[#E6DFD5] rounded bg-white focus:outline-none focus:border-[#C7A97B]"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Brand (optional)"
+                      value={customGiftBrand}
+                      onChange={(e) => setCustomGiftBrand(e.target.value)}
+                      className="sm:col-span-2 px-3 py-1.5 text-xs border border-[#E6DFD5] rounded bg-white focus:outline-none focus:border-[#C7A97B]"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center space-x-1.5 text-[11px] text-stone-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={saveCustomToVault}
+                        onChange={(e) => setSaveCustomToVault(e.target.checked)}
+                        className="w-3.5 h-3.5 accent-amber-600 rounded"
+                      />
+                      <span>⭐ Save to my Quick-Picks Vault for future replacements</span>
+                    </label>
                     <button
                       type="button"
-                      onClick={() => handleRemoveExtraGift(gift.id)}
-                      className="text-stone-400 hover:text-rose-600"
+                      onClick={handleAddCustomGift}
+                      disabled={!customGiftTitle.trim()}
+                      className="px-3 py-1.5 bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] text-xs font-semibold rounded flex items-center gap-1 cursor-pointer disabled:opacity-40"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Gift</span>
                     </button>
                   </div>
-                ))}
-
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="text"
-                    placeholder="Or type other custom gift (e.g. Lip Mask, Hydrating Serum)..."
-                    value={customGiftTitle}
-                    onChange={(e) => setCustomGiftTitle(e.target.value)}
-                    className="flex-1 px-3 py-1.5 text-xs border border-[#E6DFD5] rounded bg-white focus:outline-none focus:border-[#C7A97B]"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddExtraGift}
-                    className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium rounded flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add</span>
-                  </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* 3. Initial Pipeline Stage Selector (Answers user: CONFIRMED vs PACKED) */}
+          {/* 3. Initial Pipeline Stage Selector */}
           <div className="p-3.5 bg-white border border-[#E6DFD5] rounded-lg space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917] font-mono block">
               3. Initial Fulfillment Pipeline Stage:
@@ -632,7 +963,11 @@ export function ReplacementOrderModal({
             </div>
             <div className="flex justify-between text-[#F9F6F0]/70 text-[11px]">
               <span>Complimentary Gift(s):</span>
-              <span>৳0 (Courtesy)</span>
+              <span>
+                {hasGift && activeGifts.length > 0
+                  ? `${activeGifts.map((g) => `${g.title} (x${g.quantity})`).join(', ')} — ৳0 (Courtesy)`
+                  : 'None'}
+              </span>
             </div>
             <div className="flex justify-between text-[#F9F6F0]/70 text-[11px]">
               <span>Courier Delivery Fee:</span>
@@ -650,7 +985,7 @@ export function ReplacementOrderModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900 transition-colors"
+            className="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
           >
             Cancel
           </button>

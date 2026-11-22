@@ -92,20 +92,43 @@ function parseCourierRouting(district?: string, zone?: string, address?: string)
 }
 
 /**
- * Formats a clean item manifest label by removing generic default variants
- * and avoiding duplicate bracket clutter.
+ * Formats a clean item manifest label by removing generic default variants,
+ * administrative clutter, and avoiding duplicate bracket truncation on thermal labels.
  */
 function formatItemManifestLabel(item: { title: string; variant?: string }): string {
-  const title = (item.title || 'Product Item').trim();
+  let title = (item.title || 'Product Item').trim();
+
+  // 1. Strip administrative/system bracket suffixes (e.g. "(Complimentary Apology Gift)", "(Free Gift)", etc.)
+  title = title
+    .replace(/\s*\((?:complimentary|apology|goodwill|courtesy|gwp|gift|free)[^)]*\)/gi, '')
+    .replace(/\s*\[(?:complimentary|apology|goodwill|courtesy|gwp|gift|free)[^\]]*\]/gi, '')
+    .trim();
+
   const v = (item.variant || '').trim();
   if (!v) return title;
 
   const lowerV = v.toLowerCase();
   const lowerTitle = title.toLowerCase();
 
-  // If variant is generic default (Standard, Default, Regular, etc.) or already in title
-  const isGeneric = ['standard', 'default', 'default title', 'regular', 'none', 'n/a', 'single'].includes(lowerV);
-  if (isGeneric || lowerTitle.includes(lowerV)) {
+  // 2. If variant is generic default or administrative, do not append to label
+  const isGenericOrAdmin = [
+    'standard',
+    'default',
+    'default title',
+    'regular',
+    'none',
+    'n/a',
+    'single',
+    'complimentary',
+    'complimentary gift',
+    'gift',
+    'courtesy',
+    'courtesy gift',
+    'apology gift',
+    'free gift',
+  ].includes(lowerV);
+
+  if (isGenericOrAdmin || lowerTitle.includes(lowerV)) {
     return title;
   }
 

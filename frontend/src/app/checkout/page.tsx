@@ -21,7 +21,7 @@ import { BRAND } from '@/lib/constants';
 import { formatBdt } from '@/lib/formatters';
 import { buildWhatsAppUrl, sanitizeMessengerUrl } from '@/lib/concierge';
 import { trackInitiateCheckout, trackPurchase } from '@/lib/analytics/meta-pixel';
-import { detectDistrictFromAddress } from '@/lib/district-resolver';
+import { detectDistrictFromAddress, BD_ALL_DISTRICT_OPTIONS } from '@/lib/district-resolver';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -451,6 +451,30 @@ export default function CheckoutPage() {
                       2–3 Days Nationwide Courier
                     </p>
                   </button>
+                </div>
+
+                {/* Explicit District Selector Dropdown */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pt-1">
+                  <span className="text-[10px] uppercase tracking-[0.15em] text-[#1C1917]/70 font-medium">
+                    District / জেলা (Auto-detects or select):
+                  </span>
+                  <select
+                    value={detectedDistrictName || (isInsideDhaka ? 'Dhaka' : '')}
+                    onChange={(e) => {
+                      const sel = e.target.value;
+                      if (!sel) return;
+                      setDetectedDistrictName(sel);
+                      setIsInsideDhaka(sel === 'Dhaka');
+                    }}
+                    className="bg-[#F9F6F0] border border-[#E6DFD5] px-2.5 py-1.5 text-xs text-[#1C1917] rounded-none focus:outline-hidden focus:border-[#C7A97B] font-sans"
+                  >
+                    <option value="">-- Auto-detect from address or select --</option>
+                    {BD_ALL_DISTRICT_OPTIONS.map((d) => (
+                      <option key={d.id} value={d.name}>
+                        {d.name} ({d.nameBn}) {d.isDhaka ? `— ৳${standardFeeDhaka}` : `— ৳${standardFeeOutside}`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

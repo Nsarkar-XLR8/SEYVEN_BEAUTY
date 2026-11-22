@@ -37,6 +37,73 @@ export function getGlobalDeliveryFeeConfig(): DeliveryFeeConfig {
   return { ...globalDeliveryFeeConfig };
 }
 
+export const BD_ALL_DISTRICT_OPTIONS = [
+  { id: 'dhaka', name: 'Dhaka', nameBn: 'ঢাকা', isDhaka: true },
+  { id: 'manikganj', name: 'Manikganj', nameBn: 'মানিকগঞ্জ' },
+  { id: 'gazipur', name: 'Gazipur', nameBn: 'গাজীপুর' },
+  { id: 'narayanganj', name: 'Narayanganj', nameBn: 'নারায়ণগঞ্জ' },
+  { id: 'narsingdi', name: 'Narsingdi', nameBn: 'নরসিংদী' },
+  { id: 'tangail', name: 'Tangail', nameBn: 'টাঙ্গাইল' },
+  { id: 'munshiganj', name: 'Munshiganj', nameBn: 'মুন্সীগঞ্জ' },
+  { id: 'faridpur', name: 'Faridpur', nameBn: 'ফরিদপুর' },
+  { id: 'gopalganj', name: 'Gopalganj', nameBn: 'গোপালগঞ্জ' },
+  { id: 'madaripur', name: 'Madaripur', nameBn: 'মাদারীপুর' },
+  { id: 'rajbari', name: 'Rajbari', nameBn: 'রাজবাড়ী' },
+  { id: 'shariatpur', name: 'Shariatpur', nameBn: 'শরীয়তপুর' },
+  { id: 'kishoreganj', name: 'Kishoreganj', nameBn: 'কিশোরগঞ্জ' },
+  { id: 'chattogram', name: 'Chattogram', nameBn: 'চট্টগ্রাম' },
+  { id: 'coxs-bazar', name: "Cox's Bazar", nameBn: 'কক্সবাজার' },
+  { id: 'cumilla', name: 'Cumilla', nameBn: 'কুমিল্লা' },
+  { id: 'feni', name: 'Feni', nameBn: 'ফেনী' },
+  { id: 'noakhali', name: 'Noakhali', nameBn: 'নোয়াখালী' },
+  { id: 'brahmanbaria', name: 'Brahmanbaria', nameBn: 'ব্রাহ্মণবাড়িয়া' },
+  { id: 'chandpur', name: 'Chandpur', nameBn: 'চাঁদপুর' },
+  { id: 'lakshmipur', name: 'Lakshmipur', nameBn: 'লক্ষ্মীপুর' },
+  { id: 'bandarban', name: 'Bandarban', nameBn: 'বান্দরবান' },
+  { id: 'rangamati', name: 'Rangamati', nameBn: 'রাঙ্গামাটি' },
+  { id: 'khagrachhari', name: 'Khagrachhari', nameBn: 'খাগড়াছড়ি' },
+  { id: 'sylhet', name: 'Sylhet', nameBn: 'সিলেট' },
+  { id: 'moulvibazar', name: 'Moulvibazar', nameBn: 'মৌলভীবাজার' },
+  { id: 'habiganj', name: 'Habiganj', nameBn: 'হবিগঞ্জ' },
+  { id: 'sunamganj', name: 'Sunamganj', nameBn: 'সুনামগঞ্জ' },
+  { id: 'rajshahi', name: 'Rajshahi', nameBn: 'রাজশাহী' },
+  { id: 'bogura', name: 'Bogura', nameBn: 'বগুড়া' },
+  { id: 'pabna', name: 'Pabna', nameBn: 'পাবনা' },
+  { id: 'sirajganj', name: 'Sirajganj', nameBn: 'সিরাজগঞ্জ' },
+  { id: 'naogaon', name: 'Naogaon', nameBn: 'নওগাঁ' },
+  { id: 'natore', name: 'Natore', nameBn: 'নাটোর' },
+  { id: 'chapainawabganj', name: 'Chapainawabganj', nameBn: 'চাঁপাইনবাবগঞ্জ' },
+  { id: 'joypurhat', name: 'Joypurhat', nameBn: 'জয়পুরহাট' },
+  { id: 'khulna', name: 'Khulna', nameBn: 'খুলনা' },
+  { id: 'jashore', name: 'Jashore', nameBn: 'যশোর' },
+  { id: 'kushtia', name: 'Kushtia', nameBn: 'কুষ্টিয়া' },
+  { id: 'satkhira', name: 'Satkhira', nameBn: 'সাতক্ষীরা' },
+  { id: 'bagerhat', name: 'Bagerhat', nameBn: 'বাগেরহাট' },
+  { id: 'jhenaidah', name: 'Jhenaidah', nameBn: 'ঝিনাইদহ' },
+  { id: 'chuadanga', name: 'Chuadanga', nameBn: 'চুয়াডাঙ্গা' },
+  { id: 'magura', name: 'Magura', nameBn: 'মাগুরা' },
+  { id: 'meherpur', name: 'Meherpur', nameBn: 'মেহেরপুর' },
+  { id: 'narail', name: 'Narail', nameBn: 'নড়াইল' },
+  { id: 'barishal', name: 'Barishal', nameBn: 'বরিশাল' },
+  { id: 'bhola', name: 'Bhola', nameBn: 'ভোলা' },
+  { id: 'patuakhali', name: 'Patuakhali', nameBn: 'পটুয়াখালী' },
+  { id: 'pirojpur', name: 'Pirojpur', nameBn: 'পিরোজপুর' },
+  { id: 'barguna', name: 'Barguna', nameBn: 'বরগুনা' },
+  { id: 'jhalokati', name: 'Jhalokati', nameBn: 'ঝালকাঠি' },
+  { id: 'rangpur', name: 'Rangpur', nameBn: 'রংপুর' },
+  { id: 'dinajpur', name: 'Dinajpur', nameBn: 'দিনাজপুর' },
+  { id: 'gaibandha', name: 'Gaibandha', nameBn: 'গাইবান্ধা' },
+  { id: 'kurigram', name: 'Kurigram', nameBn: 'কুড়িগ্রাম' },
+  { id: 'lalmonirhat', name: 'Lalmonirhat', nameBn: 'লালমনিরহাট' },
+  { id: 'nilphamari', name: 'Nilphamari', nameBn: 'নীলফামারী' },
+  { id: 'panchagarh', name: 'Panchagarh', nameBn: 'পঞ্চগড়' },
+  { id: 'thakurgaon', name: 'Thakurgaon', nameBn: 'ঠাকুরগাঁও' },
+  { id: 'mymensingh', name: 'Mymensingh', nameBn: 'ময়মনসিংহ' },
+  { id: 'jamalpur', name: 'Jamalpur', nameBn: 'জামালপুর' },
+  { id: 'netrokona', name: 'Netrokona', nameBn: 'নেত্রকোণা' },
+  { id: 'sherpur', name: 'Sherpur', nameBn: 'শেরপুর' },
+];
+
 export const DISTRICT_PATTERNS: DistrictPattern[] = [
   // 1. All Non-Dhaka 63 Districts (Checked FIRST to avoid accidental Dhaka fallback!)
   { id: 'manikganj', name: 'Manikganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['manikganj', 'manikgonj', 'মানিকগঞ্জ'] },
@@ -173,6 +240,26 @@ export function detectDistrictFromAddress(
       const lowerKw = kw.toLowerCase();
       const regex = new RegExp(`(^|[^a-zA-Z0-9\u0980-\u09FF])${lowerKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-zA-Z0-9\u0980-\u09FF]|$)`, 'i');
       if (regex.test(text) || text.includes(lowerKw)) {
+        // Protect against false-positive street/business landmark names (e.g. 'Manikganj Road, Mirpur, Dhaka')
+        if (pattern.zoneType === 'OUTSIDE_DHAKA') {
+          const landmarkSuffixes = [
+            ' road', ' রোড', ' rd', ' mor', ' মোড়', ' stand', ' স্ট্যান্ড',
+            ' bus stand', ' বাস স্ট্যান্ড', ' sweets', ' সুইটস', ' plaza', ' প্লাজা',
+            ' market', ' মার্কেট', ' bhaban', ' ভবন', ' lane', ' লেন', ' goli', ' গলি'
+          ];
+          const hasDhakaMetroDestination = [
+            'mirpur', 'মিরপুর', 'uttara', 'উত্তরা', 'dhanmondi', 'ধানমন্ডি',
+            'gulshan', 'গুলশান', 'banani', 'বনানী', 'mohammadpur', 'মোহাম্মদপুর',
+            'farmgate', 'ফার্মগেট', 'gabtoli', 'গাবতলী', 'badda', 'বাড্ডা',
+            'motijheel', 'মতিঝিল', 'bashundhara', 'বসুন্ধরা'
+          ].some((token) => text.includes(token));
+
+          const isLandmark = landmarkSuffixes.some((sfx) => text.includes(lowerKw + sfx));
+          if (isLandmark && hasDhakaMetroDestination) {
+            continue;
+          }
+        }
+
         const isDhakaCity = pattern.zoneType === 'DHAKA_CITY';
         const isSuburbs = pattern.zoneType === 'DHAKA_SUBURBS';
 

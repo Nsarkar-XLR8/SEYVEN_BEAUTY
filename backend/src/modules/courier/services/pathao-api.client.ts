@@ -229,4 +229,147 @@ export class PathaoApiClient {
       clearTimeout(timeout);
     }
   }
+
+  /**
+   * Fetch official Bangladesh city/district list from Pathao Aladdin API
+   */
+  async getCities(): Promise<any> {
+    const isMock =
+      !this.clientId ||
+      this.clientId.startsWith('mock_') ||
+      this.configService.get<string>('NODE_ENV') === 'test';
+
+    if (isMock) {
+      return {
+        type: 'success',
+        data: {
+          data: [
+            { city_id: 1, city_name: 'Dhaka' },
+            { city_id: 50, city_name: 'Manikganj' },
+            { city_id: 17, city_name: 'Gazipur' },
+            { city_id: 48, city_name: 'Narayanganj' },
+            { city_id: 2, city_name: 'Chattogram' },
+            { city_id: 61, city_name: 'Sylhet' },
+          ],
+        },
+      };
+    }
+
+    const token = await this.getAccessToken();
+    const endpoint = `${this.baseUrl}/aladdin/api/v1/countries/1/city-list`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Pathao cities (HTTP ${response.status})`);
+      }
+
+      return await response.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Fetch official zone/upazila list for a city from Pathao Aladdin API
+   */
+  async getZones(cityId: number): Promise<any> {
+    const isMock =
+      !this.clientId ||
+      this.clientId.startsWith('mock_') ||
+      this.configService.get<string>('NODE_ENV') === 'test';
+
+    if (isMock) {
+      return {
+        type: 'success',
+        data: {
+          data: [
+            { zone_id: 1, zone_name: 'Dhaka Sadar' },
+            { zone_id: 2, zone_name: 'Mirpur' },
+            { zone_id: 3, zone_name: 'Uttara' },
+            { zone_id: 10, zone_name: 'Manikganj Sadar' },
+          ],
+        },
+      };
+    }
+
+    const token = await this.getAccessToken();
+    const endpoint = `${this.baseUrl}/aladdin/api/v1/cities/${cityId}/zone-list`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Pathao zones for city ${cityId} (HTTP ${response.status})`);
+      }
+
+      return await response.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Fetch area list for a zone from Pathao Aladdin API
+   */
+  async getAreas(zoneId: number): Promise<any> {
+    const isMock =
+      !this.clientId ||
+      this.clientId.startsWith('mock_') ||
+      this.configService.get<string>('NODE_ENV') === 'test';
+
+    if (isMock) {
+      return {
+        type: 'success',
+        data: {
+          data: [
+            { area_id: 1, area_name: 'Central Area' },
+          ],
+        },
+      };
+    }
+
+    const token = await this.getAccessToken();
+    const endpoint = `${this.baseUrl}/aladdin/api/v1/zones/${zoneId}/area-list`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Pathao areas for zone ${zoneId} (HTTP ${response.status})`);
+      }
+
+      return await response.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
 }

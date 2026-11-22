@@ -34,6 +34,7 @@ import { CurrentUser, AuthUser } from '../auth/decorators/current-user.decorator
 import { UserRole } from '@prisma/client';
 import { CourierRoutingService } from './services/courier-routing.service';
 import { SmartDispatchDto } from './dto/smart-dispatch.dto';
+import { LogisticsService } from './services/logistics.service';
 
 @ApiTags('Courier Logistics & Inbound Webhooks (Steadfast & Pathao)')
 @Controller()
@@ -42,6 +43,7 @@ export class CourierController {
     private readonly steadfastService: SteadfastService,
     private readonly pathaoService: PathaoService,
     private readonly courierRoutingService: CourierRoutingService,
+    private readonly logisticsService: LogisticsService,
   ) {}
 
   // ==========================================
@@ -281,5 +283,55 @@ export class CourierController {
   @ApiResponse({ status: 200, description: 'Active routing policy configuration' })
   getRoutingPolicy() {
     return this.courierRoutingService.getRoutingPolicy();
+  }
+
+  // ==========================================
+  // DYNAMIC LOGISTICS & DISTRICTS (PHASE 2)
+  // ==========================================
+
+  @Get('courier/logistics/districts')
+  @ApiOperation({
+    summary: 'Get all 64 official Bangladesh districts with live dynamic delivery fees',
+    description: 'Returns all 64 official districts with Bengali/English names and delivery fees calculated live from Platform Settings.',
+  })
+  async getDistricts() {
+    const districts = await this.logisticsService.getAllDistricts();
+    return {
+      success: true,
+      data: districts,
+    };
+  }
+
+  @Get('courier/logistics/zones')
+  @ApiOperation({
+    summary: 'Get official zones/upazilas for a district or city ID',
+    description: 'Returns zones/upazilas from Pathao official Aladdin API, cached in Redis.',
+  })
+  @ApiQuery({ name: 'districtId', required: false, description: 'District ID or Name (e.g. manikganj)' })
+  @ApiQuery({ name: 'cityId', required: false, description: 'Pathao City ID (e.g. 50)' })
+  async getZones(
+    @Query('districtId') districtId?: string,
+    @Query('cityId') cityId?: string,
+  ) {
+    const target = cityId ? Number(cityId) : (districtId || 'dhaka-city');
+    const zones = await this.logisticsService.getZonesForDistrict(target);
+    return {
+      success: true,
+      data: zones,
+    };
+  }
+
+  @Post('courier/logistics/resolve-address')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Context-aware dynamic address resolver',
+    description: 'Extracts authentic district, zone, Pathao City ID, and dynamic fee from raw text with false-positive landmark elimination.',
+  })
+  async resolveAddress(@Body() body: { address: string }) {
+    const resolved = this.logisticsService.resolveAddress(body?.address || '');
+    return {
+      success: true,
+      data: resolved,
+    };
   }
 }

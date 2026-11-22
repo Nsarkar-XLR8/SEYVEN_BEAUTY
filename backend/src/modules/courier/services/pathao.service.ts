@@ -21,6 +21,7 @@ import {
 import { OrderStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { detectDistrictFromAddress } from '../../../common/utils/district-resolver.util';
+import { BD_OFFICIAL_DISTRICTS_GEO } from './logistics.service';
 
 @Injectable()
 export class PathaoService {
@@ -189,6 +190,18 @@ export class PathaoService {
 
     if (dto.recipientCityId) {
       payload.recipient_city = dto.recipientCityId;
+    } else {
+      const targetDistrict = (district || '').toLowerCase().trim();
+      const matchedDistrict = BD_OFFICIAL_DISTRICTS_GEO.find(
+        (d) =>
+          d.nameEn.toLowerCase() === targetDistrict ||
+          d.id === targetDistrict ||
+          d.nameBn === district ||
+          targetDistrict.includes(d.id),
+      );
+      if (matchedDistrict?.pathaoCityId) {
+        payload.recipient_city = matchedDistrict.pathaoCityId;
+      }
     }
     if (dto.recipientZoneId) {
       payload.recipient_zone = dto.recipientZoneId;

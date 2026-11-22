@@ -282,6 +282,26 @@ export function detectDistrictFromAddress(
       // Match whole word or bounded token in Bangla/English
       const regex = new RegExp(`(^|[^a-zA-Z0-9\u0980-\u09FF])${lowerKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-zA-Z0-9\u0980-\u09FF]|$)`, 'i');
       if (regex.test(text) || text.includes(lowerKw)) {
+        // Protect against false-positive street/business landmark names (e.g. 'Manikganj Road, Mirpur, Dhaka')
+        if (pattern.id !== 'dhaka-city' && pattern.id !== 'dhaka-suburbs') {
+          const landmarkSuffixes = [
+            ' road', ' রোড', ' rd', ' mor', ' মোড়', ' stand', ' স্ট্যান্ড',
+            ' bus stand', ' বাস স্ট্যান্ড', ' sweets', ' সুইটস', ' plaza', ' প্লাজা',
+            ' market', ' মার্কেট', ' bhaban', ' ভবন', ' lane', ' লেন', ' goli', ' গলি'
+          ];
+          const hasDhakaMetroDestination = [
+            'mirpur', 'মিরপুর', 'uttara', 'উত্তরা', 'dhanmondi', 'ধানমন্ডি',
+            'gulshan', 'গুলশান', 'banani', 'বনানী', 'mohammadpur', 'মোহাম্মদপুর',
+            'farmgate', 'ফার্মগেট', 'gabtoli', 'গাবতলী', 'badda', 'বাড্ডা',
+            'motijheel', 'মতিঝিল', 'bashundhara', 'বসুন্ধরা'
+          ].some((token) => text.includes(token));
+
+          const isLandmark = landmarkSuffixes.some((sfx) => text.includes(lowerKw + sfx));
+          if (isLandmark && hasDhakaMetroDestination) {
+            continue;
+          }
+        }
+
         const isDhakaCity = pattern.id === 'dhaka-city';
         const isSuburbs = pattern.id === 'dhaka-suburbs';
 

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '../../common/database/database.module';
 import { RedisModule } from '../../common/redis/redis.module';
+import { SettingsModule } from '../settings/settings.module';
 import { CourierController } from './courier.controller';
 import { PathaoService } from './services/pathao.service';
 import { PathaoApiClient } from './services/pathao-api.client';
@@ -13,11 +14,14 @@ import { SteadfastApiClient } from './services/steadfast-api.client';
 import { SteadfastBookingWorker } from './workers/steadfast-booking.worker';
 import { SteadfastWebhookGuard } from './guards/steadfast-webhook.guard';
 import { CourierRoutingService } from './services/courier-routing.service';
+import { LogisticsService } from './services/logistics.service';
 
 @Module({
-  imports: [ConfigModule, DatabaseModule, RedisModule],
+  imports: [ConfigModule, DatabaseModule, RedisModule, SettingsModule],
   controllers: [CourierController],
   providers: [
+    // Logistics & Geographic Resolver
+    LogisticsService,
     // Pathao (Primary Courier)
     PathaoApiClient,
     PathaoBookingWorker,
@@ -32,6 +36,7 @@ import { CourierRoutingService } from './services/courier-routing.service';
     CourierRoutingService,
   ],
   exports: [
+    LogisticsService,
     PathaoService,
     PathaoApiClient,
     PathaoBookingWorker,

@@ -7,6 +7,7 @@ import { Menu, Search, User, ShoppingBag, X, LogOut, Sparkles, Package } from 'l
 import { useCart } from '@/context/cart-context';
 import { useAuth } from '@/context/auth-context';
 import { GUEST_NAV_LINKS, AUTH_NAV_LINKS, BRAND } from '@/lib/constants';
+import { MobileNavDrawer } from './mobile-nav-drawer';
 
 interface HeaderProps {
   onOpenSearch?: () => void;
@@ -211,145 +212,12 @@ export function Header({ onOpenSearch }: HeaderProps) {
       </header>
 
       {/* ========================================================================= */}
-      {/* MOBILE SLIDE-OVER NAVIGATION DRAWER */}
+      {/* HAUTE LUXURY EDITORIAL MOBILE NAVIGATION & CATEGORY TAXONOMY DRAWER       */}
       {/* ========================================================================= */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-[#1C1917]/40 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-
-          {/* Drawer Surface */}
-          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-[#F9F6F0] border-r border-[#E6DFD5] shadow-2xl p-6 flex flex-col justify-between z-10">
-            <div>
-              {/* Header inside drawer */}
-              <div className="flex items-center justify-between pb-6 border-b border-[#E6DFD5]">
-                <Link
-                  href="/"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center space-x-2.5 group focus:outline-none"
-                  aria-label="SEYVEN Home"
-                >
-                  <Image
-                    src={BRAND.logoPath}
-                    alt="SEYVEN"
-                    width={400}
-                    height={588}
-                    className="h-8 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-                  />
-                  <span className="text-xs uppercase tracking-[0.25em] font-serif text-[#1C1917] group-hover:text-[#C7A97B] transition-colors">
-                    SEYVEN
-                  </span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1 text-[#1C1917]/70 hover:text-[#1C1917]"
-                  aria-label="Close menu"
-                >
-                  <X className="w-5 h-5 stroke-[1.5]" />
-                </button>
-              </div>
-
-              {/* Navigation links - Pure Haute Luxury Editorial Spacing */}
-              <nav className="mt-8 flex flex-col space-y-6">
-                {currentNavLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-xs uppercase tracking-[0.25em] font-medium text-[#1C1917] hover:text-[#C7A97B] transition-colors"
-                  >
-                    {link.labelEn}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-
-            {/* Mobile Account Section & Logout (Haute Luxury Standard - Gucci / Chanel UX) */}
-            <div className="py-4 my-2 border-y border-[#E6DFD5] space-y-2.5">
-              {mounted && isAuthenticated ? (
-                <>
-                  <Link
-                    href="/customer/account"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center justify-between p-3 rounded bg-white border border-[#E6DFD5] hover:border-[#C7A97B] transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-9 h-9 rounded-full bg-[#1C1917] text-[#C7A97B] flex items-center justify-center font-serif text-sm font-semibold">
-                        {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'S'}
-                      </div>
-                      <div>
-                        <span className="block text-xs font-serif font-medium text-[#1C1917]">
-                          {user?.fullName || 'Sanctuary Client'}
-                        </span>
-                        <span className="block text-[9px] uppercase tracking-wider text-[#C7A97B] font-mono">
-                          {user?.phone || 'Sanctuary VIP Privilege'}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-[#C7A97B] font-medium tracking-wider">
-                      VAULT &rarr;
-                    </span>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsMobileMenuOpen(false);
-                      await logout();
-                    }}
-                    className="w-full py-2.5 px-3 rounded bg-white hover:bg-red-50 border border-[#E6DFD5] hover:border-red-200 transition-all duration-200 text-left flex items-center justify-between text-xs uppercase tracking-[0.18em] font-medium text-red-700"
-                  >
-                    <span className="flex items-center space-x-2">
-                      <LogOut className="w-3.5 h-3.5 text-red-600" />
-                      <span>SIGN OUT OF SEYVEN</span>
-                    </span>
-                    <span className="text-[10px] text-red-400">&rarr;</span>
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    openAuthModal();
-                  }}
-                  className="w-full py-3 px-4 rounded bg-[#1C1917] hover:bg-[#C7A97B] text-white transition-colors text-center text-xs uppercase tracking-[0.2em] font-medium flex items-center justify-center space-x-2"
-                >
-                  <User className="w-3.5 h-3.5 text-[#C7A97B]" />
-                  <span>SIGN IN / REGISTER</span>
-                </button>
-              )}
-            </div>
-
-            {/* Bottom info in drawer */}
-            <div className="pt-4 text-[10px] text-[#1C1917]/70 space-y-3">
-              <div className="flex items-center justify-between pb-1">
-                <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#1C1917]/60">
-                  INTERNATIONAL CURATION
-                </span>
-                <span className="text-[9px] uppercase tracking-wider text-[#1C1917]/40 font-mono">BANGLADESH · BDT ৳</span>
-              </div>
-
-              <div className="space-y-1 text-[9px] text-[#1C1917]/50 pt-1 border-t border-[#E6DFD5]/40">
-                {(settings?.supportPhone || BRAND.supportPhone) ? (
-                  <p className="uppercase tracking-[0.15em] text-[#C7A97B] font-medium">
-                    DIRECT CLIENT CARE · {settings?.supportPhone || BRAND.supportPhone}
-                  </p>
-                ) : null}
-                {BRAND.corporate.vatBin ? (
-                  <p className="tracking-[0.05em]">
-                    {BRAND.corporate.vatBin}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <MobileNavDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+      />
     </>
   );
 }

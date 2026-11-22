@@ -1,92 +1,120 @@
 /**
  * Universal Intelligent Bangladesh District Resolver for Storefront Checkout.
+ * Automatically resolves authentic District and Logistics Hub from raw address text.
+ * Delivery fees are dynamically synchronized with Admin Platform Settings.
  */
 
-interface DistrictPattern {
+export type ZoneType = 'DHAKA_CITY' | 'DHAKA_SUBURBS' | 'OUTSIDE_DHAKA';
+
+export interface DistrictPattern {
   id: string;
   name: string;
-  fee: number;
+  zoneType: ZoneType;
   keywords: string[];
 }
 
-const DISTRICT_PATTERNS: DistrictPattern[] = [
-  // 1. All Non-Dhaka 63 Districts
-  { id: 'manikganj', name: 'Manikganj', fee: 130, keywords: ['manikganj', 'manikgonj', 'মানিকগঞ্জ'] },
-  { id: 'gazipur', name: 'Gazipur', fee: 130, keywords: ['gazipur', 'গাজীপুর', 'tongi', 'টঙ্গী', 'joydebpur', 'জয়দেবপুর', 'konabari', 'কোনাবাড়ী', 'chourasta', 'চৌরাস্তা'] },
-  { id: 'narayanganj', name: 'Narayanganj', fee: 130, keywords: ['narayanganj', 'narayangonj', 'নারায়ণগঞ্জ', 'নারায়নগঞ্জ', 'siddhirganj', 'সিদ্ধিরগঞ্জ', 'fatullah', 'ফতুল্লা', 'chasara', 'চাষাড়া'] },
-  { id: 'narsingdi', name: 'Narsingdi', fee: 130, keywords: ['narsingdi', 'নরসিংদী'] },
-  { id: 'tangail', name: 'Tangail', fee: 130, keywords: ['tangail', 'টাঙ্গাইল', 'modhupur', 'মধুপুর', 'mirzapur', 'মির্জাপুর'] },
-  { id: 'munshiganj', name: 'Munshiganj', fee: 130, keywords: ['munshiganj', 'munshigonj', 'মুন্সীগঞ্জ', 'মুন্সিগঞ্জ', 'srinagar', 'শ্রীনগর'] },
-  { id: 'faridpur', name: 'Faridpur', fee: 130, keywords: ['faridpur', 'ফরিদপুর'] },
-  { id: 'gopalganj', name: 'Gopalganj', fee: 130, keywords: ['gopalganj', 'গোপালগঞ্জ', 'tungipara', 'টুঙ্গিপাড়া'] },
-  { id: 'madaripur', name: 'Madaripur', fee: 130, keywords: ['madaripur', 'মাদারীপুর', 'shibchar', 'শিবচর'] },
-  { id: 'rajbari', name: 'Rajbari', fee: 130, keywords: ['rajbari', 'রাজবাড়ী', 'রাজবাড়ি'] },
-  { id: 'shariatpur', name: 'Shariatpur', fee: 130, keywords: ['shariatpur', 'শরীয়তপুর', 'শরিয়তপুর'] },
-  { id: 'kishoreganj', name: 'Kishoreganj', fee: 130, keywords: ['kishoreganj', 'কিশোরগঞ্জ', 'bhairab', 'ভৈরব'] },
+export interface DeliveryFeeConfig {
+  insideDhakaFee?: number;
+  outsideDhakaFee?: number;
+  suburbsFee?: number;
+}
 
-  { id: 'chattogram', name: 'Chattogram', fee: 130, keywords: ['chattogram', 'chittagong', 'ctg', 'চট্টগ্রাম', 'agrabad', 'আগ্রাবাদ', 'gec', 'জিইসি', 'nasirabad', 'নাসিরাবাদ', 'halishahar', 'হালিশহর', 'chawkbazar ctg', 'চকবাজার চট্টগ্রাম', 'panchlaish', 'পাঁচলাইশ', 'kotwali ctg'] },
-  { id: 'coxs-bazar', name: "Cox's Bazar", fee: 130, keywords: ['coxs bazar', "cox's bazar", 'coxsbazar', 'কক্সবাজার'] },
-  { id: 'cumilla', name: 'Cumilla', fee: 130, keywords: ['cumilla', 'comilla', 'কুমিল্লা', 'kandirpar', 'কান্দিরপাড়'] },
-  { id: 'feni', name: 'Feni', fee: 130, keywords: ['feni', 'ফেনী'] },
-  { id: 'noakhali', name: 'Noakhali', fee: 130, keywords: ['noakhali', 'নোয়াখালী', 'maijdee', 'মাইজদী'] },
-  { id: 'brahmanbaria', name: 'Brahmanbaria', fee: 130, keywords: ['brahmanbaria', 'ব্রাহ্মণবাড়িয়া', 'b.baria'] },
-  { id: 'chandpur', name: 'Chandpur', fee: 130, keywords: ['chandpur', 'চাঁদপুর', 'হাজীগঞ্জ'] },
-  { id: 'lakshmipur', name: 'Lakshmipur', fee: 130, keywords: ['lakshmipur', 'laxmipur', 'লক্ষ্মীপুর'] },
-  { id: 'bandarban', name: 'Bandarban', fee: 130, keywords: ['bandarban', 'বান্দরবান'] },
-  { id: 'rangamati', name: 'Rangamati', fee: 130, keywords: ['rangamati', 'রাঙ্গামাটি'] },
-  { id: 'khagrachhari', name: 'Khagrachhari', fee: 130, keywords: ['khagrachhari', 'খাগড়াছড়ি'] },
+// Module-level live fee configuration (dynamically updated from platform settings)
+let globalDeliveryFeeConfig: DeliveryFeeConfig = {
+  insideDhakaFee: 70,
+  outsideDhakaFee: 130,
+  suburbsFee: 100,
+};
 
-  { id: 'sylhet', name: 'Sylhet', fee: 130, keywords: ['sylhet', 'সিলেট', 'zindabazar', 'জিন্দাবাজার', 'amberkhana', 'আম্বরখানা', 'subidbazar', 'সুবিদবাজার', 'shahi eidgah', 'শাহ ঈদগাহ'] },
-  { id: 'moulvibazar', name: 'Moulvibazar', fee: 130, keywords: ['moulvibazar', 'moulvibazar', 'মৌলভীবাজার', 'sreemangal', 'শ্রীমঙ্গল'] },
-  { id: 'habiganj', name: 'Habiganj', fee: 130, keywords: ['habiganj', 'হবিগঞ্জ', 'shaistaganj', 'শায়েস্তাগঞ্জ'] },
-  { id: 'sunamganj', name: 'Sunamganj', fee: 130, keywords: ['sunamganj', 'সুনামগঞ্জ'] },
+export function updateGlobalDeliveryFeeConfig(config: Partial<DeliveryFeeConfig>) {
+  globalDeliveryFeeConfig = {
+    ...globalDeliveryFeeConfig,
+    ...config,
+  };
+}
 
-  { id: 'rajshahi', name: 'Rajshahi', fee: 130, keywords: ['rajshahi', 'রাজশাহী', 'saheb bazar', 'সাহেব বাজার', 'motihar', 'মতিহার', 'boalia', 'বোয়ালিয়া'] },
-  { id: 'bogura', name: 'Bogura', fee: 130, keywords: ['bogura', 'bogra', 'বগুড়া', 'বগুরা', 'satmatha', 'সাতমাথা'] },
-  { id: 'pabna', name: 'Pabna', fee: 130, keywords: ['pabna', 'পাবনা', 'ishwardi', 'ঈশ্বরদী'] },
-  { id: 'sirajganj', name: 'Sirajganj', fee: 130, keywords: ['sirajganj', 'সিরাজগঞ্জ'] },
-  { id: 'naogaon', name: 'Naogaon', fee: 130, keywords: ['naogaon', 'নওগাঁ'] },
-  { id: 'natore', name: 'Natore', fee: 130, keywords: ['natore', 'নাটোর'] },
-  { id: 'chapainawabganj', name: 'Chapainawabganj', fee: 130, keywords: ['chapainawabganj', 'চাঁপাইনবাবগঞ্জ'] },
-  { id: 'joypurhat', name: 'Joypurhat', fee: 130, keywords: ['joypurhat', 'জয়পুরহাট'] },
+export function getGlobalDeliveryFeeConfig(): DeliveryFeeConfig {
+  return { ...globalDeliveryFeeConfig };
+}
 
-  { id: 'khulna', name: 'Khulna', fee: 130, keywords: ['khulna', 'খুলনা', 'sonadanga', 'সোনাডাঙ্গা', 'daulatpur', 'দৌলতপুর', 'khalishpur', 'খালিশপুর'] },
-  { id: 'jashore', name: 'Jashore', fee: 130, keywords: ['jashore', 'jessore', 'যশোর', 'benapole', 'বেনাপোল'] },
-  { id: 'kushtia', name: 'Kushtia', fee: 130, keywords: ['kushtia', 'কুষ্টিয়া'] },
-  { id: 'satkhira', name: 'Satkhira', fee: 130, keywords: ['satkhira', 'সাতক্ষীরা'] },
-  { id: 'bagerhat', name: 'Bagerhat', fee: 130, keywords: ['bagerhat', 'বাগেরহাট', 'mongla', 'মংলা'] },
-  { id: 'jhenaidah', name: 'Jhenaidah', fee: 130, keywords: ['jhenaidah', 'ঝিনাইদহ'] },
-  { id: 'chuadanga', name: 'Chuadanga', fee: 130, keywords: ['chuadanga', 'চুয়াডাঙ্গা', 'darshana', 'দর্শনা'] },
-  { id: 'magura', name: 'Magura', fee: 130, keywords: ['magura', 'মাগুরা'] },
-  { id: 'meherpur', name: 'Meherpur', fee: 130, keywords: ['meherpur', 'মেহেরপুর'] },
-  { id: 'narail', name: 'Narail', fee: 130, keywords: ['narail', 'নড়াইল'] },
+export const DISTRICT_PATTERNS: DistrictPattern[] = [
+  // 1. All Non-Dhaka 63 Districts (Checked FIRST to avoid accidental Dhaka fallback!)
+  { id: 'manikganj', name: 'Manikganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['manikganj', 'manikgonj', 'মানিকগঞ্জ'] },
+  { id: 'gazipur', name: 'Gazipur', zoneType: 'OUTSIDE_DHAKA', keywords: ['gazipur', 'গাজীপুর', 'tongi', 'টঙ্গী', 'joydebpur', 'জয়দেবপুর', 'konabari', 'কোনাবাড়ী', 'chourasta', 'চৌরাস্তা'] },
+  { id: 'narayanganj', name: 'Narayanganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['narayanganj', 'narayangonj', 'নারায়ণগঞ্জ', 'নারায়নগঞ্জ', 'siddhirganj', 'সিদ্ধিরগঞ্জ', 'fatullah', 'ফতুল্লা', 'chasara', 'চাষাড়া'] },
+  { id: 'narsingdi', name: 'Narsingdi', zoneType: 'OUTSIDE_DHAKA', keywords: ['narsingdi', 'নরসিংদী'] },
+  { id: 'tangail', name: 'Tangail', zoneType: 'OUTSIDE_DHAKA', keywords: ['tangail', 'টাঙ্গাইল', 'modhupur', 'মধুপুর', 'mirzapur', 'মির্জাপুর'] },
+  { id: 'munshiganj', name: 'Munshiganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['munshiganj', 'munshigonj', 'মুন্সীগঞ্জ', 'মুন্সিগঞ্জ', 'srinagar', 'শ্রীনগর'] },
+  { id: 'faridpur', name: 'Faridpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['faridpur', 'ফরিদপুর'] },
+  { id: 'gopalganj', name: 'Gopalganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['gopalganj', 'গোপালগঞ্জ', 'tungipara', 'টুঙ্গিপাড়া'] },
+  { id: 'madaripur', name: 'Madaripur', zoneType: 'OUTSIDE_DHAKA', keywords: ['madaripur', 'মাদারীপুর', 'shibchar', 'শিবচর'] },
+  { id: 'rajbari', name: 'Rajbari', zoneType: 'OUTSIDE_DHAKA', keywords: ['rajbari', 'রাজবাড়ী', 'রাজবাড়ি'] },
+  { id: 'shariatpur', name: 'Shariatpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['shariatpur', 'শরীয়তপুর', 'শরিয়তপুর'] },
+  { id: 'kishoreganj', name: 'Kishoreganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['kishoreganj', 'কিশোরগঞ্জ', 'bhairab', 'ভৈরব'] },
 
-  { id: 'barishal', name: 'Barishal', fee: 130, keywords: ['barishal', 'barisal', 'বরিশাল', 'rupatali', 'রূপাতলী'] },
-  { id: 'bhola', name: 'Bhola', fee: 130, keywords: ['bhola', 'ভোলা'] },
-  { id: 'patuakhali', name: 'Patuakhali', fee: 130, keywords: ['patuakhali', 'পটুয়াখালী', 'kuakata', 'কুয়াকাটা'] },
-  { id: 'pirojpur', name: 'Pirojpur', fee: 130, keywords: ['pirojpur', 'পিরোজপুর'] },
-  { id: 'barguna', name: 'Barguna', fee: 130, keywords: ['barguna', 'বরগুনা'] },
-  { id: 'jhalokati', name: 'Jhalokati', fee: 130, keywords: ['jhalokati', 'jhalakati', 'ঝালকাঠি'] },
+  { id: 'chattogram', name: 'Chattogram', zoneType: 'OUTSIDE_DHAKA', keywords: ['chattogram', 'chittagong', 'ctg', 'চট্টগ্রাম', 'agrabad', 'আগ্রাবাদ', 'gec', 'জিইসি', 'nasirabad', 'নাসিরাবাদ', 'halishahar', 'হালিশহর', 'chawkbazar ctg', 'চকবাজার চট্টগ্রাম', 'panchlaish', 'পাঁচলাইশ', 'kotwali ctg'] },
+  { id: 'coxs-bazar', name: "Cox's Bazar", zoneType: 'OUTSIDE_DHAKA', keywords: ['coxs bazar', "cox's bazar", 'coxsbazar', 'কক্সবাজার'] },
+  { id: 'cumilla', name: 'Cumilla', zoneType: 'OUTSIDE_DHAKA', keywords: ['cumilla', 'comilla', 'কুমিল্লা', 'kandirpar', 'কান্দিরপাড়'] },
+  { id: 'feni', name: 'Feni', zoneType: 'OUTSIDE_DHAKA', keywords: ['feni', 'ফেনী'] },
+  { id: 'noakhali', name: 'Noakhali', zoneType: 'OUTSIDE_DHAKA', keywords: ['noakhali', 'নোয়াখালী', 'maijdee', 'মাইজদী'] },
+  { id: 'brahmanbaria', name: 'Brahmanbaria', zoneType: 'OUTSIDE_DHAKA', keywords: ['brahmanbaria', 'ব্রাহ্মণবাড়িয়া', 'b.baria'] },
+  { id: 'chandpur', name: 'Chandpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['chandpur', 'চাঁদপুর', 'হাজীগঞ্জ'] },
+  { id: 'lakshmipur', name: 'Lakshmipur', zoneType: 'OUTSIDE_DHAKA', keywords: ['lakshmipur', 'laxmipur', 'লক্ষ্মীপুর'] },
+  { id: 'bandarban', name: 'Bandarban', zoneType: 'OUTSIDE_DHAKA', keywords: ['bandarban', 'বান্দরবান'] },
+  { id: 'rangamati', name: 'Rangamati', zoneType: 'OUTSIDE_DHAKA', keywords: ['rangamati', 'রাঙ্গামাটি'] },
+  { id: 'khagrachhari', name: 'Khagrachhari', zoneType: 'OUTSIDE_DHAKA', keywords: ['khagrachhari', 'খাগড়াছড়ি'] },
 
-  { id: 'rangpur', name: 'Rangpur', fee: 130, keywords: ['rangpur', 'রংপুর', 'payra chottor', 'পায়রা চত্বর'] },
-  { id: 'dinajpur', name: 'Dinajpur', fee: 130, keywords: ['dinajpur', 'দিনাজপুর', 'hili', 'হিলি'] },
-  { id: 'gaibandha', name: 'Gaibandha', fee: 130, keywords: ['gaibandha', 'গাইবান্ধা'] },
-  { id: 'kurigram', name: 'Kurigram', fee: 130, keywords: ['kurigram', 'কুড়িগ্রাম'] },
-  { id: 'lalmonirhat', name: 'Lalmonirhat', fee: 130, keywords: ['lalmonirhat', 'লালমনিরহাট'] },
-  { id: 'nilphamari', name: 'Nilphamari', fee: 130, keywords: ['nilphamari', 'নীলফামারী', 'saidpur', 'সৈয়দপুর'] },
-  { id: 'panchagarh', name: 'Panchagarh', fee: 130, keywords: ['panchagarh', 'পঞ্চগড়'] },
-  { id: 'thakurgaon', name: 'Thakurgaon', fee: 130, keywords: ['thakurgaon', 'ঠাকুরগাঁও'] },
+  { id: 'sylhet', name: 'Sylhet', zoneType: 'OUTSIDE_DHAKA', keywords: ['sylhet', 'সিলেট', 'zindabazar', 'জিন্দাবাজার', 'amberkhana', 'আম্বরখানা', 'subidbazar', 'সুবিদবাজার', 'shahi eidgah', 'শাহ ঈদগাহ'] },
+  { id: 'moulvibazar', name: 'Moulvibazar', zoneType: 'OUTSIDE_DHAKA', keywords: ['moulvibazar', 'moulvibazar', 'মৌলভীবাজার', 'sreemangal', 'শ্রীমঙ্গল'] },
+  { id: 'habiganj', name: 'Habiganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['habiganj', 'হবিগঞ্জ', 'shaistaganj', 'শায়েস্তাগঞ্জ'] },
+  { id: 'sunamganj', name: 'Sunamganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['sunamganj', 'সুনামগঞ্জ'] },
 
-  { id: 'mymensingh', name: 'Mymensingh', fee: 130, keywords: ['mymensingh', 'ময়মনসিংহ'] },
-  { id: 'jamalpur', name: 'Jamalpur', fee: 130, keywords: ['jamalpur', 'জামালপুর'] },
-  { id: 'netrokona', name: 'Netrokona', fee: 130, keywords: ['netrokona', 'নেত্রকোণা', 'নেত্রকোনা'] },
-  { id: 'sherpur', name: 'Sherpur', fee: 130, keywords: ['sherpur', 'শেরপুর'] },
+  { id: 'rajshahi', name: 'Rajshahi', zoneType: 'OUTSIDE_DHAKA', keywords: ['rajshahi', 'রাজশাহী', 'saheb bazar', 'সাহেব বাজার', 'motihar', 'মতিহার', 'boalia', 'বোয়ালিয়া'] },
+  { id: 'bogura', name: 'Bogura', zoneType: 'OUTSIDE_DHAKA', keywords: ['bogura', 'bogra', 'বগুড়া', 'বগুরা', 'satmatha', 'সাতমাথা'] },
+  { id: 'pabna', name: 'Pabna', zoneType: 'OUTSIDE_DHAKA', keywords: ['pabna', 'পাবনা', 'ishwardi', 'ঈশ্বরদী'] },
+  { id: 'sirajganj', name: 'Sirajganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['sirajganj', 'সিরাজগঞ্জ'] },
+  { id: 'naogaon', name: 'Naogaon', zoneType: 'OUTSIDE_DHAKA', keywords: ['naogaon', 'নওগাঁ'] },
+  { id: 'natore', name: 'Natore', zoneType: 'OUTSIDE_DHAKA', keywords: ['natore', 'নাটোর'] },
+  { id: 'chapainawabganj', name: 'Chapainawabganj', zoneType: 'OUTSIDE_DHAKA', keywords: ['chapainawabganj', 'চাঁপাইনবাবগঞ্জ'] },
+  { id: 'joypurhat', name: 'Joypurhat', zoneType: 'OUTSIDE_DHAKA', keywords: ['joypurhat', 'জয়পুরহাট'] },
+
+  { id: 'khulna', name: 'Khulna', zoneType: 'OUTSIDE_DHAKA', keywords: ['khulna', 'খুলনা', 'sonadanga', 'সোনাডাঙ্গা', 'daulatpur', 'দৌলতপুর', 'khalishpur', 'খালিশপুর'] },
+  { id: 'jashore', name: 'Jashore', zoneType: 'OUTSIDE_DHAKA', keywords: ['jashore', 'jessore', 'যশোর', 'benapole', 'বেনাপোল'] },
+  { id: 'kushtia', name: 'Kushtia', zoneType: 'OUTSIDE_DHAKA', keywords: ['kushtia', 'কুষ্টিয়া'] },
+  { id: 'satkhira', name: 'Satkhira', zoneType: 'OUTSIDE_DHAKA', keywords: ['satkhira', 'সাতক্ষীরা'] },
+  { id: 'bagerhat', name: 'Bagerhat', zoneType: 'OUTSIDE_DHAKA', keywords: ['bagerhat', 'বাগেরহাট', 'mongla', 'মংলা'] },
+  { id: 'jhenaidah', name: 'Jhenaidah', zoneType: 'OUTSIDE_DHAKA', keywords: ['jhenaidah', 'ঝিনাইদহ'] },
+  { id: 'chuadanga', name: 'Chuadanga', zoneType: 'OUTSIDE_DHAKA', keywords: ['chuadanga', 'চুয়াডাঙ্গা', 'darshana', 'দর্শনা'] },
+  { id: 'magura', name: 'Magura', zoneType: 'OUTSIDE_DHAKA', keywords: ['magura', 'মাগুরা'] },
+  { id: 'meherpur', name: 'Meherpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['meherpur', 'মেহেরপুর'] },
+  { id: 'narail', name: 'Narail', zoneType: 'OUTSIDE_DHAKA', keywords: ['narail', 'নড়াইল'] },
+
+  { id: 'barishal', name: 'Barishal', zoneType: 'OUTSIDE_DHAKA', keywords: ['barishal', 'barisal', 'বরিশাল', 'rupatali', 'রূপাতলী'] },
+  { id: 'bhola', name: 'Bhola', zoneType: 'OUTSIDE_DHAKA', keywords: ['bhola', 'ভোলা'] },
+  { id: 'patuakhali', name: 'Patuakhali', zoneType: 'OUTSIDE_DHAKA', keywords: ['patuakhali', 'পটুয়াখালী', 'kuakata', 'কুয়াকাটা'] },
+  { id: 'pirojpur', name: 'Pirojpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['pirojpur', 'পিরোজপুর'] },
+  { id: 'barguna', name: 'Barguna', zoneType: 'OUTSIDE_DHAKA', keywords: ['barguna', 'বরগুনা'] },
+  { id: 'jhalokati', name: 'Jhalokati', zoneType: 'OUTSIDE_DHAKA', keywords: ['jhalokati', 'jhalakati', 'ঝালকাঠি'] },
+
+  { id: 'rangpur', name: 'Rangpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['rangpur', 'রংপুর', 'payra chottor', 'পায়রা চত্বর'] },
+  { id: 'dinajpur', name: 'Dinajpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['dinajpur', 'দিনাজপুর', 'hili', 'হিলি'] },
+  { id: 'gaibandha', name: 'Gaibandha', zoneType: 'OUTSIDE_DHAKA', keywords: ['gaibandha', 'গাইবান্ধা'] },
+  { id: 'kurigram', name: 'Kurigram', zoneType: 'OUTSIDE_DHAKA', keywords: ['kurigram', 'কুড়িগ্রাম'] },
+  { id: 'lalmonirhat', name: 'Lalmonirhat', zoneType: 'OUTSIDE_DHAKA', keywords: ['lalmonirhat', 'লালমনিরহাট'] },
+  { id: 'nilphamari', name: 'Nilphamari', zoneType: 'OUTSIDE_DHAKA', keywords: ['nilphamari', 'নীলফামারী', 'saidpur', 'সৈয়দপুর'] },
+  { id: 'panchagarh', name: 'Panchagarh', zoneType: 'OUTSIDE_DHAKA', keywords: ['panchagarh', 'পঞ্চগড়'] },
+  { id: 'thakurgaon', name: 'Thakurgaon', zoneType: 'OUTSIDE_DHAKA', keywords: ['thakurgaon', 'ঠাকুরগাঁও'] },
+
+  { id: 'mymensingh', name: 'Mymensingh', zoneType: 'OUTSIDE_DHAKA', keywords: ['mymensingh', 'ময়মনসিংহ'] },
+  { id: 'jamalpur', name: 'Jamalpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['jamalpur', 'জামালপুর'] },
+  { id: 'netrokona', name: 'Netrokona', zoneType: 'OUTSIDE_DHAKA', keywords: ['netrokona', 'নেত্রকোণা', 'নেত্রকোনা'] },
+  { id: 'sherpur', name: 'Sherpur', zoneType: 'OUTSIDE_DHAKA', keywords: ['sherpur', 'শেরপুর'] },
 
   // 2. Dhaka Suburbs
   {
     id: 'dhaka-suburbs',
     name: 'Dhaka Suburbs (Savar/Keraniganj/Ashulia)',
-    fee: 100,
+    zoneType: 'DHAKA_SUBURBS',
     keywords: [
       'savar', 'সাভার', 'keraniganj', 'কেরানীগঞ্জ', 'কেরানিগঞ্জ',
       'ashulia', 'আশুলিয়া', 'আশুলিয়া', 'dhamrai', 'ধামরাই',
@@ -99,7 +127,7 @@ const DISTRICT_PATTERNS: DistrictPattern[] = [
   {
     id: 'dhaka-city',
     name: 'Dhaka City (Metro)',
-    fee: 70,
+    zoneType: 'DHAKA_CITY',
     keywords: [
       'dhaka city', 'dhaka metro', 'ঢাকা সিটি', 'inside dhaka',
       'uttara', 'উত্তরা', 'mirpur', 'মিরপুর', 'dhanmondi', 'ধানমন্ডি',
@@ -120,7 +148,10 @@ const DISTRICT_PATTERNS: DistrictPattern[] = [
   },
 ];
 
-export function detectDistrictFromAddress(rawAddress: string): {
+export function detectDistrictFromAddress(
+  rawAddress: string,
+  feeOverrides?: DeliveryFeeConfig,
+): {
   district: string;
   zone: string;
   deliveryFee: number;
@@ -133,18 +164,24 @@ export function detectDistrictFromAddress(rawAddress: string): {
   const text = rawAddress.toLowerCase().trim();
   if (text.length < 2) return null;
 
+  const insideDhaka = feeOverrides?.insideDhakaFee ?? globalDeliveryFeeConfig.insideDhakaFee ?? 70;
+  const outsideDhaka = feeOverrides?.outsideDhakaFee ?? globalDeliveryFeeConfig.outsideDhakaFee ?? 130;
+  const suburbs = feeOverrides?.suburbsFee ?? globalDeliveryFeeConfig.suburbsFee ?? 100;
+
   for (const pattern of DISTRICT_PATTERNS) {
     for (const kw of pattern.keywords) {
       const lowerKw = kw.toLowerCase();
       const regex = new RegExp(`(^|[^a-zA-Z0-9\u0980-\u09FF])${lowerKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-zA-Z0-9\u0980-\u09FF]|$)`, 'i');
       if (regex.test(text) || text.includes(lowerKw)) {
-        const isDhakaCity = pattern.id === 'dhaka-city';
-        const isSuburbs = pattern.id === 'dhaka-suburbs';
+        const isDhakaCity = pattern.zoneType === 'DHAKA_CITY';
+        const isSuburbs = pattern.zoneType === 'DHAKA_SUBURBS';
+
+        const fee = isDhakaCity ? insideDhaka : (isSuburbs ? suburbs : outsideDhaka);
 
         return {
           district: pattern.name,
           zone: isDhakaCity ? 'Dhaka City' : (isSuburbs ? 'Dhaka Suburbs' : pattern.name),
-          deliveryFee: pattern.fee,
+          deliveryFee: fee,
           matchedKeyword: kw,
           isDhakaCity,
           isSuburbs,

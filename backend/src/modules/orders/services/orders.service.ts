@@ -63,7 +63,11 @@ export class OrdersService {
       )}`;
 
     const rawAddress = (dto.address || dto.shippingAddress || 'Dhaka').trim();
-    const detectedDistrictInfo = detectDistrictFromAddress(rawAddress);
+    const currentSettings = this.settingsService?.getSettings();
+    const detectedDistrictInfo = detectDistrictFromAddress(rawAddress, {
+      insideDhakaFee: currentSettings?.standardDeliveryDhakaBdt,
+      outsideDhakaFee: currentSettings?.standardDeliveryOutsideBdt,
+    });
 
     const initialDistrict = (dto.districtName || dto.district || '').trim();
     const isGenericDistrict = !initialDistrict || ['dhaka', 'dhaka city', 'dhaka metro', 'inside dhaka', 'outside dhaka'].includes(initialDistrict.toLowerCase());

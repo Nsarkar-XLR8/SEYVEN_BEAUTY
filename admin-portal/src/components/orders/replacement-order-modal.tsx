@@ -46,7 +46,13 @@ export function ReplacementOrderModal({
   sourceOrder,
   onSuccess,
 }: ReplacementOrderModalProps) {
-  const { createReplacementOrder } = useAdmin();
+  const { createReplacementOrder, platformSettings } = useAdmin();
+
+  const dynamicFeeConfig = {
+    insideDhakaFee: Number(platformSettings?.standardDeliveryDhakaBdt) || 70,
+    outsideDhakaFee: Number(platformSettings?.standardDeliveryOutsideBdt) || 130,
+    suburbsFee: 100,
+  };
 
   // 1. Dynamic Item Selection from any order
   const [selectedItemIds, setSelectedItemIds] = useState<Record<string, boolean>>(() => {
@@ -105,7 +111,7 @@ export function ReplacementOrderModal({
     ).trim();
 
     // Prioritize 64-district NLP detection from the authentic address
-    const detected = detectDistrictFromAddress(rawAddr);
+    const detected = detectDistrictFromAddress(rawAddr, dynamicFeeConfig);
     if (detected) return detected.district;
 
     const origDistrict = (sourceOrder?.district || (sourceOrder?.shippingAddress as any)?.district || '').trim();
@@ -555,7 +561,7 @@ export function ReplacementOrderModal({
               onChange={(e) => {
                 const val = e.target.value;
                 setShippingAddress(val);
-                const detected = detectDistrictFromAddress(val);
+                const detected = detectDistrictFromAddress(val, dynamicFeeConfig);
                 if (detected) {
                   setDistrict(detected.district);
                 }

@@ -216,13 +216,50 @@ const DISTRICT_PATTERNS: DistrictPattern[] = [
   },
 ];
 
+export interface DeliveryFeeConfig {
+  insideDhakaFee?: number;
+  outsideDhakaFee?: number;
+  suburbsFee?: number;
+}
+
+// Module-level live fee configuration (dynamically updated from platform settings)
+let globalDeliveryFeeConfig: DeliveryFeeConfig = {
+  insideDhakaFee: 70,
+  outsideDhakaFee: 130,
+  suburbsFee: 100,
+};
+
+export function updateGlobalDeliveryFeeConfig(config: Partial<DeliveryFeeConfig>) {
+  globalDeliveryFeeConfig = {
+    ...globalDeliveryFeeConfig,
+    ...config,
+  };
+}
+
+export function getGlobalDeliveryFeeConfig(): DeliveryFeeConfig {
+  return { ...globalDeliveryFeeConfig };
+}
+
+export function getDistrictFee(district: DistrictItem, config?: DeliveryFeeConfig): number {
+  const inside = config?.insideDhakaFee ?? globalDeliveryFeeConfig.insideDhakaFee ?? 70;
+  const outside = config?.outsideDhakaFee ?? globalDeliveryFeeConfig.outsideDhakaFee ?? 130;
+  const suburbs = config?.suburbsFee ?? globalDeliveryFeeConfig.suburbsFee ?? 100;
+
+  if (district.isDhakaCity) return inside;
+  if (district.isDhakaSuburbs) return suburbs;
+  return outside;
+}
+
 /**
  * Intelligent Bangladesh District & Zone Resolver.
  * Given ANY raw address text in Bengali, English, or mixed:
- * Detects the authentic Bangladesh District, appropriate delivery fee (৳70, ৳100, ৳130),
+ * Detects the authentic Bangladesh District, dynamic delivery fee based on Admin Settings,
  * and standard logistics routing name.
  */
-export function detectDistrictFromAddress(rawAddress: string): {
+export function detectDistrictFromAddress(
+  rawAddress: string,
+  feeOverrides?: DeliveryFeeConfig,
+): {
   district: string;
   zone: string;
   deliveryFee: number;
@@ -235,6 +272,10 @@ export function detectDistrictFromAddress(rawAddress: string): {
   const text = rawAddress.toLowerCase().trim();
   if (text.length < 2) return null;
 
+  const insideDhaka = feeOverrides?.insideDhakaFee ?? globalDeliveryFeeConfig.insideDhakaFee ?? 70;
+  const outsideDhaka = feeOverrides?.outsideDhakaFee ?? globalDeliveryFeeConfig.outsideDhakaFee ?? 130;
+  const suburbs = feeOverrides?.suburbsFee ?? globalDeliveryFeeConfig.suburbsFee ?? 100;
+
   for (const pattern of DISTRICT_PATTERNS) {
     for (const kw of pattern.keywords) {
       const lowerKw = kw.toLowerCase();
@@ -244,10 +285,12 @@ export function detectDistrictFromAddress(rawAddress: string): {
         const isDhakaCity = pattern.id === 'dhaka-city';
         const isSuburbs = pattern.id === 'dhaka-suburbs';
 
+        const fee = isDhakaCity ? insideDhaka : (isSuburbs ? suburbs : outsideDhaka);
+
         return {
           district: pattern.name,
           zone: isDhakaCity ? 'Dhaka City' : (isSuburbs ? 'Dhaka Suburbs' : pattern.name),
-          deliveryFee: pattern.fee,
+          deliveryFee: fee,
           matchedKeyword: kw,
           isDhakaCity,
           isSuburbs,

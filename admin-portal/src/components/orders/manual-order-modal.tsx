@@ -39,16 +39,27 @@ const CHANNELS = [
   { id: 'Phone Call', label: 'Phone', icon: '📞' },
 ];
 
-const PRESET_FEES = [
-  { label: 'Inside Dhaka (৳70)', fee: 70, zone: 'Dhaka City' },
-  { label: 'Suburbs (৳100)', fee: 100, zone: 'Dhaka Suburbs' },
-  { label: 'Outside Dhaka (৳130)', fee: 130, zone: 'Outside Dhaka' },
-  { label: 'Express (৳150)', fee: 150, zone: 'Express Courier' },
-  { label: 'Free Delivery (৳0)', fee: 0, zone: 'Free Delivery' },
-];
-
 export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrderModalProps) {
-  const { products, addManualOrder, assignCourier } = useAdmin();
+  const { products, addManualOrder, assignCourier, platformSettings } = useAdmin();
+
+  // Dynamic fees from Admin Platform Settings
+  const insideFee = Number(platformSettings?.standardDeliveryDhakaBdt) || 70;
+  const outsideFee = Number(platformSettings?.standardDeliveryOutsideBdt) || 130;
+  const suburbsFee = 100;
+
+  const dynamicFeeConfig = useMemo(() => ({
+    insideDhakaFee: insideFee,
+    outsideDhakaFee: outsideFee,
+    suburbsFee,
+  }), [insideFee, outsideFee, suburbsFee]);
+
+  const presetFees = useMemo(() => [
+    { label: `Inside Dhaka (৳${insideFee})`, fee: insideFee, zone: 'Dhaka City' },
+    { label: `Suburbs (৳${suburbsFee})`, fee: suburbsFee, zone: 'Dhaka Suburbs' },
+    { label: `Outside Dhaka (৳${outsideFee})`, fee: outsideFee, zone: 'Outside Dhaka' },
+    { label: 'Express (৳150)', fee: 150, zone: 'Express Courier' },
+    { label: 'Free Delivery (৳0)', fee: 0, zone: 'Free Delivery' },
+  ], [insideFee, outsideFee, suburbsFee]);
 
   // Smart Paste State
   const [showSmartPaste, setShowSmartPaste] = useState(false);
@@ -61,8 +72,8 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
   const [address, setAddress] = useState('');
   const [source, setSource] = useState('Facebook Messenger');
 
-  // Delivery zone & fee (Full freedom for admin)
-  const [deliveryFee, setDeliveryFee] = useState<number>(70);
+  // Delivery zone & fee (Full freedom for admin, initialized with platform setting)
+  const [deliveryFee, setDeliveryFee] = useState<number>(() => insideFee);
   const [zoneName, setZoneName] = useState<string>('Dhaka City');
 
   // Order items
@@ -180,13 +191,13 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
     if (parsedPhone) setPhone(parsedPhone);
     if (parsedAddress) setAddress(parsedAddress);
 
-    // Auto-detect Zone & District using 64-District Universal NLP
-    const detected = detectDistrictFromAddress(parsedAddress || pastedText);
+    // Auto-detect Zone & District using 64-District Universal NLP with live settings fee
+    const detected = detectDistrictFromAddress(parsedAddress || pastedText, dynamicFeeConfig);
     if (detected) {
       setZoneName(detected.district);
       setDeliveryFee(detected.deliveryFee);
       if (hasAdvanceFee) setAdvanceAmount(detected.deliveryFee);
-      setPasteSuccessNotice(`Extracted! Detected ${detected.district} (${detected.isDhakaCity ? 'Inside Dhaka · ৳70' : 'Outside Dhaka · ৳130'})`);
+      setPasteSuccessNotice(`Extracted! Detected ${detected.district} (${detected.isDhakaCity ? `Inside Dhaka · ৳${insideFee}` : `Outside Dhaka · ৳${outsideFee}`})`);
     } else {
       setPasteSuccessNotice('Extracted customer details successfully!');
     }
@@ -519,7 +530,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                   onChange={(e) => {
                     const newAddr = e.target.value;
                     setAddress(newAddr);
-                    const detected = detectDistrictFromAddress(newAddr);
+                    const detected = detectDistrictFromAddress(newAddr, dynamicFeeConfig);
                     if (detected) {
                       setZoneName(detected.district);
                       setDeliveryFee(detected.deliveryFee);
@@ -540,7 +551,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                     Destination District & Delivery Fee (৳ BDT)
                   </label>
                   <span className="text-[11px] text-[#1C1917]/60 font-sans">
-                    Universal 64-District auto-detected from address, or override below
+                    Synced with Platform Settings (Dhaka ৳{insideFee} · Outside ৳{outsideFee})
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -550,27 +561,30 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                       const selected = e.target.value;
                       setZoneName(selected);
                       if (selected === 'Dhaka City' || selected === 'Dhaka') {
-                        setDeliveryFee(70);
-                        if (hasAdvanceFee) setAdvanceAmount(70);
+                        setDeliveryFee(insideFee);
+                        if (hasAdvanceFee) setAdvanceAmount(insideFee);
                       } else if (selected === 'Dhaka Suburbs') {
-                        setDeliveryFee(100);
-                        if (hasAdvanceFee) setAdvanceAmount(100);
+                        setDeliveryFee(suburbsFee);
+                        if (hasAdvanceFee) setAdvanceAmount(suburbsFee);
                       } else {
-                        setDeliveryFee(130);
-                        if (hasAdvanceFee) setAdvanceAmount(130);
+                        setDeliveryFee(outsideFee);
+                        if (hasAdvanceFee) setAdvanceAmount(outsideFee);
                       }
                     }}
                     className="text-xs bg-white border border-[#C7A97B]/70 rounded-md py-1 px-2 font-mono font-medium focus:outline-none focus:border-[#1C1917]"
                   >
-                    <option value="Dhaka City">Dhaka City (৳70)</option>
-                    <option value="Dhaka Suburbs">Dhaka Suburbs (৳100)</option>
-                    <option value="Outside Dhaka">Outside Dhaka (৳130)</option>
+                    <option value="Dhaka City">Dhaka City (৳{insideFee})</option>
+                    <option value="Dhaka Suburbs">Dhaka Suburbs (৳{suburbsFee})</option>
+                    <option value="Outside Dhaka">Outside Dhaka (৳{outsideFee})</option>
                     <optgroup label="All 64 Bangladesh Districts">
-                      {BD_ALL_DISTRICTS.map((d) => (
-                        <option key={d.nameEn} value={d.nameEn}>
-                          {d.nameEn} ({d.nameBn}) — ৳{d.standardFee}
-                        </option>
-                      ))}
+                      {BD_ALL_DISTRICTS.map((d) => {
+                        const fee = d.isDhakaCity ? insideFee : (d.isDhakaSuburbs ? suburbsFee : outsideFee);
+                        return (
+                          <option key={d.nameEn} value={d.nameEn}>
+                            {d.nameEn} ({d.nameBn}) — ৳{fee}
+                          </option>
+                        );
+                      })}
                     </optgroup>
                   </select>
                   <div className="relative w-24">
@@ -580,7 +594,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
                       min="0"
                       value={deliveryFee}
                       onChange={(e) => setDeliveryFee(Number(e.target.value) || 0)}
-                      placeholder="70"
+                      placeholder={String(insideFee)}
                       className="w-full pl-6 pr-2.5 py-1 text-sm font-mono font-bold bg-white border border-[#C7A97B]/70 rounded-md focus:border-[#1C1917] focus:outline-none shadow-xs text-right"
                     />
                   </div>
@@ -590,7 +604,7 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
               {/* Quick Preset Buttons for Delivery Fee */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[#EAE4D9]">
                 <span className="text-[10px] font-mono uppercase text-[#1C1917]/60 mr-1">Quick Presets:</span>
-                {PRESET_FEES.map((preset) => (
+                {presetFees.map((preset) => (
                   <button
                     key={preset.label}
                     type="button"

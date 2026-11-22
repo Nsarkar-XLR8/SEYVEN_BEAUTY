@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { BRAND } from '@/lib/constants';
 import { trackAddToCart } from '@/lib/analytics/meta-pixel';
+import { updateGlobalDeliveryFeeConfig } from '@/lib/district-resolver';
 
 export interface CartItem {
   id: string;
@@ -119,6 +120,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isBagOpen, setIsBagOpen] = useState(false);
   const [privilegeCode, setPrivilegeCode] = useState<string | null>(null);
   const [settings, setSettings] = useState<PlatformSettingsState>(DEFAULT_PLATFORM_SETTINGS);
+
+  // Sync dynamic delivery fees to storefront district resolver
+  useEffect(() => {
+    if (settings) {
+      updateGlobalDeliveryFeeConfig({
+        insideDhakaFee: Number(settings.standardDeliveryDhakaBdt) || 70,
+        outsideDhakaFee: Number(settings.standardDeliveryOutsideBdt) || 130,
+      });
+    }
+  }, [settings]);
 
   const refreshSettings = React.useCallback(async () => {
     try {

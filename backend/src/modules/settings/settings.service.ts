@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaService } from '../../common/database/prisma.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
+import { updateGlobalDeliveryFeeConfig } from '../../common/utils/district-resolver.util';
 
 export interface PlatformSettings {
   isVatEnabled: boolean;
@@ -69,6 +70,7 @@ export class SettingsService implements OnModuleInit {
       if (dbRow) {
         this.settings = this.mapDbRowToSettings(dbRow);
         this.saveToStorage();
+        this.syncDeliveryFeeConfig();
         this.logger.log('✨ [SettingsService] Platform settings successfully synced from PostgreSQL database.');
       } else {
         // Seed default row into database
@@ -130,9 +132,11 @@ export class SettingsService implements OnModuleInit {
         const raw = fs.readFileSync(this.storageFilePath, 'utf-8');
         const parsed = JSON.parse(raw);
         this.settings = { ...DEFAULT_SETTINGS, ...parsed };
+        this.syncDeliveryFeeConfig();
         this.logger.log(`Loaded platform settings from ${this.storageFilePath}`);
       } else {
         this.saveToStorage();
+        this.syncDeliveryFeeConfig();
       }
     } catch (err: any) {
       this.logger.warn(`Failed to read platform settings file: ${err.message}, using defaults.`);
@@ -217,12 +221,21 @@ export class SettingsService implements OnModuleInit {
         },
       });
       this.settings = this.mapDbRowToSettings(dbRow);
+      this.syncDeliveryFeeConfig();
       this.logger.log(`✅ [SettingsService] Settings saved and persisted to PostgreSQL database successfully.`);
     } catch (err: any) {
       this.logger.error(`❌ [SettingsService] Failed to persist settings to database: ${err.message}`);
     }
 
+    this.syncDeliveryFeeConfig();
     return { ...this.settings };
+  }
+
+  private syncDeliveryFeeConfig() {
+    updateGlobalDeliveryFeeConfig({
+      insideDhakaFee: Number(this.settings.standardDeliveryDhakaBdt) || 70,
+      outsideDhakaFee: Number(this.settings.standardDeliveryOutsideBdt) || 130,
+    });
   }
 
   async toggleVat(enabled?: boolean): Promise<PlatformSettings> {

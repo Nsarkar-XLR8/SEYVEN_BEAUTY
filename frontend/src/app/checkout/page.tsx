@@ -462,7 +462,7 @@ export default function CheckoutPage() {
                   </label>
                   {detectedDistrictName && (
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#C7A97B]/20 text-[#8C6D3B] font-semibold">
-                      ✓ {detectedDistrictName} ({isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka'})
+                      ✓ {detectedDistrictName} ({isInsideDhaka ? `Inside Dhaka · ৳${standardFeeDhaka}` : `Outside Dhaka · ৳${standardFeeOutside}`})
                     </span>
                   )}
                 </div>
@@ -474,7 +474,10 @@ export default function CheckoutPage() {
                   onChange={(e) => {
                     const val = e.target.value;
                     setStreetAddress(val);
-                    const detected = detectDistrictFromAddress(val);
+                    const detected = detectDistrictFromAddress(val, {
+                      insideDhakaFee: standardFeeDhaka,
+                      outsideDhakaFee: standardFeeOutside,
+                    });
                     if (detected) {
                       setDetectedDistrictName(detected.district);
                       setIsInsideDhaka(detected.isDhakaCity);

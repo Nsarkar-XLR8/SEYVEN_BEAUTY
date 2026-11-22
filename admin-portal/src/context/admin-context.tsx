@@ -23,6 +23,7 @@ import {
   INITIAL_REDIRECTS,
 } from '../data/admin-data';
 import { API_BASE_URL } from '@/lib/api-config';
+import { updateGlobalDeliveryFeeConfig } from '@/data/bangladesh-districts';
 
 interface AdminContextType {
   staffUser: StaffUser | null;
@@ -351,6 +352,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [platformSettings, setPlatformSettings] = useState<AdminPlatformSettings>(DEFAULT_ADMIN_SETTINGS);
   const [lastPurgedAt, setLastPurgedAt] = useState<string | null>(null);
   const [isSyncingOrders, setIsSyncingOrders] = useState(false);
+
+  // Sync dynamic delivery fees to logistics district resolver
+  useEffect(() => {
+    if (platformSettings) {
+      updateGlobalDeliveryFeeConfig({
+        insideDhakaFee: Number(platformSettings.standardDeliveryDhakaBdt) || 70,
+        outsideDhakaFee: Number(platformSettings.standardDeliveryOutsideBdt) || 130,
+      });
+    }
+  }, [platformSettings]);
 
   const updatePlatformSettings = useCallback((newSettings: Partial<AdminPlatformSettings>) => {
     setPlatformSettings((prev) => {

@@ -1,183 +1,165 @@
-export interface SubCategoryItem {
+export interface CategoryNode {
   id: string;
-  name: string;
-  nameBn?: string;
   slug: string;
-  filterType?: 'category' | 'concern' | 'brand' | 'sort' | 'badge';
-  filterValue: string;
-  badge?: string;
+  nameEn: string;
+  nameBn?: string;
+  children?: CategoryNode[];
 }
 
-export interface ParentCategoryItem {
-  id: string;
-  name: string;
-  nameBn?: string;
-  subtitle?: string;
-  slug: string;
-  filterType?: 'category' | 'concern' | 'brand';
-  filterValue: string;
-  badge?: string;
-  subcategories: SubCategoryItem[];
-}
-
-export const SEYVEN_CATEGORY_TAXONOMY: ParentCategoryItem[] = [
+/**
+ * Pristine, elegant default luxury category hierarchy for SEYVEN.
+ * Used for instant, zero-delay rendering while live database categories load.
+ */
+export const DEFAULT_LUXURY_CATEGORIES: CategoryNode[] = [
   {
     id: 'skincare',
-    name: 'Skincare Formulations',
-    nameBn: 'স্কিনকেয়ার ফর্মুলেশন',
-    subtitle: 'Clinical & Curated Facial Care',
     slug: 'skincare',
-    filterType: 'category',
-    filterValue: 'skincare',
-    badge: 'Core',
-    subcategories: [
-      { id: 'all-skincare', name: 'View All Skincare Formulations', slug: 'skincare', filterType: 'category', filterValue: 'skincare' },
-      { id: 'serums', name: 'Serums & Ampoules', slug: 'serums-ampoules', filterType: 'category', filterValue: 'serums', badge: 'Active' },
-      { id: 'toners', name: 'Toners & Essences', slug: 'toners-essences', filterType: 'category', filterValue: 'toners' },
-      { id: 'suncare', name: 'Sun Protection (SPF 50+)', slug: 'sun-care', filterType: 'category', filterValue: 'sunscreen', badge: 'Essential' },
-      { id: 'cleansers', name: 'Cleansers & Balms', slug: 'cleansers', filterType: 'category', filterValue: 'cleansers' },
-      { id: 'moisturizers', name: 'Moisturizers & Barrier Creams', slug: 'moisturizers', filterType: 'category', filterValue: 'moisturizers' },
-      { id: 'lip-eye', name: 'Lip & Eye Contour Care', slug: 'lip-eye-care', filterType: 'category', filterValue: 'lip' },
-      { id: 'exfoliators', name: 'Exfoliators & Peels (AHA/BHA)', slug: 'exfoliators', filterType: 'category', filterValue: 'exfoliator' },
-      { id: 'masks', name: 'Sheet Masks & Sleeping Packs', slug: 'sheet-masks', filterType: 'category', filterValue: 'mask' },
-    ],
-  },
-  {
-    id: 'concerns',
-    name: 'By Clinical Concern',
-    nameBn: 'স্কিন কনসার্ন অনুযায়ী',
-    subtitle: 'Targeted Active Dermatological Solutions',
-    slug: 'clinical-concerns',
-    filterType: 'concern',
-    filterValue: 'all',
-    subcategories: [
-      { id: 'all-concerns', name: 'Explore All Concern Solutions', slug: 'all-concerns', filterType: 'category', filterValue: 'all' },
-      { id: 'acne', name: 'Acne & Blemish Defense (Salicylic/Niacinamide)', slug: 'acne-blemish', filterType: 'concern', filterValue: 'acne' },
-      { id: 'brightening', name: 'Hyperpigmentation & Glow (Vitamin C/Arbutin)', slug: 'brightening-glow', filterType: 'concern', filterValue: 'brightening', badge: 'Cult' },
-      { id: 'barrier', name: 'Skin Barrier Repair & Calming (Ceramides/Cica)', slug: 'barrier-repair', filterType: 'concern', filterValue: 'barrier' },
-      { id: 'anti-aging', name: 'Anti-Aging & Firming (Peptides/Retinol)', slug: 'anti-aging', filterType: 'concern', filterValue: 'anti-aging' },
-      { id: 'pores', name: 'Pore Minimizing & Oil Balance', slug: 'pore-minimizing', filterType: 'concern', filterValue: 'pores' },
-      { id: 'hydration', name: 'Deep Hydration for Parched Skin (Hyaluronic)', slug: 'hydration', filterType: 'concern', filterValue: 'hydration' },
+    nameEn: 'SKIN CARE',
+    nameBn: 'স্কিন কেয়ার',
+    children: [
+      { id: 'cleansers', slug: 'cleansers', nameEn: 'Cleansers & Balms', nameBn: 'ক্লিনজার' },
+      { id: 'toners', slug: 'toners', nameEn: 'Toners & Essences', nameBn: 'টোনার ও এসেন্স' },
+      { id: 'serums', slug: 'serums', nameEn: 'Serums & Ampoules', nameBn: 'সিরাম ও অ্যাম্পুল' },
+      { id: 'moisturizers', slug: 'moisturizers', nameEn: 'Moisturizers & Creams', nameBn: 'ময়েশ্চারাইজার' },
+      { id: 'sunscreen', slug: 'sunscreen', nameEn: 'Sun Protection (SPF)', nameBn: 'সানস্ক্রিন' },
+      { id: 'lip-eye', slug: 'lip', nameEn: 'Lip & Eye Care', nameBn: 'লিপ ও আই কেয়ার' },
+      { id: 'exfoliator', slug: 'exfoliator', nameEn: 'Exfoliators & Peels', nameBn: 'এক্সফোলিয়েটর' },
+      { id: 'masks', slug: 'mask', nameEn: 'Face Masks & Packs', nameBn: 'মাস্ক' },
     ],
   },
   {
     id: 'body-bath',
-    name: 'Body & Bath Sanctuary',
-    nameBn: 'বডি অ্যান্ড বাথ কেয়ার',
-    subtitle: 'Exfoliating Body Scrubs & Barrier Lotions',
-    slug: 'body-bath',
-    filterType: 'category',
-    filterValue: 'body',
-    subcategories: [
-      { id: 'all-body', name: 'View All Body Sanctuary', slug: 'body-bath', filterType: 'category', filterValue: 'body' },
-      { id: 'body-lotions', name: 'Body Lotions & Dermal Milks', slug: 'body-lotions', filterType: 'category', filterValue: 'lotion' },
-      { id: 'body-scrubs', name: 'Exfoliating Body Polishes & Scrubs', slug: 'body-scrubs', filterType: 'category', filterValue: 'scrub' },
-      { id: 'body-washes', name: 'Nourishing Shower Gels & Cleansers', slug: 'shower-gels', filterType: 'category', filterValue: 'wash' },
-      { id: 'hand-foot', name: 'Hand & Heel Repair Balms', slug: 'hand-foot-balms', filterType: 'category', filterValue: 'balm' },
+    slug: 'body',
+    nameEn: 'BODY CARE',
+    nameBn: 'বডি কেয়ার',
+    children: [
+      { id: 'body-lotion', slug: 'lotion', nameEn: 'Body Lotions & Milks', nameBn: 'বডি লোশন' },
+      { id: 'body-scrub', slug: 'scrub', nameEn: 'Body Scrubs & Polishes', nameBn: 'বডি স্ক্রাব' },
+      { id: 'body-wash', slug: 'wash', nameEn: 'Shower Gels & Washes', nameBn: 'শাওয়ার জেল' },
+      { id: 'hand-foot', slug: 'balm', nameEn: 'Hand & Foot Care', nameBn: 'হ্যান্ড ও ফুট কেয়ার' },
     ],
   },
   {
     id: 'hair-scalp',
-    name: 'Hair & Scalp Rituals',
-    nameBn: 'হেয়ার ও স্ক্যাল্প কেয়ার',
-    subtitle: 'Follicle Density & Peptide Scalp Scrubs',
-    slug: 'hair-scalp',
-    filterType: 'category',
-    filterValue: 'hair',
-    subcategories: [
-      { id: 'all-hair', name: 'View All Hair & Scalp Rituals', slug: 'hair-scalp', filterType: 'category', filterValue: 'hair' },
-      { id: 'scalp-scrubs', name: 'AHA Scalp Exfoliators & Scrubs', slug: 'scalp-scrubs', filterType: 'category', filterValue: 'scalp' },
-      { id: 'growth-serums', name: 'Hair Growth & Density Peptide Serums', slug: 'growth-serums', filterType: 'category', filterValue: 'serum' },
-      { id: 'hair-masks', name: 'Deep Conditioning Hair Masks', slug: 'hair-masks', filterType: 'category', filterValue: 'mask' },
+    slug: 'hair',
+    nameEn: 'HAIR CARE',
+    nameBn: 'হেয়ার কেয়ার',
+    children: [
+      { id: 'scalp-care', slug: 'scalp', nameEn: 'Scalp Scrubs & Treatments', nameBn: 'স্ক্যাল্প কেয়ার' },
+      { id: 'hair-serum', slug: 'hair-serum', nameEn: 'Hair Serums & Oils', nameBn: 'হেয়ার সিরাম' },
+      { id: 'hair-mask', slug: 'hair-mask', nameEn: 'Deep Hair Masks', nameBn: 'হেয়ার মাস্ক' },
     ],
   },
   {
-    id: 'curated-brands',
-    name: 'Curated Houses & Brands',
-    nameBn: 'অফিশিয়াল ব্র্যান্ডস',
-    subtitle: '100% Certified Direct Manufacturer Imports',
-    slug: 'curated-brands',
-    filterType: 'brand',
-    filterValue: 'all',
-    badge: 'Verified',
-    subcategories: [
-      { id: 'all-brands', name: 'Explore All Curated Houses', slug: 'all-brands', filterType: 'category', filterValue: 'all' },
-      { id: 'wishcare', name: 'WishCare Clinical Formulations', slug: 'wishcare', filterType: 'brand', filterValue: 'WishCare', badge: 'Official' },
-      { id: 'k-beauty', name: 'Curated K-Beauty Exclusives', slug: 'k-beauty', filterType: 'brand', filterValue: 'Curated K-Beauty' },
-      { id: 'mars', name: 'MARS Beauty & Accessories', slug: 'mars', filterType: 'brand', filterValue: 'MARS' },
-      { id: 'seyven-signature', name: 'SEYVEN Courtesy & Signature Editions', slug: 'seyven', filterType: 'brand', filterValue: 'SEYVEN' },
+    id: 'makeup',
+    slug: 'makeup',
+    nameEn: 'MAKEUP',
+    nameBn: 'মেকআপ',
+    children: [
+      { id: 'eye-makeup', slug: 'eyeliner', nameEn: 'Eyeliners & Kajal', nameBn: 'আইলাইনার' },
+      { id: 'lip-makeup', slug: 'lip-tint', nameEn: 'Lip Balms & Tints', nameBn: 'লিপ টিন্ট' },
     ],
   },
   {
-    id: 'sets-gifting',
-    name: 'Ritual Sets & VIP Vault',
-    nameBn: 'সেটস ও গিফটিং ভল্ট',
-    subtitle: 'Multi-Step Synergistic Routine Sets',
-    slug: 'sets-gifting',
-    filterType: 'category',
-    filterValue: 'sets',
-    badge: 'Privilege',
-    subcategories: [
-      { id: 'all-sets', name: 'View All Curated Sets & Bundles', slug: 'sets-gifting', filterType: 'category', filterValue: 'sets' },
-      { id: 'routine-combos', name: 'Synergistic AM/PM Routine Combos', slug: 'routine-combos', filterType: 'category', filterValue: 'combo' },
-      { id: 'gwp-vault', name: 'VIP Courtesy Gifts with Purchase', slug: 'vip-vault', filterType: 'category', filterValue: 'gift' },
+    id: 'sets-vault',
+    slug: 'sets',
+    nameEn: 'SETS & BUNDLES',
+    nameBn: 'সেটস ও বান্ডেল',
+    children: [
+      { id: 'routine-combos', slug: 'combo', nameEn: 'AM/PM Routine Sets', nameBn: 'রুটিন কম্বো' },
+      { id: 'gift-vault', slug: 'gift', nameEn: 'Complimentary VIP Gifts', nameBn: 'ভিআইপি গিফট' },
     ],
   },
-];
-
-export interface EditorialMenuLink {
-  label: string;
-  labelBn?: string;
-  href: string;
-  badge?: string;
-  isAccent?: boolean;
-}
-
-export const SEYVEN_EDITORIAL_MENU: EditorialMenuLink[] = [
-  { label: 'HOME', href: '/' },
-  { label: 'SHOP ALL FORMULATIONS', href: '/catalog', badge: 'Runway' },
-  { label: 'NEW ARRIVALS & CURATIONS', href: '/catalog?badge=new', badge: 'New', isAccent: true },
-  { label: 'CULT BESTSELLERS', href: '/catalog?sort=bestseller' },
-  { label: 'THE DERMAL CONCIERGE', href: '/skin-concierge', badge: 'AI/Expert' },
-  { label: 'ABOUT THE SANCTUARY', href: '/about' },
-  { label: 'CLIENT CARE & AUTHENTICITY', href: '/care' },
-  { label: 'TRACK MY CONSIGNMENT', href: '/customer/tracking' },
 ];
 
 /**
- * Dynamically merges categories fetched from the live database
- * with SEYVEN's editorial taxonomy to guarantee zero blank states.
+ * 100% Dynamic Category Resolver:
+ * Ingests live database categories and live published products from Admin Portal,
+ * building an accurate, self-healing hierarchical category tree.
  */
-export function mergeDynamicTaxonomy(
-  dbCategories: Array<{ id: string; slug: string; nameEn: string; nameBn?: string }> = [],
-): ParentCategoryItem[] {
-  if (!dbCategories || dbCategories.length === 0) {
-    return SEYVEN_CATEGORY_TAXONOMY;
+export function buildDynamicCategoryTree(
+  dbCategories: Array<any> = [],
+  dbProducts: Array<any> = [],
+): CategoryNode[] {
+  // If no DB data is available yet, return the default luxury taxonomy
+  if ((!dbCategories || dbCategories.length === 0) && (!dbProducts || dbProducts.length === 0)) {
+    return DEFAULT_LUXURY_CATEGORIES;
   }
 
-  // Clone taxonomy
-  const cloned: ParentCategoryItem[] = JSON.parse(JSON.stringify(SEYVEN_CATEGORY_TAXONOMY));
+  const result: CategoryNode[] = [];
+  const processedSlugs = new Set<string>();
 
-  // Find skincare group to inject any novel admin categories
-  const skincareGroup = cloned.find((c) => c.id === 'skincare');
-  if (skincareGroup) {
-    const existingSlugs = new Set(skincareGroup.subcategories.map((s) => s.filterValue.toLowerCase()));
-    
-    dbCategories.forEach((cat) => {
-      const slugVal = (cat.slug || cat.id).toLowerCase();
-      if (!existingSlugs.has(slugVal) && !existingSlugs.has(cat.nameEn.toLowerCase())) {
-        existingSlugs.add(slugVal);
-        skincareGroup.subcategories.push({
-          id: `db-${cat.id}`,
-          name: cat.nameEn,
+  // 1. Process root categories from database (where parentId is null or children exist)
+  if (Array.isArray(dbCategories) && dbCategories.length > 0) {
+    // If backend returns hierarchical categories (each root has a `children` array)
+    const rootsWithChildren = dbCategories.filter((c) => c && (!c.parentId || (c.children && c.children.length > 0)));
+
+    if (rootsWithChildren.length > 0) {
+      rootsWithChildren.forEach((root) => {
+        const rootSlug = (root.slug || root.id || '').toLowerCase();
+        if (!rootSlug || processedSlugs.has(rootSlug)) return;
+        processedSlugs.add(rootSlug);
+
+        const children: CategoryNode[] = [];
+        if (Array.isArray(root.children)) {
+          root.children.forEach((child: any) => {
+            const childSlug = (child.slug || child.id || '').toLowerCase();
+            if (childSlug && !processedSlugs.has(childSlug)) {
+              processedSlugs.add(childSlug);
+              children.push({
+                id: child.id || childSlug,
+                slug: child.slug || childSlug,
+                nameEn: child.nameEn || child.slug,
+                nameBn: child.nameBn,
+              });
+            }
+          });
+        }
+
+        result.push({
+          id: root.id || rootSlug,
+          slug: root.slug || rootSlug,
+          nameEn: (root.nameEn || root.slug || '').toUpperCase(),
+          nameBn: root.nameBn,
+          children: children.length > 0 ? children : undefined,
+        });
+      });
+    } else {
+      // If categories from DB are flat list (e.g. from Admin Portal direct sync)
+      dbCategories.forEach((cat) => {
+        const slug = (cat.slug || cat.id || '').toLowerCase();
+        if (!slug || processedSlugs.has(slug)) return;
+        processedSlugs.add(slug);
+
+        result.push({
+          id: cat.id || slug,
+          slug: cat.slug || slug,
+          nameEn: (cat.nameEn || cat.slug || '').toUpperCase(),
           nameBn: cat.nameBn,
-          slug: cat.slug || cat.id,
-          filterType: 'category',
-          filterValue: cat.slug || cat.id,
+        });
+      });
+    }
+  }
+
+  // 2. Discover any additional categories present on live products that haven't been indexed
+  if (Array.isArray(dbProducts) && dbProducts.length > 0) {
+    dbProducts.forEach((p) => {
+      if (!p) return;
+      const rawCat = p.category;
+      const catName = typeof rawCat === 'object' && rawCat ? (rawCat.nameEn || rawCat.slug) : String(rawCat || '');
+      const catSlug = typeof rawCat === 'object' && rawCat ? (rawCat.slug || rawCat.id) : catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      if (catName && catName !== 'Curated Formulation' && !processedSlugs.has(catSlug.toLowerCase())) {
+        processedSlugs.add(catSlug.toLowerCase());
+        result.push({
+          id: catSlug,
+          slug: catSlug,
+          nameEn: catName.toUpperCase(),
+          nameBn: typeof rawCat === 'object' && rawCat?.nameBn ? rawCat.nameBn : catName,
         });
       }
     });
   }
 
-  return cloned;
+  return result.length > 0 ? result : DEFAULT_LUXURY_CATEGORIES;
 }

@@ -6,160 +6,249 @@ export interface CategoryNode {
   children?: CategoryNode[];
 }
 
+export interface DepartmentNode {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameBn?: string;
+  children: CategoryNode[];
+}
+
 /**
- * Pristine, elegant default luxury category hierarchy for SEYVEN.
- * Used for instant, zero-delay rendering while live database categories load.
+ * High-End Luxury Department Taxonomy:
+ * Aligns with international beauty houses and reference standard (Ravissa).
+ * Groups subcategories into elegant, scalable macro departments.
  */
-export const DEFAULT_LUXURY_CATEGORIES: CategoryNode[] = [
+export const LUXURY_DEPARTMENTS: Array<{
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameBn: string;
+  keywords: string[];
+  defaultChildren: CategoryNode[];
+}> = [
   {
-    id: 'skincare',
+    id: 'dept-skincare',
     slug: 'skincare',
     nameEn: 'SKIN CARE',
     nameBn: 'স্কিন কেয়ার',
-    children: [
-      { id: 'cleansers', slug: 'cleansers', nameEn: 'Cleansers & Balms', nameBn: 'ক্লিনজার' },
-      { id: 'toners', slug: 'toners', nameEn: 'Toners & Essences', nameBn: 'টোনার ও এসেন্স' },
-      { id: 'serums', slug: 'serums', nameEn: 'Serums & Ampoules', nameBn: 'সিরাম ও অ্যাম্পুল' },
-      { id: 'moisturizers', slug: 'moisturizers', nameEn: 'Moisturizers & Creams', nameBn: 'ময়েশ্চারাইজার' },
-      { id: 'sunscreen', slug: 'sunscreen', nameEn: 'Sun Protection (SPF)', nameBn: 'সানস্ক্রিন' },
-      { id: 'lip-eye', slug: 'lip', nameEn: 'Lip & Eye Care', nameBn: 'লিপ ও আই কেয়ার' },
-      { id: 'exfoliator', slug: 'exfoliator', nameEn: 'Exfoliators & Peels', nameBn: 'এক্সফোলিয়েটর' },
-      { id: 'masks', slug: 'mask', nameEn: 'Face Masks & Packs', nameBn: 'মাস্ক' },
+    keywords: [
+      'sun', 'sunscreen', 'suncream', 'sun stick', 'uv',
+      'toner', 'essence', 'ampoule', 'serum',
+      'pad', 'calming pad', 'peeling pad',
+      'moisturizer', 'cream', 'gel cream', 'barrier',
+      'cleanse', 'cleanser', 'foam', 'cleansing oil', 'cleansing balm', 'face wash',
+      'mask', 'sheet mask', 'sleeping pack',
+      'exfoliat', 'peel', 'scrub', 'aha', 'bha',
+      'eye', 'eye cream', 'lip', 'lip balm',
+      'skin', 'skincare',
+    ],
+    defaultChildren: [
+      { id: 'cleanser', slug: 'cleanser', nameEn: 'Cleanser' },
+      { id: 'toner', slug: 'toner', nameEn: 'Toner' },
+      { id: 'ampoule', slug: 'ampoule', nameEn: 'Ampoule' },
+      { id: 'essence', slug: 'essence', nameEn: 'Essence' },
+      { id: 'serum', slug: 'serum', nameEn: 'Serum' },
+      { id: 'moisturizer', slug: 'moisturizer', nameEn: 'Moisturizer' },
+      { id: 'sunscreen', slug: 'sunscreen', nameEn: 'Sunscreen' },
+      { id: 'pad', slug: 'pad', nameEn: 'Pad' },
     ],
   },
   {
-    id: 'body-bath',
+    id: 'dept-bodycare',
     slug: 'body',
     nameEn: 'BODY CARE',
     nameBn: 'বডি কেয়ার',
-    children: [
-      { id: 'body-lotion', slug: 'lotion', nameEn: 'Body Lotions & Milks', nameBn: 'বডি লোশন' },
-      { id: 'body-scrub', slug: 'scrub', nameEn: 'Body Scrubs & Polishes', nameBn: 'বডি স্ক্রাব' },
-      { id: 'body-wash', slug: 'wash', nameEn: 'Shower Gels & Washes', nameBn: 'শাওয়ার জেল' },
-      { id: 'hand-foot', slug: 'balm', nameEn: 'Hand & Foot Care', nameBn: 'হ্যান্ড ও ফুট কেয়ার' },
+    keywords: [
+      'body', 'lotion', 'body lotion', 'milk',
+      'body scrub', 'polish', 'body wash', 'shower',
+      'shower gel', 'bath', 'hand', 'hand cream', 'foot',
+    ],
+    defaultChildren: [
+      { id: 'body-lotion', slug: 'body-lotion', nameEn: 'Body Lotion' },
+      { id: 'body-scrub', slug: 'body-scrub', nameEn: 'Body Scrub' },
+      { id: 'shower-gel', slug: 'shower-gel', nameEn: 'Shower Gel' },
+      { id: 'hand-foot', slug: 'hand-cream', nameEn: 'Hand & Foot Care' },
     ],
   },
   {
-    id: 'hair-scalp',
+    id: 'dept-haircare',
     slug: 'hair',
     nameEn: 'HAIR CARE',
     nameBn: 'হেয়ার কেয়ার',
-    children: [
-      { id: 'scalp-care', slug: 'scalp', nameEn: 'Scalp Scrubs & Treatments', nameBn: 'স্ক্যাল্প কেয়ার' },
-      { id: 'hair-serum', slug: 'hair-serum', nameEn: 'Hair Serums & Oils', nameBn: 'হেয়ার সিরাম' },
-      { id: 'hair-mask', slug: 'hair-mask', nameEn: 'Deep Hair Masks', nameBn: 'হেয়ার মাস্ক' },
+    keywords: [
+      'hair', 'scalp', 'shampoo', 'conditioner', 'hair mask',
+      'hair serum', 'hair oil', 'follicle',
+    ],
+    defaultChildren: [
+      { id: 'scalp-care', slug: 'scalp-care', nameEn: 'Scalp Care' },
+      { id: 'hair-oil-serum', slug: 'hair-serum', nameEn: 'Hair Serum & Oil' },
+      { id: 'hair-mask', slug: 'hair-mask', nameEn: 'Hair Mask' },
     ],
   },
   {
-    id: 'makeup',
+    id: 'dept-makeup',
     slug: 'makeup',
     nameEn: 'MAKEUP',
     nameBn: 'মেকআপ',
-    children: [
-      { id: 'eye-makeup', slug: 'eyeliner', nameEn: 'Eyeliners & Kajal', nameBn: 'আইলাইনার' },
-      { id: 'lip-makeup', slug: 'lip-tint', nameEn: 'Lip Balms & Tints', nameBn: 'লিপ টিন্ট' },
+    keywords: [
+      'makeup', 'eyeliner', 'kajal', 'mascara',
+      'lip tint', 'lipstick', 'tint', 'lip balm',
+      'cushion', 'foundation', 'concealer', 'bb cream',
+    ],
+    defaultChildren: [
+      { id: 'eyeliner', slug: 'eyeliner', nameEn: 'Eyeliner & Kajal' },
+      { id: 'lip-tint', slug: 'lip-tint', nameEn: 'Lip Tint & Balm' },
     ],
   },
   {
-    id: 'sets-vault',
+    id: 'dept-babycare',
+    slug: 'baby',
+    nameEn: 'BABY CARE',
+    nameBn: 'বেবি কেয়ার',
+    keywords: ['baby', 'infant', 'toddler', 'kids', 'baby lotion', 'baby wash'],
+    defaultChildren: [
+      { id: 'baby-lotion', slug: 'baby-lotion', nameEn: 'Baby Lotion & Cream' },
+      { id: 'baby-wash', slug: 'baby-wash', nameEn: 'Baby Wash & Shampoo' },
+    ],
+  },
+  {
+    id: 'dept-fragrance',
+    slug: 'fragrance',
+    nameEn: 'FRAGRANCE',
+    nameBn: 'সুগন্ধি',
+    keywords: ['fragrance', 'perfume', 'parfum', 'attar', 'mist', 'body mist', 'scent'],
+    defaultChildren: [
+      { id: 'body-mist', slug: 'body-mist', nameEn: 'Body Mist & Spray' },
+      { id: 'perfume', slug: 'perfume', nameEn: 'Eau De Parfum' },
+    ],
+  },
+  {
+    id: 'dept-sets',
     slug: 'sets',
     nameEn: 'SETS & BUNDLES',
     nameBn: 'সেটস ও বান্ডেল',
-    children: [
-      { id: 'routine-combos', slug: 'combo', nameEn: 'AM/PM Routine Sets', nameBn: 'রুটিন কম্বো' },
-      { id: 'gift-vault', slug: 'gift', nameEn: 'Complimentary VIP Gifts', nameBn: 'ভিআইপি গিফট' },
+    keywords: ['set', 'bundle', 'kit', 'combo', 'vault', 'routine', 'gift', 'complimentary'],
+    defaultChildren: [
+      { id: 'routine-sets', slug: 'routine-sets', nameEn: 'AM/PM Routine Sets' },
+      { id: 'vip-gift-vault', slug: 'gift-vault', nameEn: 'VIP Gift Vault' },
     ],
   },
 ];
 
 /**
- * 100% Dynamic Category Resolver:
- * Ingests live database categories and live published products from Admin Portal,
- * building an accurate, self-healing hierarchical category tree.
+ * Dynamic Department Builder:
+ * Takes categories and products from the database, and intelligently
+ * groups them into departments so the UI remains pristine, scalable,
+ * and perfectly organized like Ravissa.
  */
-export function buildDynamicCategoryTree(
+export function buildDepartmentTaxonomy(
   dbCategories: Array<any> = [],
   dbProducts: Array<any> = [],
 ): CategoryNode[] {
-  // If no DB data is available yet, return the default luxury taxonomy
-  if ((!dbCategories || dbCategories.length === 0) && (!dbProducts || dbProducts.length === 0)) {
-    return DEFAULT_LUXURY_CATEGORIES;
+  // Collect all distinct category items from both database categories table and live products
+  const categoryMap = new Map<string, { slug: string; nameEn: string; nameBn?: string }>();
+
+  // 1. Ingest database categories
+  if (Array.isArray(dbCategories)) {
+    dbCategories.forEach((c) => {
+      if (!c) return;
+      const slug = (c.slug || c.id || '').toLowerCase().trim();
+      if (!slug) return;
+      categoryMap.set(slug, {
+        slug,
+        nameEn: c.nameEn || c.slug,
+        nameBn: c.nameBn,
+      });
+    });
   }
 
-  const result: CategoryNode[] = [];
-  const processedSlugs = new Set<string>();
-
-  // 1. Process root categories from database (where parentId is null or children exist)
-  if (Array.isArray(dbCategories) && dbCategories.length > 0) {
-    // If backend returns hierarchical categories (each root has a `children` array)
-    const rootsWithChildren = dbCategories.filter((c) => c && (!c.parentId || (c.children && c.children.length > 0)));
-
-    if (rootsWithChildren.length > 0) {
-      rootsWithChildren.forEach((root) => {
-        const rootSlug = (root.slug || root.id || '').toLowerCase();
-        if (!rootSlug || processedSlugs.has(rootSlug)) return;
-        processedSlugs.add(rootSlug);
-
-        const children: CategoryNode[] = [];
-        if (Array.isArray(root.children)) {
-          root.children.forEach((child: any) => {
-            const childSlug = (child.slug || child.id || '').toLowerCase();
-            if (childSlug && !processedSlugs.has(childSlug)) {
-              processedSlugs.add(childSlug);
-              children.push({
-                id: child.id || childSlug,
-                slug: child.slug || childSlug,
-                nameEn: child.nameEn || child.slug,
-                nameBn: child.nameBn,
-              });
-            }
-          });
-        }
-
-        result.push({
-          id: root.id || rootSlug,
-          slug: root.slug || rootSlug,
-          nameEn: (root.nameEn || root.slug || '').toUpperCase(),
-          nameBn: root.nameBn,
-          children: children.length > 0 ? children : undefined,
-        });
-      });
-    } else {
-      // If categories from DB are flat list (e.g. from Admin Portal direct sync)
-      dbCategories.forEach((cat) => {
-        const slug = (cat.slug || cat.id || '').toLowerCase();
-        if (!slug || processedSlugs.has(slug)) return;
-        processedSlugs.add(slug);
-
-        result.push({
-          id: cat.id || slug,
-          slug: cat.slug || slug,
-          nameEn: (cat.nameEn || cat.slug || '').toUpperCase(),
-          nameBn: cat.nameBn,
-        });
-      });
-    }
-  }
-
-  // 2. Discover any additional categories present on live products that haven't been indexed
-  if (Array.isArray(dbProducts) && dbProducts.length > 0) {
+  // 2. Ingest products' categories
+  if (Array.isArray(dbProducts)) {
     dbProducts.forEach((p) => {
       if (!p) return;
       const rawCat = p.category;
       const catName = typeof rawCat === 'object' && rawCat ? (rawCat.nameEn || rawCat.slug) : String(rawCat || '');
       const catSlug = typeof rawCat === 'object' && rawCat ? (rawCat.slug || rawCat.id) : catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-      if (catName && catName !== 'Curated Formulation' && !processedSlugs.has(catSlug.toLowerCase())) {
-        processedSlugs.add(catSlug.toLowerCase());
-        result.push({
-          id: catSlug,
-          slug: catSlug,
-          nameEn: catName.toUpperCase(),
+      if (catName && catName !== 'Curated Formulation' && !categoryMap.has(catSlug.toLowerCase())) {
+        categoryMap.set(catSlug.toLowerCase(), {
+          slug: catSlug.toLowerCase(),
+          nameEn: catName,
           nameBn: typeof rawCat === 'object' && rawCat?.nameBn ? rawCat.nameBn : catName,
         });
       }
     });
   }
 
-  return result.length > 0 ? result : DEFAULT_LUXURY_CATEGORIES;
+  // Track which DB categories were claimed by departments
+  const assignedCategories = new Set<string>();
+
+  // Build the department tree
+  const departments: CategoryNode[] = LUXURY_DEPARTMENTS.map((dept) => {
+    const matchedChildren: CategoryNode[] = [];
+    const childSlugs = new Set<string>();
+
+    // Check every DB category against department keywords
+    categoryMap.forEach((item, slug) => {
+      const lowerName = item.nameEn.toLowerCase();
+      const lowerSlug = slug.toLowerCase();
+
+      const isMatch = dept.keywords.some((kw) => lowerName.includes(kw) || lowerSlug.includes(kw));
+      if (isMatch) {
+        assignedCategories.add(slug);
+        if (!childSlugs.has(slug)) {
+          childSlugs.add(slug);
+          matchedChildren.push({
+            id: `cat-${slug}`,
+            slug: item.slug,
+            nameEn: formatCategoryDisplayName(item.nameEn),
+            nameBn: item.nameBn,
+          });
+        }
+      }
+    });
+
+    // If no DB categories were matched for this department, fall back to pristine default subcategories
+    const finalChildren = matchedChildren.length > 0 ? matchedChildren : dept.defaultChildren;
+
+    return {
+      id: dept.id,
+      slug: dept.slug,
+      nameEn: dept.nameEn,
+      nameBn: dept.nameBn,
+      children: finalChildren,
+    };
+  });
+
+  // Any remaining DB categories that didn't match standard department keywords
+  // will appear gracefully as their own top-level department rows
+  categoryMap.forEach((item, slug) => {
+    if (!assignedCategories.has(slug)) {
+      departments.push({
+        id: `custom-cat-${slug}`,
+        slug: item.slug,
+        nameEn: formatCategoryDisplayName(item.nameEn).toUpperCase(),
+        nameBn: item.nameBn,
+      });
+    }
+  });
+
+  return departments;
+}
+
+/**
+ * Formats all-caps or slugged category names into elegant Title Case (e.g., "SUNSCREEN" -> "Sunscreen")
+ */
+function formatCategoryDisplayName(name: string): string {
+  if (!name) return '';
+  // If already mixed case, keep it
+  if (name !== name.toUpperCase() && name !== name.toLowerCase()) {
+    return name;
+  }
+  // Convert "SUNSCREEN" -> "Sunscreen", "TONER & ESSENCE" -> "Toner & Essence"
+  return name
+    .toLowerCase()
+    .split(' ')
+    .map((word) => (word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1) : ''))
+    .join(' ');
 }

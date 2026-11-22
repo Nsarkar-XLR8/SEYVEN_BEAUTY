@@ -6,7 +6,6 @@ import Image from 'next/image';
 import {
   X,
   ChevronRight,
-  ChevronDown,
   User,
   LogOut,
 } from 'lucide-react';
@@ -15,8 +14,7 @@ import { useCart } from '@/context/cart-context';
 import { BRAND, GUEST_NAV_LINKS, AUTH_NAV_LINKS } from '@/lib/constants';
 import {
   CategoryNode,
-  DEFAULT_LUXURY_CATEGORIES,
-  buildDynamicCategoryTree,
+  buildDepartmentTaxonomy,
 } from '@/data/category-taxonomy';
 
 interface MobileNavDrawerProps {
@@ -28,9 +26,9 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
   const { settings } = useCart();
   const [activeTab, setActiveTab] = useState<'MENU' | 'CATEGORIES'>('CATEGORIES');
-  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>('skincare');
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>('dept-skincare');
   const [mounted, setMounted] = useState(false);
-  const [categories, setCategories] = useState<CategoryNode[]>(DEFAULT_LUXURY_CATEGORIES);
+  const [departments, setDepartments] = useState<CategoryNode[]>(() => buildDepartmentTaxonomy([], []));
 
   useEffect(() => {
     setMounted(true);
@@ -51,9 +49,9 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
         const prodData = prodRes && prodRes.ok ? await prodRes.json() : [];
 
         if (isMounted) {
-          const dynamicTree = buildDynamicCategoryTree(catData, prodData);
+          const dynamicTree = buildDepartmentTaxonomy(catData, prodData);
           if (dynamicTree.length > 0) {
-            setCategories(dynamicTree);
+            setDepartments(dynamicTree);
           }
         }
       } catch {
@@ -102,7 +100,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
       <div className="fixed inset-y-0 left-0 max-w-sm w-full bg-[#F9F6F0] border-r border-[#E6DFD5] shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-left duration-300">
         
         {/* ========================================================================= */}
-        {/* TOP BRAND HEADER (Clean & Minimalist)                                     */}
+        {/* TOP BRAND HEADER (Strictly Logo + SEYVEN Name + Clean X Only)             */}
         {/* ========================================================================= */}
         <div className="p-4 sm:p-5 border-b border-[#E6DFD5] flex items-center justify-between bg-[#F9F6F0]">
           <Link
@@ -118,22 +116,16 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
               height={441}
               className="h-8 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
             />
-            <div>
-              <span className="text-xs uppercase tracking-[0.25em] font-serif font-bold text-[#1C1917] block leading-none">
-                SEYVEN
-              </span>
-              <span className="text-[8px] uppercase tracking-[0.25em] text-[#C7A97B] font-mono block mt-0.5">
-                The Sanctuary
-              </span>
-            </div>
+            <span className="text-xs uppercase tracking-[0.25em] font-serif font-bold text-[#1C1917] block leading-none">
+              SEYVEN
+            </span>
           </Link>
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center space-x-1 p-1.5 rounded-full text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-[#E6DFD5]/50 transition-colors cursor-pointer"
+            className="p-1.5 rounded-full text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-[#E6DFD5]/50 transition-colors cursor-pointer"
             aria-label="Close menu"
           >
-            <span className="text-[10px] uppercase font-mono tracking-wider hidden sm:inline">Close</span>
             <X className="w-5 h-5 stroke-[1.5]" />
           </button>
         </div>
@@ -202,26 +194,26 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
             </nav>
           )}
 
-          {/* TAB 2: MINIMALIST LUXURY CATEGORIES (Matching Reference: Ravissa) */}
+          {/* TAB 2: HIERARCHICAL LUXURY CATEGORIES (Ravissa Style: Departments + Expandable Subcategories) */}
           {activeTab === 'CATEGORIES' && (
             <div className="divide-y divide-[#E6DFD5]/70">
-              {categories.map((cat) => {
-                const hasChildren = Array.isArray(cat.children) && cat.children.length > 0;
-                const isExpanded = expandedCategoryId === cat.id;
+              {departments.map((dept) => {
+                const hasChildren = Array.isArray(dept.children) && dept.children.length > 0;
+                const isExpanded = expandedCategoryId === dept.id;
 
                 if (hasChildren) {
                   return (
-                    <div key={cat.id} className="group">
-                      {/* Parent Category Row with Chevron */}
+                    <div key={dept.id} className="group">
+                      {/* Department Row with Subtle Chevron */}
                       <button
                         type="button"
-                        onClick={() => toggleCategory(cat.id)}
+                        onClick={() => toggleCategory(dept.id)}
                         className={`w-full py-3.5 px-2 flex items-center justify-between text-left transition-colors cursor-pointer select-none ${
                           isExpanded ? 'text-[#C7A97B]' : 'text-[#1C1917] hover:text-[#C7A97B]'
                         }`}
                       >
                         <span className="text-xs uppercase font-serif tracking-[0.2em] font-semibold">
-                          {cat.nameEn}
+                          {dept.nameEn}
                         </span>
                         <ChevronRight
                           className={`w-4 h-4 text-stone-400 transition-transform duration-200 shrink-0 ${
@@ -230,19 +222,20 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                         />
                       </button>
 
-                      {/* Subcategories (Minimalist indented list) */}
+                      {/* Subcategories (Minimalist indented list matching Ravissa) */}
                       {isExpanded && (
                         <div className="bg-[#FAF8F5]/80 py-1 border-t border-[#E6DFD5]/40 divide-y divide-[#E6DFD5]/40">
-                          {/* "All [Category]" link */}
+                          {/* "All [Department]" Link */}
                           <Link
-                            href={`/catalog?category=${encodeURIComponent(cat.slug)}`}
+                            href={`/catalog?category=${encodeURIComponent(dept.slug)}`}
                             onClick={onClose}
                             className="block py-2.5 pl-6 pr-4 text-xs font-serif font-bold text-[#8C6D3B] hover:text-[#1C1917] tracking-wider transition-colors"
                           >
-                            All {cat.nameEn} &rarr;
+                            All {dept.nameEn} &rarr;
                           </Link>
 
-                          {cat.children!.map((sub) => (
+                          {/* Subcategory Items */}
+                          {dept.children!.map((sub) => (
                             <Link
                               key={sub.id}
                               href={`/catalog?category=${encodeURIComponent(sub.slug)}`}
@@ -258,16 +251,16 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                   );
                 }
 
-                // Leaf category (Direct link with subtle chevron)
+                // Leaf category row without children
                 return (
                   <Link
-                    key={cat.id}
-                    href={`/catalog?category=${encodeURIComponent(cat.slug)}`}
+                    key={dept.id}
+                    href={`/catalog?category=${encodeURIComponent(dept.slug)}`}
                     onClick={onClose}
                     className="py-3.5 px-2 flex items-center justify-between text-[#1C1917] hover:text-[#C7A97B] transition-colors group cursor-pointer"
                   >
                     <span className="text-xs uppercase font-serif tracking-[0.2em] font-semibold">
-                      {cat.nameEn}
+                      {dept.nameEn}
                     </span>
                     <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#C7A97B] transition-colors shrink-0" />
                   </Link>

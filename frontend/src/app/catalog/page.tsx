@@ -1,26 +1,29 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Sparkles,
-  Filter,
+  Search,
+  X,
+  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Search,
-  X,
-  SlidersHorizontal,
-  ArrowUpDown,
-  Layers,
 } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
-import { getAllProducts, createDynamicProductDetail, ProductDetail } from '@/data/products';
+import { createDynamicProductDetail, ProductDetail } from '@/data/products';
 import { ProductCard } from '@/components/storefront/product-card';
 
-export default function CatalogPage() {
+function CatalogContent() {
   const { lang, t } = useLanguage();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const catalogTopRef = useRef<HTMLDivElement>(null);
+
+  // URL Sync
+  const categoryParam = searchParams.get('category') || searchParams.get('cat') || searchParams.get('filter');
 
   // Filter & Search & Sort State
   const [selectedFilter, setSelectedFilter] = useState('ALL');
@@ -34,19 +37,21 @@ export default function CatalogPage() {
   const [remoteProducts, setRemoteProducts] = useState<ProductDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 1. Reactive URL Sync: Whenever category in URL changes (e.g. from Mobile Drawer), react instantly
   useEffect(() => {
-    // 0. Sync URL category parameter if present (?category=sunscreen)
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const catParam = params.get('category') || params.get('cat');
-      if (catParam) {
-        setSelectedFilter(catParam);
-      }
+    if (categoryParam) {
+      setSelectedFilter(categoryParam);
+    } else {
+      setSelectedFilter('ALL');
     }
+    setCurrentPage(1);
+  }, [categoryParam]);
 
+  // 2. Fetch categories and products from resilient Next.js internal endpoints
+  useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://seyven-beauty-backend.onrender.com/api/v1';
 
-    // 1. Fetch Categories (resilient internal Next.js API route first, then backend fallback)
+    // 1. Fetch Categories
     fetch('/api/catalog/categories')
       .then((r) => (r.ok ? r.json() : fetch(`${apiUrl}/catalog/categories`).then((b) => (b.ok ? b.json() : null))))
       .then((data) => {
@@ -56,7 +61,7 @@ export default function CatalogPage() {
       })
       .catch(() => {});
 
-    // 2. Fetch Products (resilient Next.js route with persistent disk fallback + backend)
+    // 2. Fetch Products
     fetch('/api/catalog/products')
       .then((r) => (r.ok ? r.json() : fetch(`${apiUrl}/catalog/products`).then((b) => (b.ok ? b.json() : null))))
       .then((data) => {
@@ -85,9 +90,9 @@ export default function CatalogPage() {
     // 1. Primary: Use categories fetched from Admin DB
     if (remoteCategories.length > 0) {
       remoteCategories.forEach((c) => {
-        const id = c.slug || c.id;
-        if (id && !seen.has(id.toLowerCase())) {
-          seen.add(id.toLowerCase());
+        const id = (c.slug || c.id || '').toLowerCase();
+        if (id && !seen.has(id)) {
+          seen.add(id);
           base.push({
             id,
             labelEn: (c.nameEn || c.slug || '').toUpperCase(),
@@ -107,7 +112,7 @@ export default function CatalogPage() {
         if (catName && catName !== 'Curated Formulation' && !seen.has(catSlug.toLowerCase())) {
           seen.add(catSlug.toLowerCase());
           base.push({
-            id: catSlug,
+            id: catSlug.toLowerCase(),
             labelEn: catName.toUpperCase(),
             labelBn: catName,
           });
@@ -116,16 +121,15 @@ export default function CatalogPage() {
       return base;
     }
 
-    // 3. Fallback during initial load: Return ONLY 'ALL FORMULATIONS' (Zero static fake categories)
     return base;
   }, [remoteCategories, allProducts]);
 
-  // High-performance search & category filtering
+  // High-performance search & category filtering with Department Rollups
   const filteredProducts = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
 
     return allProducts.filter((p) => {
-      // 1. Dynamic Category Matching (Strictly matches admin-assigned category)
+      // 1. Dynamic Category & Department Matching
       if (selectedFilter !== 'ALL') {
         const filterKey = selectedFilter.toLowerCase().trim();
         const rawCat = (p as any).category;
@@ -136,20 +140,75 @@ export default function CatalogPage() {
           ? rawCat.slug || rawCat.id || ''
           : catName.replace(/[^a-z0-9]+/g, '-')).toLowerCase().trim();
         const catId = ((p as any).categoryId || (typeof rawCat === 'object' && rawCat ? rawCat.id : '') || '').toLowerCase().trim();
+        const titleLower = (p.titleEn || '').toLowerCase();
+        const purposeLower = (p.purposeTagEn || '').toLowerCase();
 
-        // Safety: If product has no category assigned, it cannot match any specific category tab
-        if (!catName && !catSlug && !catId) {
-          return false;
+        // Department Rollup Checks (Supports All Skin Care, All Body Care, etc.)
+        const isSkincareProduct =
+          catName.includes('sun') || catName.includes('toner') || catName.includes('ampoule') ||
+          catName.includes('essence') || catName.includes('pad') || catName.includes('moistur') ||
+          catName.includes('cream') || catName.includes('serum') || catName.includes('cleanse') ||
+          catName.includes('foam') || catName.includes('mask') || catName.includes('peel') ||
+          catName.includes('skin') ||
+          catSlug.includes('sun') || catSlug.includes('toner') || catSlug.includes('ampoule') ||
+          catSlug.includes('essence') || catSlug.includes('pad') || catSlug.includes('moistur') ||
+          catSlug.includes('cream') || catSlug.includes('serum') || catSlug.includes('cleanse') ||
+          catSlug.includes('foam') || catSlug.includes('mask') || catSlug.includes('peel') ||
+          catSlug.includes('skin') ||
+          titleLower.includes('sun') || titleLower.includes('toner') || titleLower.includes('ampoule') ||
+          titleLower.includes('essence') || titleLower.includes('pad') || titleLower.includes('cream') ||
+          titleLower.includes('serum') || titleLower.includes('cleanser');
+
+        const isBodyProduct =
+          catName.includes('body') || catName.includes('lotion') || catName.includes('scrub') ||
+          catName.includes('wash') || catName.includes('shower') || catName.includes('bath') ||
+          catSlug.includes('body') || catSlug.includes('lotion') || catSlug.includes('scrub') ||
+          catSlug.includes('wash') || catSlug.includes('shower') || catSlug.includes('bath') ||
+          titleLower.includes('body') || titleLower.includes('shower') || titleLower.includes('lotion');
+
+        const isHairProduct =
+          catName.includes('hair') || catName.includes('scalp') || catName.includes('shampoo') ||
+          catName.includes('conditioner') ||
+          catSlug.includes('hair') || catSlug.includes('scalp') || catSlug.includes('shampoo') ||
+          titleLower.includes('hair') || titleLower.includes('scalp') || titleLower.includes('shampoo');
+
+        const isMakeupProduct =
+          catName.includes('makeup') || catName.includes('eye') || catName.includes('lip') ||
+          catSlug.includes('makeup') || catSlug.includes('eye') || catSlug.includes('lip') ||
+          titleLower.includes('eyeliner') || titleLower.includes('lipstick') || titleLower.includes('lip balm');
+
+        const isBabyProduct =
+          catName.includes('baby') || catName.includes('kids') ||
+          catSlug.includes('baby') || catSlug.includes('kids') ||
+          titleLower.includes('baby');
+
+        let matchesDepartment = false;
+        if (filterKey === 'skincare' || filterKey === 'skin-care' || filterKey === 'skin') {
+          matchesDepartment = isSkincareProduct;
+        } else if (filterKey === 'body' || filterKey === 'bodycare' || filterKey === 'body-care') {
+          matchesDepartment = isBodyProduct;
+        } else if (filterKey === 'hair' || filterKey === 'haircare') {
+          matchesDepartment = isHairProduct;
+        } else if (filterKey === 'makeup') {
+          matchesDepartment = isMakeupProduct;
+        } else if (filterKey === 'baby' || filterKey === 'babycare') {
+          matchesDepartment = isBabyProduct;
         }
 
-        const matchesCategory =
+        // Direct Subcategory or Exact Match
+        const matchesDirect =
           catSlug === filterKey ||
           catName === filterKey ||
           (catId !== '' && catId === filterKey) ||
           (catName !== '' && filterKey !== '' && (catName.includes(filterKey) || filterKey.includes(catName))) ||
-          (catSlug !== '' && filterKey !== '' && (catSlug.includes(filterKey) || filterKey.includes(catSlug)));
+          (catSlug !== '' && filterKey !== '' && (catSlug.includes(filterKey) || filterKey.includes(catSlug))) ||
+          // Robust keyword matching (e.g. "sunscreen" matches "Sun Stick", "Sun Serum", "Sunscreen")
+          (filterKey === 'sunscreen' && (catName.includes('sun') || titleLower.includes('sun') || purposeLower.includes('uv') || purposeLower.includes('sun'))) ||
+          (filterKey.length >= 4 && (titleLower.includes(filterKey) || purposeLower.includes(filterKey)));
 
-        if (!matchesCategory) return false;
+        if (!matchesDepartment && !matchesDirect) {
+          return false;
+        }
       }
 
       // 2. Search Query Matching (Search across title, brand, actives, volume, and purpose)
@@ -203,6 +262,11 @@ export default function CatalogPage() {
     setSelectedFilter(filterId);
     setCurrentPage(1);
     scrollToCatalogTop();
+    if (filterId === 'ALL') {
+      router.replace('/catalog', { scroll: false });
+    } else {
+      router.replace(`/catalog?category=${encodeURIComponent(filterId)}`, { scroll: false });
+    }
   };
 
   const handleSearchChange = (val: string) => {
@@ -224,9 +288,9 @@ export default function CatalogPage() {
     }
   };
 
-  // Generate numbered pages with smart ellipsis (e.g. 1 2 3 ... 8 9 10 ... 44)
+  // Generate numbered pages with smart ellipsis
   const paginationRange = useMemo(() => {
-    const delta = 2; // Number of pages to show before/after current page
+    const delta = 2;
     const range: (number | string)[] = [];
     const rangeWithDots: (number | string)[] = [];
     let l: number | undefined;
@@ -290,13 +354,13 @@ export default function CatalogPage() {
               </div>
             ) : (
               filterOptions.map((filter) => {
-                const isActive = selectedFilter === filter.id;
+                const isActive = selectedFilter.toLowerCase() === filter.id.toLowerCase();
                 return (
                   <button
                     key={filter.id}
                     type="button"
                     onClick={() => handleFilterChange(filter.id)}
-                    className={`shrink-0 py-3 text-[10px] sm:text-[11px] uppercase tracking-[0.22em] sm:tracking-[0.25em] transition-all duration-300 relative ${
+                    className={`shrink-0 py-3 text-[10px] sm:text-[11px] uppercase tracking-[0.22em] sm:tracking-[0.25em] transition-all duration-300 relative cursor-pointer ${
                       isActive ? 'text-[#1C1917] font-semibold' : 'text-[#1C1917]/45 hover:text-[#1C1917] font-normal'
                     }`}
                   >
@@ -320,14 +384,14 @@ export default function CatalogPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder={`Search across ${totalItems > 0 ? totalItems.toLocaleString() : '1,000+'} formulations or brands...`}
+              placeholder={`Search across ${totalItems > 0 ? totalItems.toLocaleString() : 'all'} formulations...`}
               className="w-full pl-9 pr-8 py-2 bg-[#F9F6F0]/60 border border-[#E6DFD5] text-[11px] text-[#1C1917] placeholder:text-[#1C1917]/35 tracking-wider focus:outline-none focus:border-[#C7A97B] focus:bg-white transition-all font-light"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => handleSearchChange('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#1C1917]/40 hover:text-[#1C1917]"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#1C1917]/40 hover:text-[#1C1917] cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -378,19 +442,18 @@ export default function CatalogPage() {
           <span>AUTHENTIC SELECTION</span>
           <span className="font-mono">
             {totalItems > 0
-              ? `Showing ${startIndex + 1} - ${endIndex} of ${totalItems.toLocaleString()} Formulations`
-              : 'No matching formulations found'}
+              ? `SHOWING ${startIndex + 1}–${endIndex} OF ${totalItems}`
+              : '0 FORMULATIONS FOUND'}
           </span>
         </div>
       </div>
 
-      {/* Product Grid: 2 columns mobile, 3 tablet, 4 desktop */}
+      {/* Main Luxury Product Grid */}
       {isLoading ? (
-        <div className="py-24 text-center space-y-3">
-          <div className="w-6 h-6 border-2 border-[#C7A97B] border-t-transparent animate-spin rounded-full mx-auto" />
-          <span className="text-[10px] uppercase font-mono tracking-[0.25em] text-[#C7A97B]">
-            LOADING CLINICAL COLLECTION...
-          </span>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="bg-white border border-[#E6DFD5]/60 aspect-3/4 animate-pulse" />
+          ))}
         </div>
       ) : paginatedProducts.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
@@ -401,9 +464,9 @@ export default function CatalogPage() {
               slug={p.slug}
               brand={p.brand}
               titleEn={p.titleEn}
-              titleBn={p.titleEn}
+              titleBn={p.titleBn || p.titleEn}
               purposeEn={p.purposeTagEn}
-              purposeBn={p.purposeTagEn}
+              purposeBn={p.purposeTagBn || p.purposeTagEn}
               volume={p.volume}
               priceBdt={p.priceBdt}
               imageUrl={p.images?.[0]?.url || (p as any).imageUrl}
@@ -412,42 +475,33 @@ export default function CatalogPage() {
             />
           ))}
         </div>
-      ) : allProducts.length === 0 ? (
-        <div className="py-24 text-center space-y-4 border border-[#E6DFD5] bg-[#FAF8F5]/80 p-10 max-w-xl mx-auto shadow-xs">
-          <Sparkles className="w-5 h-5 text-[#C7A97B] mx-auto animate-pulse" />
-          <h3 className="text-base font-serif uppercase tracking-[0.2em] text-[#1C1917] font-light">
-            COLLECTION READY FOR CURATION
-          </h3>
-        </div>
       ) : (
-        <div className="py-20 text-center space-y-4 border border-dashed border-[#E6DFD5] bg-[#FAF8F5]/50 p-8">
-          <Layers className="w-6 h-6 text-[#C7A97B]/70 mx-auto" />
-          <h3 className="text-sm font-serif uppercase tracking-[0.2em] text-[#1C1917]">
-            No Formulations Match Your Filter
+        <div className="text-center py-20 px-4 border border-dashed border-[#E6DFD5] bg-[#FAF8F5]">
+          <h3 className="font-serif text-lg uppercase tracking-wider text-[#1C1917] mb-2">
+            No Formulations Found
           </h3>
-          <p className="text-xs text-[#1C1917]/60 max-w-md mx-auto font-light">
-            Try clearing your search query or selecting a different formulation category from the runway above.
+          <p className="text-xs text-[#1C1917]/60 max-w-md mx-auto mb-6">
+            We could not find any formulations matching your filter selection. Try selecting ALL FORMULATIONS or searching with another keyword.
           </p>
           <button
             type="button"
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedFilter('ALL');
-              setCurrentPage(1);
-            }}
-            className="inline-flex items-center px-5 py-2.5 bg-[#1C1917] text-[#FAF8F5] text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-[#C7A97B] transition-colors"
+            onClick={() => handleFilterChange('ALL')}
+            className="px-6 py-2.5 bg-[#1C1917] text-[#C7A97B] text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-[#2C2724] transition-colors"
           >
-            RESET ALL FILTERS
+            VIEW ALL FORMULATIONS
           </button>
         </div>
       )}
 
-      {/* Haute Luxury Minimalist Editorial Pagination */}
+      {/* Editorial Pagination Controls */}
       {totalPages > 1 && (
-        <nav aria-label="Catalog Pagination" className="pt-12 sm:pt-16 pb-8 border-t border-[#E6DFD5]/80 flex flex-col items-center space-y-5">
-          {/* Main Runway Navigation Row (Single sleek horizontal baseline) */}
-          <div className="w-full flex items-center justify-between sm:justify-center sm:space-x-8 text-xs uppercase tracking-[0.25em]">
-            {/* Previous */}
+        <nav
+          aria-label="Collection Pagination"
+          className="pt-6 sm:pt-8 border-t border-[#E6DFD5]/80 flex flex-col sm:flex-row items-center justify-between gap-4"
+        >
+          {/* Previous / Numbers / Next */}
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            {/* Prev */}
             <button
               type="button"
               disabled={safeCurrentPage === 1}
@@ -458,35 +512,30 @@ export default function CatalogPage() {
               <span className="text-[10px] sm:text-[11px] font-light">PREV</span>
             </button>
 
-            {/* Clean Number Sequence without clunky boxes */}
-            <div className="flex items-center space-x-1 sm:space-x-2">
+            {/* Page Numbers */}
+            <div className="flex items-center space-x-1">
               {paginationRange.map((page, idx) => {
-                if (page === '...') {
+                if (typeof page === 'string') {
                   return (
-                    <span key={`dots-${idx}`} className="px-1.5 py-1 text-[#1C1917]/30 select-none font-serif text-sm">
-                      &hellip;
+                    <span key={`dots-${idx}`} className="px-2 py-1 text-xs text-[#1C1917]/30 select-none font-mono">
+                      ...
                     </span>
                   );
                 }
 
-                const pageNum = Number(page);
-                const isCurrent = pageNum === safeCurrentPage;
-
+                const isActive = page === safeCurrentPage;
                 return (
                   <button
-                    key={`page-${pageNum}`}
+                    key={page}
                     type="button"
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`min-w-[32px] sm:min-w-[38px] h-8 sm:h-9 flex items-center justify-center text-[11px] sm:text-[12px] font-mono transition-all duration-300 relative ${
-                      isCurrent
-                        ? 'text-[#1C1917] font-semibold'
-                        : 'text-[#1C1917]/40 hover:text-[#1C1917] font-light'
+                    onClick={() => handlePageChange(page)}
+                    className={`w-8 h-8 sm:w-9 sm:h-9 text-[10px] sm:text-[11px] font-mono tracking-wider transition-all duration-300 relative flex items-center justify-center cursor-pointer ${
+                      isActive
+                        ? 'text-[#F9F6F0] bg-[#1C1917] font-bold shadow-sm'
+                        : 'text-[#1C1917]/70 hover:text-[#1C1917] hover:bg-[#E6DFD5]/30'
                     }`}
                   >
-                    <span>{pageNum}</span>
-                    {isCurrent && (
-                      <span className="absolute bottom-1 inset-x-2 h-[1.5px] bg-[#1C1917] rounded-full transition-all" />
-                    )}
+                    <span>{page}</span>
                   </button>
                 );
               })}
@@ -529,5 +578,19 @@ export default function CatalogPage() {
         </nav>
       )}
     </div>
+  );
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+          <div className="inline-block w-8 h-8 border-2 border-[#C7A97B] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <CatalogContent />
+    </Suspense>
   );
 }

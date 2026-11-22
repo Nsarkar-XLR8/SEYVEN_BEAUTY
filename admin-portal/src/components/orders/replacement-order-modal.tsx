@@ -16,6 +16,7 @@ import {
 import { useAdmin } from '@/context/admin-context';
 import { AdminOrder, OrderItem } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
+import { detectDistrictFromAddress, BD_ALL_DISTRICTS } from '@/data/bangladesh-districts';
 
 interface ReplacementOrderModalProps {
   isOpen: boolean;
@@ -94,7 +95,28 @@ export function ReplacementOrderModal({
     return '';
   });
   const [customerPhone, setCustomerPhone] = useState<string>(sourceOrder?.customerPhone || '');
-  const [district, setDistrict] = useState<string>(sourceOrder?.district || 'Dhaka');
+  const [district, setDistrict] = useState<string>(() => {
+    const rawAddr = (
+      (typeof sourceOrder?.shippingAddress === 'string' ? sourceOrder.shippingAddress : '') ||
+      (sourceOrder?.shippingAddress as any)?.address ||
+      (sourceOrder?.shippingAddress as any)?.streetAddress ||
+      (sourceOrder?.shippingAddress as any)?.fullAddress ||
+      ''
+    ).trim();
+
+    // Prioritize 64-district NLP detection from the authentic address
+    const detected = detectDistrictFromAddress(rawAddr);
+    if (detected) return detected.district;
+
+    const origDistrict = (sourceOrder?.district || (sourceOrder?.shippingAddress as any)?.district || '').trim();
+    if (
+      origDistrict &&
+      !['dhaka', 'dhaka city', 'inside dhaka', 'outside dhaka', 'dhaka metro'].includes(origDistrict.toLowerCase())
+    ) {
+      return origDistrict;
+    }
+    return 'Dhaka City';
+  });
 
   // Auto courier booking toggle
   const [autoBookPathao, setAutoBookPathao] = useState<boolean>(false);
@@ -517,13 +539,27 @@ export function ReplacementOrderModal({
 
           {/* 5. Delivery Destination Address */}
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block font-mono">
-              Delivery Destination (Bangladeshi Address)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917] block font-mono">
+                Delivery Destination (Bangladeshi Address)
+              </label>
+              {district && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#C7A97B]/20 text-[#8C6D3B] font-bold">
+                  Detected: {district}
+                </span>
+              )}
+            </div>
             <textarea
               rows={2}
               value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setShippingAddress(val);
+                const detected = detectDistrictFromAddress(val);
+                if (detected) {
+                  setDistrict(detected.district);
+                }
+              }}
               className="w-full p-2.5 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none font-sans"
               placeholder="Full village/house/street address..."
             />
@@ -538,12 +574,29 @@ export function ReplacementOrderModal({
                 />
               </div>
               <div>
-                <span className="text-[10px] text-[#1C1917]/50 block">District / Zone</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#1C1917]/50 block">District / Zone</span>
+                  <select
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    className="text-[9px] font-mono bg-white border border-[#E6DFD5] rounded px-1 text-stone-700"
+                  >
+                    <option value={district}>{district} (Selected)</option>
+                    <optgroup label="All 64 BD Districts">
+                      {BD_ALL_DISTRICTS.map((d) => (
+                        <option key={d.nameEn} value={d.nameEn}>
+                          {d.nameEn} ({d.nameBn})
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
                 <input
                   type="text"
                   value={district}
                   onChange={(e) => setDistrict(e.target.value)}
-                  className="w-full p-2 bg-[#FAF8F5] border border-[#E6DFD5] rounded text-xs"
+                  placeholder="e.g. Manikganj"
+                  className="w-full p-2 bg-[#FAF8F5] border border-[#E6DFD5] rounded text-xs font-semibold text-[#1C1917]"
                 />
               </div>
             </div>

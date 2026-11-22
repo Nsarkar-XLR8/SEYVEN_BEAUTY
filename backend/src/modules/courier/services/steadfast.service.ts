@@ -24,6 +24,7 @@ import {
 } from '../interfaces/steadfast.interface';
 import { OrderStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { detectDistrictFromAddress } from '../../../common/utils/district-resolver.util';
 
 @Injectable()
 export class SteadfastService {
@@ -108,8 +109,16 @@ export class SteadfastService {
     ).trim();
 
     let recipientAddress = rawStreet;
-    const district = (shippingAddress.district || shippingAddress.zone || '').trim();
+    let district = (shippingAddress.district || shippingAddress.zone || '').trim();
     const thana = (shippingAddress.thanaArea || '').trim();
+
+    // If district is missing or generic (e.g. Inside/Outside Dhaka), auto-detect from address text
+    if (!district || ['inside dhaka', 'outside dhaka', 'dhaka city', 'dhaka metro'].includes(district.toLowerCase())) {
+      const detected = detectDistrictFromAddress(rawStreet);
+      if (detected) {
+        district = detected.district;
+      }
+    }
 
     if (!recipientAddress) {
       recipientAddress = [thana, district].filter(Boolean).join(', ');
@@ -118,7 +127,7 @@ export class SteadfastService {
       if (thana && !lowerAddr.includes(thana.toLowerCase())) {
         recipientAddress = `${recipientAddress}, ${thana}`;
       }
-      if (district && !lowerAddr.includes(district.toLowerCase())) {
+      if (district && !lowerAddr.includes(district.toLowerCase()) && !['inside dhaka', 'outside dhaka'].includes(district.toLowerCase())) {
         recipientAddress = `${recipientAddress}, ${district}`;
       }
     }

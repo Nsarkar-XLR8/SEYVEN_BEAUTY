@@ -20,6 +20,7 @@ import {
 } from '../interfaces/pathao.interface';
 import { OrderStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { detectDistrictFromAddress } from '../../../common/utils/district-resolver.util';
 
 @Injectable()
 export class PathaoService {
@@ -115,7 +116,10 @@ export class PathaoService {
     ).trim();
 
     let recipientAddress = rawStreet;
-    const district = (shippingAddress.district || shippingAddress.zone || '').trim();
+    const detectedInfo = detectDistrictFromAddress(rawStreet);
+    const rawDistrict = (shippingAddress.district || shippingAddress.zone || '').trim();
+    const isGeneric = !rawDistrict || ['dhaka', 'dhaka city', 'dhaka metro', 'inside dhaka', 'outside dhaka'].includes(rawDistrict.toLowerCase());
+    const district = (!isGeneric && rawDistrict) ? rawDistrict : (detectedInfo?.district || (rawDistrict ? rawDistrict : ''));
     const thana = (shippingAddress.thanaArea || '').trim();
 
     if (!recipientAddress) {
@@ -132,7 +136,7 @@ export class PathaoService {
 
     recipientAddress = recipientAddress.trim().replace(/^,*\s*/, '').replace(/,\s*,/g, ', ');
     if (recipientAddress.length < 10) {
-      recipientAddress = `${recipientAddress}, ${district || 'Dhaka, Bangladesh'}`.replace(/^,*\s*/, '');
+      recipientAddress = `${recipientAddress}, ${district || 'Bangladesh'}`.replace(/^,*\s*/, '');
     }
     recipientAddress = recipientAddress.slice(0, 220);
 
@@ -186,8 +190,11 @@ export class PathaoService {
     if (dto.recipientCityId) {
       payload.recipient_city = dto.recipientCityId;
     }
-    if (dto.recipientZoneId || shippingAddress.courierZoneId) {
-      payload.recipient_zone = dto.recipientZoneId || shippingAddress.courierZoneId;
+    if (dto.recipientZoneId) {
+      payload.recipient_zone = dto.recipientZoneId;
+    } else if (shippingAddress.courierZoneId && shippingAddress.courierZoneId !== 1) {
+      // Only attach stored courierZoneId if it was not blindly defaulted to Dhaka (1)
+      payload.recipient_zone = shippingAddress.courierZoneId;
     }
     if (dto.recipientAreaId) {
       payload.recipient_area = dto.recipientAreaId;

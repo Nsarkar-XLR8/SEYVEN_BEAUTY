@@ -22,6 +22,7 @@ import { SettingsService } from '../../settings/settings.service';
 import { NotificationQueueService } from '../../notifications/services/notification-queue.service';
 import { MetaCapiService } from '../../meta-capi/meta-capi.service';
 import { FraudDetectionService } from './fraud-detection.service';
+import { detectDistrictFromAddress } from '../../../common/utils/district-resolver.util';
 // Prisma Generated Entities & Enums
 import {
   CallVerificationOutcome,
@@ -61,6 +62,20 @@ export class OrdersService {
         1000 + Math.random() * 9000,
       )}`;
 
+    const rawAddress = (dto.address || dto.shippingAddress || 'Dhaka').trim();
+    const detectedDistrictInfo = detectDistrictFromAddress(rawAddress);
+
+    const initialDistrict = (dto.districtName || dto.district || '').trim();
+    const isGenericDistrict = !initialDistrict || ['dhaka', 'dhaka city', 'dhaka metro', 'inside dhaka', 'outside dhaka'].includes(initialDistrict.toLowerCase());
+
+    const resolvedDistrict = (!isGenericDistrict && initialDistrict)
+      ? initialDistrict
+      : (detectedDistrictInfo?.district || (initialDistrict ? initialDistrict : 'Dhaka'));
+
+    const resolvedZone = dto.zone && !['dhaka metro', 'outside dhaka (nationwide)'].includes(dto.zone.toLowerCase())
+      ? dto.zone
+      : (detectedDistrictInfo?.zone || (resolvedDistrict === 'Dhaka City (Metro)' ? 'Dhaka Metro' : resolvedDistrict));
+
     const newOrder = {
       id: orderId,
       orderNumber: orderId,
@@ -70,9 +85,9 @@ export class OrdersService {
       customerPhone: dto.phone || dto.customerPhone || '01700000000',
       guestPhone: dto.phone || dto.customerPhone || '01700000000',
       customerEmail: dto.email || dto.customerEmail || '',
-      shippingAddress: dto.address || dto.shippingAddress || 'Dhaka',
-      zone: dto.districtName || dto.zone || 'Dhaka Metro',
-      district: dto.districtName || dto.district || 'Dhaka',
+      shippingAddress: rawAddress,
+      zone: resolvedZone,
+      district: resolvedDistrict,
       supportPhone,
       supportWhatsApp,
       items: Array.isArray(dto.items)
@@ -381,7 +396,7 @@ export class OrdersService {
       division: dto.shippingAddress.division,
       district: dto.shippingAddress.district,
       thanaArea: dto.shippingAddress.thanaArea,
-      courierZoneId: dto.shippingAddress.courierZoneId || 1,
+      courierZoneId: dto.shippingAddress.courierZoneId || null,
       streetAddress: dto.shippingAddress.streetAddress,
       landmark: dto.shippingAddress.landmark || null,
     };

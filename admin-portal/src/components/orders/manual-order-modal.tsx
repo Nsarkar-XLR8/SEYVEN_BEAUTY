@@ -24,6 +24,7 @@ import {
 import { useAdmin } from '@/context/admin-context';
 import { AdminProduct, AdminProductVariant, OrderItem } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
+import { detectDistrictFromAddress, BD_ALL_DISTRICTS } from '@/data/bangladesh-districts';
 
 interface ManualOrderModalProps {
   isOpen: boolean;
@@ -179,37 +180,16 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
     if (parsedPhone) setPhone(parsedPhone);
     if (parsedAddress) setAddress(parsedAddress);
 
-    // Auto-detect Zone based on address keywords
-    const lowerAddr = (parsedAddress + ' ' + pastedText).toLowerCase();
-    if (
-      lowerAddr.includes('savar') ||
-      lowerAddr.includes('gazipur') ||
-      lowerAddr.includes('narayanganj') ||
-      lowerAddr.includes('keraniganj')
-    ) {
-      setZoneName('Dhaka Suburbs');
-      setDeliveryFee(100);
-      if (hasAdvanceFee) setAdvanceAmount(100);
-    } else if (
-      lowerAddr.includes('dhaka') ||
-      lowerAddr.includes('uttara') ||
-      lowerAddr.includes('mirpur') ||
-      lowerAddr.includes('dhanmondi') ||
-      lowerAddr.includes('gulshan') ||
-      lowerAddr.includes('banani') ||
-      lowerAddr.includes('mohammadpur') ||
-      lowerAddr.includes('badda')
-    ) {
-      setZoneName('Dhaka City');
-      setDeliveryFee(70);
-      if (hasAdvanceFee) setAdvanceAmount(70);
-    } else if (parsedAddress.length > 10) {
-      setZoneName('Outside Dhaka');
-      setDeliveryFee(130);
-      if (hasAdvanceFee) setAdvanceAmount(130);
+    // Auto-detect Zone & District using 64-District Universal NLP
+    const detected = detectDistrictFromAddress(parsedAddress || pastedText);
+    if (detected) {
+      setZoneName(detected.district);
+      setDeliveryFee(detected.deliveryFee);
+      if (hasAdvanceFee) setAdvanceAmount(detected.deliveryFee);
+      setPasteSuccessNotice(`Extracted! Detected ${detected.district} (${detected.isDhakaCity ? 'Inside Dhaka · ৳70' : 'Outside Dhaka · ৳130'})`);
+    } else {
+      setPasteSuccessNotice('Extracted customer details successfully!');
     }
-
-    setPasteSuccessNotice('Extracted customer details successfully!');
     setShowSmartPaste(false);
     setTimeout(() => setPasteSuccessNotice(null), 4000);
   };
@@ -520,17 +500,33 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
 
             {/* Address */}
             <div>
-              <label className="text-xs font-medium text-[#1C1917]/80 block mb-1">
-                Full Delivery Address (House, Road, Area, District) *
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-[#1C1917]/80 block">
+                  Full Delivery Address (House, Road, Area, District) *
+                </label>
+                {zoneName && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#C7A97B]/15 text-[#8C6D3B] font-semibold">
+                    District: {zoneName}
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <MapPin className="w-3.5 h-3.5 text-[#1C1917]/40 absolute left-2.5 top-2.5" />
                 <textarea
                   rows={2}
                   required
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="e.g. House 14, Road 5, Block C, Banani, Dhaka"
+                  onChange={(e) => {
+                    const newAddr = e.target.value;
+                    setAddress(newAddr);
+                    const detected = detectDistrictFromAddress(newAddr);
+                    if (detected) {
+                      setZoneName(detected.district);
+                      setDeliveryFee(detected.deliveryFee);
+                      if (hasAdvanceFee) setAdvanceAmount(detected.deliveryFee);
+                    }
+                  }}
+                  placeholder="e.g. House 14, Road 5, Block C, Banani, Dhaka or গ্রাম: চর হিজুলী, মানিকগঞ্জ"
                   className="w-full pl-8 pr-3 py-2 text-xs bg-[#FAF8F5] border border-[#E6DFD5] rounded-md focus:border-[#C7A97B] focus:bg-white focus:outline-none"
                 />
               </div>
@@ -541,15 +537,43 @@ export function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrde
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <label className="text-xs font-semibold text-[#1C1917] block">
-                    Delivery Fee (৳ BDT) — Custom Delivery Charge
+                    Destination District & Delivery Fee (৳ BDT)
                   </label>
                   <span className="text-[11px] text-[#1C1917]/60 font-sans">
-                    Set according to courier service charge (e.g. 70, 80, 100, 130 or 0)
+                    Universal 64-District auto-detected from address, or override below
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-[#1C1917]/60">Fee:</span>
-                  <div className="relative w-28">
+                  <select
+                    value={zoneName}
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setZoneName(selected);
+                      if (selected === 'Dhaka City' || selected === 'Dhaka') {
+                        setDeliveryFee(70);
+                        if (hasAdvanceFee) setAdvanceAmount(70);
+                      } else if (selected === 'Dhaka Suburbs') {
+                        setDeliveryFee(100);
+                        if (hasAdvanceFee) setAdvanceAmount(100);
+                      } else {
+                        setDeliveryFee(130);
+                        if (hasAdvanceFee) setAdvanceAmount(130);
+                      }
+                    }}
+                    className="text-xs bg-white border border-[#C7A97B]/70 rounded-md py-1 px-2 font-mono font-medium focus:outline-none focus:border-[#1C1917]"
+                  >
+                    <option value="Dhaka City">Dhaka City (৳70)</option>
+                    <option value="Dhaka Suburbs">Dhaka Suburbs (৳100)</option>
+                    <option value="Outside Dhaka">Outside Dhaka (৳130)</option>
+                    <optgroup label="All 64 Bangladesh Districts">
+                      {BD_ALL_DISTRICTS.map((d) => (
+                        <option key={d.nameEn} value={d.nameEn}>
+                          {d.nameEn} ({d.nameBn}) — ৳{d.standardFee}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  <div className="relative w-24">
                     <span className="absolute left-2.5 top-1.5 text-xs font-mono font-bold text-[#1C1917]/50">৳</span>
                     <input
                       type="number"

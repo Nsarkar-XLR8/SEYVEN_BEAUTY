@@ -21,6 +21,7 @@ import { BRAND } from '@/lib/constants';
 import { formatBdt } from '@/lib/formatters';
 import { buildWhatsAppUrl, sanitizeMessengerUrl } from '@/lib/concierge';
 import { trackInitiateCheckout, trackPurchase } from '@/lib/analytics/meta-pixel';
+import { detectDistrictFromAddress } from '@/lib/district-resolver';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState('');
   const [isInsideDhaka, setIsInsideDhaka] = useState(true);
   const [streetAddress, setStreetAddress] = useState('');
+  const [detectedDistrictName, setDetectedDistrictName] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'BKASH' | 'SSLCOMMERZ'>('COD');
   const [loyaltyDiscountBdt, setLoyaltyDiscountBdt] = useState(0);
@@ -76,7 +78,7 @@ export default function CheckoutPage() {
   }, [items, subtotalBdt]);
 
   // Delivery Destination Zone Name
-  const activeDistrictName = isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka (Nationwide)';
+  const activeDistrictName = detectedDistrictName || (isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka (Nationwide)');
 
   // Dynamic Delivery Fee strictly matches selected destination & admin threshold
   const standardFeeDhaka = Number(settings?.standardDeliveryDhakaBdt) || 70;
@@ -131,6 +133,9 @@ export default function CheckoutPage() {
         .substring(2, 6)
         .toUpperCase()}`;
 
+      const finalDistrict = detectedDistrictName || (isInsideDhaka ? 'Dhaka' : 'Outside Dhaka');
+      const finalZone = detectedDistrictName ? `${detectedDistrictName} District` : (isInsideDhaka ? 'Dhaka Metro' : 'Outside Dhaka (Nationwide)');
+
       const successPayload = {
         orderId: orderTrackingId,
         eventId: orderTrackingId,
@@ -138,8 +143,8 @@ export default function CheckoutPage() {
         phone: cleanPhone,
         email: email.trim(),
         address: streetAddress.trim(),
-        districtName: isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka',
-        zone: isInsideDhaka ? 'Dhaka Metro' : 'Outside Dhaka (Nationwide)',
+        districtName: finalDistrict,
+        zone: finalZone,
         paymentMethod,
         totalBdt: netPayableBdt,
         subtotalBdt,
@@ -184,8 +189,8 @@ export default function CheckoutPage() {
             customerPhone: cleanPhone,
             customerEmail: email.trim(),
             shippingAddress: streetAddress.trim(),
-            zone: isInsideDhaka ? 'Dhaka Metro' : 'Outside Dhaka (Nationwide)',
-            district: isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka',
+            zone: finalZone,
+            district: finalDistrict,
             items: items.map((it) => ({
               id: it.id,
               sku: `SKU-${it.id.slice(0, 6)}`,
@@ -451,19 +456,34 @@ export default function CheckoutPage() {
 
               {/* Detailed Street Address */}
               <div className="space-y-1 pt-1">
-                <label htmlFor="street-address" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block font-medium">
-                  FULL DELIVERY ADDRESS (HOUSE, ROAD, AREA, THANA, DISTRICT)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="street-address" className="text-[10px] uppercase tracking-[0.2em] text-[#1C1917]/70 block font-medium">
+                    FULL DELIVERY ADDRESS (HOUSE, ROAD, AREA, THANA, DISTRICT)
+                  </label>
+                  {detectedDistrictName && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#C7A97B]/20 text-[#8C6D3B] font-semibold">
+                      ✓ {detectedDistrictName} ({isInsideDhaka ? 'Inside Dhaka' : 'Outside Dhaka'})
+                    </span>
+                  )}
+                </div>
                 <textarea
                   id="street-address"
                   required
                   rows={2}
                   value={streetAddress}
-                  onChange={(e) => setStreetAddress(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setStreetAddress(val);
+                    const detected = detectDistrictFromAddress(val);
+                    if (detected) {
+                      setDetectedDistrictName(detected.district);
+                      setIsInsideDhaka(detected.isDhakaCity);
+                    }
+                  }}
                   placeholder={
                     isInsideDhaka
                       ? 'e.g. House 24, Road 11, Block D, Banani, Dhaka'
-                      : 'e.g. House 15, Nasirabad Housing Society, Chattogram'
+                      : 'e.g. গ্রাম: চর হিজুলী, মানিকগঞ্জ সদর, মানিকগঞ্জ'
                   }
                   className="w-full bg-[#F9F6F0] border border-[#E6DFD5] p-3 text-base sm:text-xs text-[#1C1917] placeholder:text-[#1C1917]/35 focus:outline-hidden focus:border-[#C7A97B] transition-colors resize-none"
                 />

@@ -25,6 +25,7 @@ import {
 import { OrderStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { detectDistrictFromAddress } from '../../../common/utils/district-resolver.util';
+import { calculateParcelWeightKg } from './pathao.service';
 
 @Injectable()
 export class SteadfastService {
@@ -154,6 +155,7 @@ export class SteadfastService {
 
     // Strictly pass cod_amount = order.codDueBdt (0 for prepaid)
     const amountToCollect = Math.max(0, Math.round(Number(order.codDueBdt)));
+    const dynamicWeightKg = calculateParcelWeightKg(order.items || []);
 
     const payload: SteadfastCreateOrderPayload = {
       invoice: order.orderNumber,
@@ -163,8 +165,8 @@ export class SteadfastService {
       cod_amount: amountToCollect,
       note:
         amountToCollect === 0
-          ? `[PREPAID / ZERO-CASH REPLACEMENT · DO NOT COLLECT CASH (৳0)] ${dto.specialInstruction || shippingAddress.notes || 'Fragile Luxury Packaging'}`
-          : (dto.specialInstruction || shippingAddress.notes || 'Fragile Luxury Cosmetic Packaging'),
+          ? `[PREPAID / ZERO-CASH REPLACEMENT · DO NOT COLLECT CASH (৳0)] [Weight: ${dynamicWeightKg}kg] ${dto.specialInstruction || shippingAddress.notes || 'Fragile Luxury Packaging'}`
+          : `[Weight: ${dynamicWeightKg}kg] ${dto.specialInstruction || shippingAddress.notes || 'Fragile Luxury Cosmetic Packaging'}`,
       item_description: itemDescription.slice(0, 255),
     };
 

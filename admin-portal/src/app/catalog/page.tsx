@@ -37,6 +37,7 @@ import { API_BASE_URL } from '@/lib/api-config';
 import { useAdmin } from '@/context/admin-context';
 import { formatBdt } from '@/lib/formatters';
 import { AdminProduct } from '@/types/admin';
+import { suggestProductWeightGrams } from '@/lib/weight-calculator';
 
 export default function AdminCatalogDeskPage() {
   const {
@@ -103,9 +104,9 @@ export default function AdminCatalogDeskPage() {
   const [prodVolume, setProdVolume] = useState('50 ML');
   const [prodBsti, setProdBsti] = useState(true);
 
-  // Multi-size Variants State (e.g. 30 ML, 50 ML, 100 ML)
-  const [prodVariants, setProdVariants] = useState<Array<{ id?: string; volume: string; priceBdt: number; sku?: string }>>([
-    { volume: '50 ML', priceBdt: 2450 },
+  // Multi-size Variants State (e.g. 30 ML, 50 ML, 100 ML with dynamic Gross Weight in grams)
+  const [prodVariants, setProdVariants] = useState<Array<{ id?: string; volume: string; priceBdt: number; weightGrams?: number; sku?: string }>>([
+    { volume: '50 ML', priceBdt: 2450, weightGrams: 145 },
   ]);
 
   // Clinical & PDP Dynamic Content State
@@ -427,7 +428,7 @@ export default function AdminCatalogDeskPage() {
     setProdPurposeTag('');
     setProdPrice('2450');
     setProdVolume('50 ML');
-    setProdVariants([{ volume: '50 ML', priceBdt: 2450 }]);
+    setProdVariants([{ volume: '50 ML', priceBdt: 2450, weightGrams: 145 }]);
     setProdBsti(true);
     setProdImages([]);
     setProdImageUrlInput('');
@@ -453,15 +454,17 @@ export default function AdminCatalogDeskPage() {
     setProdBsti(product.bstiApproved ?? true);
     setProdImages(product.images && product.images.length > 0 ? product.images : (product.imageUrl ? [product.imageUrl] : []));
 
-    // Multi-variants
+    // Multi-variants with dynamic weight in grams
     if (Array.isArray(product.variants) && product.variants.length > 0) {
       setProdVariants(product.variants.map((v) => ({
         volume: v.volume,
         priceBdt: Number(v.priceBdt) || 2450,
+        weightGrams: v.weightGrams || suggestProductWeightGrams(v.volume, catLabel),
         sku: v.sku,
       })));
     } else {
-      setProdVariants([{ volume: product.volume || '50 ML', priceBdt: product.priceBdt || 2450 }]);
+      const fallbackWeight = product.weightGrams || suggestProductWeightGrams(product.volume || '50 ML', catLabel);
+      setProdVariants([{ volume: product.volume || '50 ML', priceBdt: product.priceBdt || 2450, weightGrams: fallbackWeight }]);
     }
 
     // Clinical details
@@ -515,7 +518,8 @@ export default function AdminCatalogDeskPage() {
       const lastVariantVol = prodVariants[prodVariants.length - 1]?.volume || prodVolume || '';
       defaultVol = lastVariantVol.toUpperCase().includes('G') ? '50 G' : '100 ML';
     }
-    setProdVariants((prev) => [...prev, { volume: defaultVol, priceBdt: defaultPrice }]);
+    const defaultWeight = suggestProductWeightGrams(defaultVol, prodCategory);
+    setProdVariants((prev) => [...prev, { volume: defaultVol, priceBdt: defaultPrice, weightGrams: defaultWeight }]);
   };
 
   const removeVariantRow = (idx: number) => {
@@ -525,9 +529,23 @@ export default function AdminCatalogDeskPage() {
     });
   };
 
-  const updateVariantRow = (idx: number, field: 'volume' | 'priceBdt', value: any) => {
+  const updateVariantRow = (idx: number, field: 'volume' | 'priceBdt' | 'weightGrams', value: any) => {
     setProdVariants((prev) =>
-      prev.map((v, i) => (i === idx ? { ...v, [field]: field === 'priceBdt' ? Number(value) || 0 : value } : v))
+      prev.map((v, i) => {
+        if (i !== idx) return v;
+        if (field === 'volume') {
+          const newVol = value;
+          const autoWeight = suggestProductWeightGrams(newVol, prodCategory);
+          return { ...v, volume: newVol, weightGrams: autoWeight };
+        }
+        if (field === 'priceBdt') {
+          return { ...v, priceBdt: Number(value) || 0 };
+        }
+        if (field === 'weightGrams') {
+          return { ...v, weightGrams: Math.max(1, Number(value) || 0) };
+        }
+        return v;
+      })
     );
   };
 
@@ -603,6 +621,7 @@ export default function AdminCatalogDeskPage() {
       priceBdt: minVariantPrice,
       priceRangeBdt,
       volume: prodVariants[0]?.volume || prodVolume,
+      weightGrams: prodVariants[0]?.weightGrams || suggestProductWeightGrams(prodVariants[0]?.volume || prodVolume, prodCategory),
       imageUrl: coverPhoto,
       images: prodImages.length > 0 ? prodImages : [coverPhoto],
       bstiApproved: prodBsti,
@@ -610,6 +629,7 @@ export default function AdminCatalogDeskPage() {
         id: v.id || `var-${finalSlug}-${idx}`,
         volume: v.volume,
         priceBdt: Number(v.priceBdt) || minVariantPrice,
+        weightGrams: v.weightGrams || suggestProductWeightGrams(v.volume, prodCategory),
         sku: v.sku || generateSmartSku(finalBrand, prodTitleEn, v.volume),
         inStock: true,
         stockCount: 50,
@@ -1749,7 +1769,7 @@ export default function AdminCatalogDeskPage() {
                             {idx + 1}
                           </span>
 
-                          <div className="flex-1 w-full sm:w-auto grid grid-cols-2 gap-3">
+                          <div className="flex-1 w-full sm:w-auto grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                             <div className="space-y-1">
                               <label className="text-[9px] text-[#1C1917]/60 uppercase block">Size / Volume *</label>
                               <input
@@ -1774,6 +1794,26 @@ export default function AdminCatalogDeskPage() {
                                   placeholder="2450"
                                   className="w-full pl-6 p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono font-bold text-[#1C1917] focus:border-[#C7A97B] focus:outline-none"
                                 />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <label className="text-[9px] text-[#1C1917]/60 uppercase block">Gross Weight *</label>
+                                <span className="text-[8px] text-[#8C6D3B] font-mono font-semibold">Tare+Formula</span>
+                              </div>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  required
+                                  min={1}
+                                  max={5000}
+                                  value={v.weightGrams || suggestProductWeightGrams(v.volume, prodCategory)}
+                                  onChange={(e) => updateVariantRow(idx, 'weightGrams', e.target.value)}
+                                  placeholder="145"
+                                  className="w-full pr-8 p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded text-xs font-mono font-bold text-[#1C1917] focus:border-[#C7A97B] focus:outline-none"
+                                />
+                                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-stone-500">g</span>
                               </div>
                             </div>
                           </div>

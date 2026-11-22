@@ -3,6 +3,7 @@
 import React from 'react';
 import { AdminOrder } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
+import { calculateOrderGrossWeight } from '@/lib/weight-calculator';
 import { Barcode128 } from '../barcode/barcode-128';
 import { useAdmin } from '@/context/admin-context';
 
@@ -161,9 +162,9 @@ export function ThermalShippingLabel({
   const isCod = order.paymentMethod === 'COD' && !isZeroCash;
   const routing = parseCourierRouting(order.district, order.zone, order.shippingAddress);
 
-  // Approximate weight calculation based on item quantity
-  const totalQty = order.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-  const estWeightKg = Math.max(0.5, +(totalQty * 0.25).toFixed(1));
+  // Dynamic gross weight calculation based on authentic product formula + container tare
+  const calculatedWeight = calculateOrderGrossWeight(order.items || []);
+  const estWeightKg = calculatedWeight.weightKg;
 
   // Dynamic Helpline & RTO Address SSOT
   let supportPhone = adminCtx?.platformSettings?.supportPhone || '01577 071997';

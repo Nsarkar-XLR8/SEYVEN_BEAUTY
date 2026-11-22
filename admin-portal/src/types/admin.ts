@@ -53,6 +53,7 @@ export interface OrderItem {
   totalPrice: number;
   image?: string;
   isGwp?: boolean;
+  weightGrams?: number;
 }
 
 export interface AdminOrder {
@@ -139,6 +140,7 @@ export interface AdminProductVariant {
   volume: string;
   priceBdt: number;
   sku?: string;
+  weightGrams?: number;
   inStock?: boolean;
   stockCount?: number;
   titleEn?: string;
@@ -156,6 +158,7 @@ export interface AdminProduct {
   variantsCount: number;
   priceRangeBdt: string;
   priceBdt?: number;
+  weightGrams?: number;
   bstiApproved: boolean;
   imageUrl?: string;
   images?: string[];

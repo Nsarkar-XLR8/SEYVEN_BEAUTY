@@ -23,6 +23,7 @@ import { useAdmin } from '@/context/admin-context';
 import { AdminOrder, OrderItem, AdminProduct } from '@/types/admin';
 import { formatBdt } from '@/lib/formatters';
 import { detectDistrictFromAddress, BD_ALL_DISTRICTS } from '@/data/bangladesh-districts';
+import { calculateOrderGrossWeight, suggestProductWeightGrams } from '@/lib/weight-calculator';
 
 interface ReplacementOrderModalProps {
   isOpen: boolean;
@@ -288,6 +289,29 @@ export function ReplacementOrderModal({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const previewGrossWeight = useMemo(() => {
+    const previewItems: Array<{ weightGrams?: number; quantity?: number; title?: string }> = [];
+    (sourceOrder?.items || []).forEach((it) => {
+      if (selectedItemIds[it.id]) {
+        previewItems.push({
+          weightGrams: it.weightGrams || suggestProductWeightGrams(it.variant, it.title),
+          quantity: quantities[it.id] || 1,
+          title: it.title,
+        });
+      }
+    });
+    if (hasGift) {
+      activeGifts.forEach((g) => {
+        previewItems.push({
+          weightGrams: suggestProductWeightGrams('Courtesy', g.title),
+          quantity: g.quantity || 1,
+          title: g.title,
+        });
+      });
+    }
+    return calculateOrderGrossWeight(previewItems);
+  }, [selectedItemIds, quantities, sourceOrder, hasGift, activeGifts]);
+
   if (!isOpen) return null;
 
   const toggleItem = (id: string) => {
@@ -309,6 +333,7 @@ export function ReplacementOrderModal({
         replacementItems.push({
           ...it,
           quantity: quantities[it.id] || 1,
+          weightGrams: it.weightGrams || suggestProductWeightGrams(it.variant, it.title),
           unitPrice: 0,
           totalPrice: 0,
         });
@@ -326,6 +351,7 @@ export function ReplacementOrderModal({
           brand: g.brand || 'SEYVEN Courtesy',
           variant: 'Courtesy',
           quantity: g.quantity || 1,
+          weightGrams: suggestProductWeightGrams('Courtesy', g.title),
           unitPrice: 0,
           totalPrice: 0,
           isGwp: true,
@@ -967,6 +993,12 @@ export function ReplacementOrderModal({
                 {hasGift && activeGifts.length > 0
                   ? `${activeGifts.map((g) => `${g.title} (x${g.quantity})`).join(', ')} — ৳0 (Courtesy)`
                   : 'None'}
+              </span>
+            </div>
+            <div className="flex justify-between text-[#F9F6F0]/70 text-[11px]">
+              <span>Est. Parcel Weight:</span>
+              <span className="text-[#C7A97B] font-bold">
+                {previewGrossWeight.weightDisplay} ({previewGrossWeight.grossGrams}g tare+items)
               </span>
             </div>
             <div className="flex justify-between text-[#F9F6F0]/70 text-[11px]">

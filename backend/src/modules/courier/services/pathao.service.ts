@@ -169,6 +169,13 @@ export class PathaoService {
     // Strictly pass cod_amount = order.codDueBdt (0 if prepaid)
     const amountToCollect = Math.max(0, Math.round(Number(order.codDueBdt || 0)));
 
+    // Calculate authentic parcel gross weight dynamically
+    const dynamicWeightKg = calculateParcelWeightKg(order.items || []);
+    const effectiveWeightKg =
+      dto.itemWeightKg && dto.itemWeightKg > 0.5
+        ? Math.max(0.5, Math.min(10, dto.itemWeightKg))
+        : dynamicWeightKg;
+
     const payload: PathaoCreateOrderPayload = {
       store_id: dto.storeId || this.defaultStoreId,
       merchant_order_id: order.orderNumber,
@@ -183,7 +190,7 @@ export class PathaoService {
           : (dto.specialInstruction || shippingAddress.notes || 'Fragile Cosmetic Packaging - Handle with Care')
       ).slice(0, 255),
       item_quantity: totalQuantity,
-      item_weight: dto.itemWeightKg ? Math.max(0.5, Math.min(10, dto.itemWeightKg)) : 0.5,
+      item_weight: effectiveWeightKg,
       amount_to_collect: amountToCollect,
       item_description: itemDescription.slice(0, 255),
     };
@@ -447,4 +454,37 @@ export class PathaoService {
         return null;
     }
   }
+}
+
+/**
+ * Dynamic Parcel Gross Weight Calculator for SEYVEN Cosmetics.
+ * Combines item formula + primary packaging tare + outer corrugated box buffer (~80g).
+ */
+export function calculateParcelWeightKg(items: Array<{ title?: string; quantity?: number }>): number {
+  let totalItemGrams = 0;
+  for (const item of items) {
+    const qty = Math.max(1, item.quantity || 1);
+    const title = (item.title || '').toLowerCase();
+    let unitGram = 150; // standard cosmetic glass/plastic bottle default
+
+    if (title.includes('lip') || title.includes('liner') || title.includes('pencil')) {
+      unitGram = 30;
+    } else if (title.includes('mask') || title.includes('sheet')) {
+      unitGram = 35;
+    } else if (title.includes('serum') || title.includes('ampoule')) {
+      unitGram = 145;
+    } else if (title.includes('cream') || title.includes('moistur')) {
+      unitGram = 190;
+    } else if (title.includes('toner') || title.includes('cleanser') || title.includes('wash')) {
+      unitGram = 260;
+    } else if (title.includes('lotion') || title.includes('body')) {
+      unitGram = 350;
+    }
+
+    totalItemGrams += unitGram * qty;
+  }
+
+  const grossGrams = totalItemGrams + 80; // corrugated box and bubble buffer
+  const rawKg = grossGrams / 1000;
+  return Math.max(0.5, +(Math.ceil(rawKg * 10) / 10).toFixed(1));
 }

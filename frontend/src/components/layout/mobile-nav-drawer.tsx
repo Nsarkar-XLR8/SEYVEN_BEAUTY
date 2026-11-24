@@ -13,8 +13,9 @@ import { useAuth } from '@/context/auth-context';
 import { useCart } from '@/context/cart-context';
 import { BRAND, GUEST_NAV_LINKS, AUTH_NAV_LINKS } from '@/lib/constants';
 import {
-  CategoryNode,
-  buildDepartmentTaxonomy,
+  DynamicCategoryNode,
+  buildDynamicCategoryHierarchy,
+  formatCategoryTitle,
 } from '@/data/category-taxonomy';
 
 interface MobileNavDrawerProps {
@@ -26,40 +27,42 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
   const { settings } = useCart();
   const [activeTab, setActiveTab] = useState<'MENU' | 'CATEGORIES'>('CATEGORIES');
-  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>('dept-skincare');
+  const [expandedLevel1Id, setExpandedLevel1Id] = useState<string | null>(null);
+  const [expandedLevel2Id, setExpandedLevel2Id] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [departments, setDepartments] = useState<CategoryNode[]>(() => buildDepartmentTaxonomy([], []));
+  const [categories, setCategories] = useState<DynamicCategoryNode[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // 100% Dynamic: Live Sync with Admin Database & Catalog
+  // 100% Dynamic: Live Sync with Admin Database Category Tree
   useEffect(() => {
     let isMounted = true;
 
-    async function loadDynamicCategories() {
+    async function loadLiveCategories() {
       try {
-        const [catRes, prodRes] = await Promise.all([
-          fetch('/api/catalog/categories').catch(() => null),
-          fetch('/api/catalog/products').catch(() => null),
-        ]);
-
-        const catData = catRes && catRes.ok ? await catRes.json() : [];
-        const prodData = prodRes && prodRes.ok ? await prodRes.json() : [];
-
-        if (isMounted) {
-          const dynamicTree = buildDepartmentTaxonomy(catData, prodData);
-          if (dynamicTree.length > 0) {
-            setDepartments(dynamicTree);
+        const res = await fetch('/api/catalog/categories').catch(() => null);
+        if (res && res.ok) {
+          const data = await res.json();
+          if (isMounted && Array.isArray(data) && data.length > 0) {
+            const tree = buildDynamicCategoryHierarchy(data);
+            setCategories(tree);
+            // Default expand first department if available
+            if (tree.length > 0 && !expandedLevel1Id) {
+              setExpandedLevel1Id(tree[0].id);
+            }
           }
         }
-      } catch {
-        // Retain pristine luxury default fallback
+      } catch (err) {
+        console.warn('[MobileNavDrawer] Live category fetch notice:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     }
 
-    loadDynamicCategories();
+    loadLiveCategories();
 
     return () => {
       isMounted = false;
@@ -80,8 +83,13 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
 
   if (!isOpen) return null;
 
-  const toggleCategory = (catId: string) => {
-    setExpandedCategoryId((prev) => (prev === catId ? null : catId));
+  const toggleLevel1 = (catId: string) => {
+    setExpandedLevel1Id((prev) => (prev === catId ? null : catId));
+    setExpandedLevel2Id(null);
+  };
+
+  const toggleLevel2 = (subId: string) => {
+    setExpandedLevel2Id((prev) => (prev === subId ? null : subId));
   };
 
   // Strictly original navigation links (No over-engineered pages or badges)
@@ -194,78 +202,146 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
             </nav>
           )}
 
-          {/* TAB 2: HIERARCHICAL LUXURY CATEGORIES (Ravissa Style: Departments + Expandable Subcategories) */}
+          {/* TAB 2: HIERARCHICAL LUXURY CATEGORIES (Ravissa 3-Level Standard) */}
           {activeTab === 'CATEGORIES' && (
             <div className="divide-y divide-[#E6DFD5]/70">
-              {departments.map((dept) => {
-                const hasChildren = Array.isArray(dept.children) && dept.children.length > 0;
-                const isExpanded = expandedCategoryId === dept.id;
+              {isLoading && categories.length === 0 ? (
+                <div className="py-6 space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-9 bg-[#E6DFD5]/40 rounded animate-pulse" />
+                  ))}
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="py-8 text-center text-xs text-stone-500 font-mono">
+                  No categories published yet.
+                </div>
+              ) : (
+                categories.map((dept) => {
+                  const hasLevel2 = Array.isArray(dept.children) && dept.children.length > 0;
+                  const isLevel1Expanded = expandedLevel1Id === dept.id;
 
-                if (hasChildren) {
-                  return (
-                    <div key={dept.id} className="group">
-                      {/* Department Row with Subtle Chevron */}
-                      <button
-                        type="button"
-                        onClick={() => toggleCategory(dept.id)}
-                        className={`w-full py-3.5 px-2 flex items-center justify-between text-left transition-colors cursor-pointer select-none ${
-                          isExpanded ? 'text-[#C7A97B]' : 'text-[#1C1917] hover:text-[#C7A97B]'
-                        }`}
-                      >
-                        <span className="text-xs uppercase font-serif tracking-[0.2em] font-semibold">
-                          {dept.nameEn}
-                        </span>
-                        <ChevronRight
-                          className={`w-4 h-4 text-stone-400 transition-transform duration-200 shrink-0 ${
-                            isExpanded ? 'rotate-90 text-[#C7A97B]' : 'group-hover:text-[#1C1917]'
+                  if (hasLevel2) {
+                    return (
+                      <div key={dept.id} className="group">
+                        {/* Level 1: Root Department Header (e.g. SKIN CARE, BODY CARE) */}
+                        <button
+                          type="button"
+                          onClick={() => toggleLevel1(dept.id)}
+                          className={`w-full py-3.5 px-2 flex items-center justify-between text-left transition-colors cursor-pointer select-none ${
+                            isLevel1Expanded ? 'text-[#C7A97B]' : 'text-[#1C1917] hover:text-[#C7A97B]'
                           }`}
-                        />
-                      </button>
+                        >
+                          <span className="text-xs uppercase font-serif tracking-[0.2em] font-semibold">
+                            {dept.nameEn}
+                          </span>
+                          <ChevronRight
+                            className={`w-4 h-4 text-stone-400 transition-transform duration-200 shrink-0 ${
+                              isLevel1Expanded ? 'rotate-90 text-[#C7A97B]' : 'group-hover:text-[#1C1917]'
+                            }`}
+                          />
+                        </button>
 
-                      {/* Subcategories (Minimalist indented list matching Ravissa) */}
-                      {isExpanded && (
-                        <div className="bg-[#FAF8F5]/80 py-1 border-t border-[#E6DFD5]/40 divide-y divide-[#E6DFD5]/40">
-                          {/* "All [Department]" Link */}
-                          <Link
-                            href={`/catalog?category=${encodeURIComponent(dept.slug)}`}
-                            onClick={onClose}
-                            className="block py-2.5 pl-6 pr-4 text-xs font-serif font-bold text-[#8C6D3B] hover:text-[#1C1917] tracking-wider transition-colors"
-                          >
-                            All {dept.nameEn} &rarr;
-                          </Link>
-
-                          {/* Subcategory Items */}
-                          {dept.children!.map((sub) => (
+                        {/* Level 2 Subcategories Container */}
+                        {isLevel1Expanded && (
+                          <div className="bg-[#FAF8F5]/90 py-1 border-t border-[#E6DFD5]/40 divide-y divide-[#E6DFD5]/40">
+                            {/* "All [Department]" Link */}
                             <Link
-                              key={sub.id}
-                              href={`/catalog?category=${encodeURIComponent(sub.slug)}`}
+                              href={`/catalog?category=${encodeURIComponent(dept.slug)}`}
                               onClick={onClose}
-                              className="block py-2.5 pl-6 pr-4 text-xs font-sans text-stone-600 hover:text-[#C7A97B] font-medium tracking-wide transition-colors"
+                              className="block py-2.5 pl-5 pr-4 text-xs font-serif font-bold text-[#8C6D3B] hover:text-[#1C1917] tracking-wider transition-colors"
                             >
-                              {sub.nameEn}
+                              All {dept.nameEn} &rarr;
                             </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
 
-                // Leaf category row without children
-                return (
-                  <Link
-                    key={dept.id}
-                    href={`/catalog?category=${encodeURIComponent(dept.slug)}`}
-                    onClick={onClose}
-                    className="py-3.5 px-2 flex items-center justify-between text-[#1C1917] hover:text-[#C7A97B] transition-colors group cursor-pointer"
-                  >
-                    <span className="text-xs uppercase font-serif tracking-[0.2em] font-semibold">
-                      {dept.nameEn}
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#C7A97B] transition-colors shrink-0" />
-                  </Link>
-                );
-              })}
+                            {/* Level 2 Child Items */}
+                            {dept.children!.map((sub) => {
+                              const hasLevel3 = Array.isArray(sub.children) && sub.children.length > 0;
+                              const isLevel2Expanded = expandedLevel2Id === sub.id;
+
+                              if (hasLevel3) {
+                                return (
+                                  <div key={sub.id} className="bg-white/60">
+                                    {/* Level 2 Expandable Subcategory (e.g. Cleanser, Sun Protection) */}
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleLevel2(sub.id)}
+                                      className={`w-full py-2.5 pl-6 pr-4 flex items-center justify-between text-left transition-colors cursor-pointer select-none ${
+                                        isLevel2Expanded ? 'text-[#8C6D3B] font-bold' : 'text-stone-700 hover:text-[#1C1917]'
+                                      }`}
+                                    >
+                                      <span className="text-xs font-sans tracking-wide">
+                                        {formatCategoryTitle(sub.nameEn)}
+                                      </span>
+                                      <ChevronRight
+                                        className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 shrink-0 ${
+                                          isLevel2Expanded ? 'rotate-90 text-[#8C6D3B]' : ''
+                                        }`}
+                                      />
+                                    </button>
+
+                                    {/* Level 3 Micro-Types Container (e.g. Cleansing Oil, Balm, Water, Foam) */}
+                                    {isLevel2Expanded && (
+                                      <div className="bg-[#F4EFE6]/70 py-1 pl-8 pr-4 border-t border-[#E6DFD5]/40 space-y-1">
+                                        {/* "All [Subcategory]" Link */}
+                                        <Link
+                                          href={`/catalog?category=${encodeURIComponent(sub.slug)}`}
+                                          onClick={onClose}
+                                          className="block py-2 text-xs font-serif font-semibold text-[#8C6D3B] hover:text-[#1C1917] tracking-wide transition-colors"
+                                        >
+                                          All {formatCategoryTitle(sub.nameEn)} &rarr;
+                                        </Link>
+
+                                        {/* Level 3 Leaf Items */}
+                                        {sub.children!.map((micro) => (
+                                          <Link
+                                            key={micro.id}
+                                            href={`/catalog?category=${encodeURIComponent(micro.slug)}`}
+                                            onClick={onClose}
+                                            className="block py-2 text-xs font-sans text-stone-600 hover:text-[#C7A97B] transition-colors"
+                                          >
+                                            {formatCategoryTitle(micro.nameEn)}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              // Level 2 Leaf Category (No Level 3 children)
+                              return (
+                                <Link
+                                  key={sub.id}
+                                  href={`/catalog?category=${encodeURIComponent(sub.slug)}`}
+                                  onClick={onClose}
+                                  className="block py-2.5 pl-6 pr-4 text-xs font-sans text-stone-700 hover:text-[#C7A97B] font-medium tracking-wide transition-colors"
+                                >
+                                  {formatCategoryTitle(sub.nameEn)}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Level 1 Leaf Category (No Level 2 children)
+                  return (
+                    <Link
+                      key={dept.id}
+                      href={`/catalog?category=${encodeURIComponent(dept.slug)}`}
+                      onClick={onClose}
+                      className="py-3.5 px-2 flex items-center justify-between text-[#1C1917] hover:text-[#C7A97B] transition-colors group cursor-pointer"
+                    >
+                      <span className="text-xs uppercase font-serif tracking-[0.2em] font-semibold">
+                        {dept.nameEn}
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#C7A97B] transition-colors shrink-0" />
+                    </Link>
+                  );
+                })
+              )}
             </div>
           )}
         </div>

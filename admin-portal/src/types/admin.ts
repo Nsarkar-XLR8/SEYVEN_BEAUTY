@@ -133,6 +133,8 @@ export interface AdminCategory {
   iconName: string;
   productCount: number;
   isActive: boolean;
+  parentId?: string | null;
+  children?: AdminCategory[];
 }
 
 export interface AdminProductVariant {

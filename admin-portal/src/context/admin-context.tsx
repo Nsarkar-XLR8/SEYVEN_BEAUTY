@@ -443,8 +443,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 2. Fetch real categories directly from backend
-      const cRes = await adminFetch(`${apiUrl}/catalog/categories`, { cache: 'no-store' }, handleUnauthorized);
+      // 2. Fetch real categories directly from backend (flat=true allows seamless hierarchical indexing)
+      const cRes = await adminFetch(`${apiUrl}/catalog/categories?flat=true`, { cache: 'no-store' }, handleUnauthorized);
       if (cRes.ok) {
         const cData = await cRes.json();
         if (Array.isArray(cData)) {
@@ -457,6 +457,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
             sortOrder: d.sortOrder || idx + 1,
             productCount: d.productCount || 0,
             isActive: true,
+            parentId: d.parentId || null,
           }));
           setCategories(mapped);
           safeStorageSet(STORAGE_KEYS.CATEGORIES, JSON.stringify(mapped));
@@ -1184,6 +1185,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           nameBn: cat.nameBn,
           slug: cat.slug,
           description: cat.nameEn,
+          parentId: cat.parentId || null,
         }),
       }, handleUnauthorized);
 
@@ -1198,6 +1200,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           sortOrder: categories.length + 1,
           productCount: 0,
           isActive: true,
+          parentId: saved.parentId !== undefined ? saved.parentId : (cat.parentId || null),
         };
         setCategories((prev) => {
           const updated = [...prev, newCat];

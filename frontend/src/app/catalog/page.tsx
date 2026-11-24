@@ -15,6 +15,7 @@ import {
 import { useLanguage } from '@/context/language-context';
 import { createDynamicProductDetail, ProductDetail } from '@/data/products';
 import { ProductCard } from '@/components/storefront/product-card';
+import { getAllDescendantSlugs } from '@/data/category-taxonomy';
 
 function CatalogContent() {
   const { lang, t } = useLanguage();
@@ -124,13 +125,23 @@ function CatalogContent() {
     return base;
   }, [remoteCategories, allProducts]);
 
-  // High-performance search & category filtering with Department Rollups
+  // Recursive descendant slug rollup for smart hierarchical filtering
+  const matchingFilterSlugs = useMemo(() => {
+    if (selectedFilter === 'ALL') return null;
+    const slugs = getAllDescendantSlugs(selectedFilter, remoteCategories as any);
+    if (!slugs.includes(selectedFilter.toLowerCase())) {
+      slugs.push(selectedFilter.toLowerCase());
+    }
+    return new Set(slugs.map((s) => s.toLowerCase()));
+  }, [selectedFilter, remoteCategories]);
+
+  // High-performance search & category filtering with Recursive Department Rollups
   const filteredProducts = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
 
     return allProducts.filter((p) => {
-      // 1. Dynamic Category & Department Matching
-      if (selectedFilter !== 'ALL') {
+      // 1. Dynamic Recursive Category & Department Matching
+      if (selectedFilter !== 'ALL' && matchingFilterSlugs) {
         const filterKey = selectedFilter.toLowerCase().trim();
         const rawCat = (p as any).category;
         const catName = (typeof rawCat === 'object' && rawCat
@@ -143,70 +154,22 @@ function CatalogContent() {
         const titleLower = (p.titleEn || '').toLowerCase();
         const purposeLower = (p.purposeTagEn || '').toLowerCase();
 
-        // Department Rollup Checks (Supports All Skin Care, All Body Care, etc.)
-        const isSkincareProduct =
-          catName.includes('sun') || catName.includes('toner') || catName.includes('ampoule') ||
-          catName.includes('essence') || catName.includes('pad') || catName.includes('moistur') ||
-          catName.includes('cream') || catName.includes('serum') || catName.includes('cleanse') ||
-          catName.includes('foam') || catName.includes('mask') || catName.includes('peel') ||
-          catName.includes('skin') ||
-          catSlug.includes('sun') || catSlug.includes('toner') || catSlug.includes('ampoule') ||
-          catSlug.includes('essence') || catSlug.includes('pad') || catSlug.includes('moistur') ||
-          catSlug.includes('cream') || catSlug.includes('serum') || catSlug.includes('cleanse') ||
-          catSlug.includes('foam') || catSlug.includes('mask') || catSlug.includes('peel') ||
-          catSlug.includes('skin') ||
-          titleLower.includes('sun') || titleLower.includes('toner') || titleLower.includes('ampoule') ||
-          titleLower.includes('essence') || titleLower.includes('pad') || titleLower.includes('cream') ||
-          titleLower.includes('serum') || titleLower.includes('cleanser');
+        // 1. Recursive Tree Rollup Match (Matches category itself or any descendant category)
+        const matchesRecursiveTree =
+          matchingFilterSlugs.has(catSlug) ||
+          matchingFilterSlugs.has(catName) ||
+          (catId !== '' && matchingFilterSlugs.has(catId));
 
-        const isBodyProduct =
-          catName.includes('body') || catName.includes('lotion') || catName.includes('scrub') ||
-          catName.includes('wash') || catName.includes('shower') || catName.includes('bath') ||
-          catSlug.includes('body') || catSlug.includes('lotion') || catSlug.includes('scrub') ||
-          catSlug.includes('wash') || catSlug.includes('shower') || catSlug.includes('bath') ||
-          titleLower.includes('body') || titleLower.includes('shower') || titleLower.includes('lotion');
-
-        const isHairProduct =
-          catName.includes('hair') || catName.includes('scalp') || catName.includes('shampoo') ||
-          catName.includes('conditioner') ||
-          catSlug.includes('hair') || catSlug.includes('scalp') || catSlug.includes('shampoo') ||
-          titleLower.includes('hair') || titleLower.includes('scalp') || titleLower.includes('shampoo');
-
-        const isMakeupProduct =
-          catName.includes('makeup') || catName.includes('eye') || catName.includes('lip') ||
-          catSlug.includes('makeup') || catSlug.includes('eye') || catSlug.includes('lip') ||
-          titleLower.includes('eyeliner') || titleLower.includes('lipstick') || titleLower.includes('lip balm');
-
-        const isBabyProduct =
-          catName.includes('baby') || catName.includes('kids') ||
-          catSlug.includes('baby') || catSlug.includes('kids') ||
-          titleLower.includes('baby');
-
-        let matchesDepartment = false;
-        if (filterKey === 'skincare' || filterKey === 'skin-care' || filterKey === 'skin') {
-          matchesDepartment = isSkincareProduct;
-        } else if (filterKey === 'body' || filterKey === 'bodycare' || filterKey === 'body-care') {
-          matchesDepartment = isBodyProduct;
-        } else if (filterKey === 'hair' || filterKey === 'haircare') {
-          matchesDepartment = isHairProduct;
-        } else if (filterKey === 'makeup') {
-          matchesDepartment = isMakeupProduct;
-        } else if (filterKey === 'baby' || filterKey === 'babycare') {
-          matchesDepartment = isBabyProduct;
-        }
-
-        // Direct Subcategory or Exact Match
+        // 2. Fallback Direct Subcategory or Keyword Match
         const matchesDirect =
           catSlug === filterKey ||
           catName === filterKey ||
           (catId !== '' && catId === filterKey) ||
           (catName !== '' && filterKey !== '' && (catName.includes(filterKey) || filterKey.includes(catName))) ||
           (catSlug !== '' && filterKey !== '' && (catSlug.includes(filterKey) || filterKey.includes(catSlug))) ||
-          // Robust keyword matching (e.g. "sunscreen" matches "Sun Stick", "Sun Serum", "Sunscreen")
-          (filterKey === 'sunscreen' && (catName.includes('sun') || titleLower.includes('sun') || purposeLower.includes('uv') || purposeLower.includes('sun'))) ||
           (filterKey.length >= 4 && (titleLower.includes(filterKey) || purposeLower.includes(filterKey)));
 
-        if (!matchesDepartment && !matchesDirect) {
+        if (!matchesRecursiveTree && !matchesDirect) {
           return false;
         }
       }

@@ -86,6 +86,7 @@ export default function AdminCatalogDeskPage() {
   const [catNameEn, setCatNameEn] = useState('');
   const [catNameBn, setCatNameBn] = useState('');
   const [catSlug, setCatSlug] = useState('');
+  const [catParentId, setCatParentId] = useState<string>('');
   const [catIcon, setCatIcon] = useState('Sparkles');
 
   // Product Modal State
@@ -265,6 +266,7 @@ export default function AdminCatalogDeskPage() {
       iconName: catIcon,
       sortOrder: categories.length + 1,
       isActive: true,
+      parentId: catParentId ? catParentId : null,
     });
 
     setIsCategoryModalOpen(false);
@@ -273,6 +275,7 @@ export default function AdminCatalogDeskPage() {
     setCatNameEn('');
     setCatNameBn('');
     setCatSlug('');
+    setCatParentId('');
   };
 
   const generateSlug = (brand: string, title: string): string => {
@@ -1264,49 +1267,78 @@ export default function AdminCatalogDeskPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((c) => (
-              <div key={c.id} className="p-5 bg-white border border-[#E6DFD5] rounded-lg space-y-2.5 shadow-xs hover:border-[#C7A97B]/60 transition-colors relative group">
-                <div className="flex items-start justify-between pb-2 border-b border-[#E6DFD5] gap-2">
-                  <span className="text-xs uppercase font-mono tracking-wider font-bold text-[#1C1917]">
-                    {c.nameEn}
-                  </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="px-1.5 py-0.5 bg-[#C7A97B]/20 text-[#8C6D3B] text-[10px] font-mono font-bold rounded">
-                      #{c.sortOrder}
-                    </span>
-                    <button
-                      type="button"
-                      title="Delete category permanently from database"
-                      onClick={async () => {
-                        if (confirm(`Are you sure you want to delete category "${c.nameEn}" from the PostgreSQL database?`)) {
-                          const ok = await deleteCategory(c.id);
-                          if (ok) {
-                            setToastMessage(`✅ Category "${c.nameEn}" deleted permanently from database.`);
-                          } else {
-                            setToastMessage(`❌ Could not delete category "${c.nameEn}".`);
+            {categories.map((c) => {
+              const parentCat = categories.find((p) => p.id === c.parentId);
+              const isLevel1 = !c.parentId;
+              const isLevel2 = parentCat && !parentCat.parentId;
+              const isLevel3 = parentCat && parentCat.parentId;
+              const levelLabel = isLevel1 ? 'L1: Department' : isLevel2 ? 'L2: Subcategory' : 'L3: Micro-Type';
+              const levelColor = isLevel1 ? 'bg-amber-100 text-amber-900 border-amber-300' : isLevel2 ? 'bg-sky-100 text-sky-900 border-sky-300' : 'bg-purple-100 text-purple-900 border-purple-300';
+
+              return (
+                <div key={c.id} className="p-4 bg-white border border-[#E6DFD5] rounded-lg space-y-2 shadow-xs hover:border-[#C7A97B]/60 transition-colors relative group">
+                  <div className="flex items-start justify-between pb-2 border-b border-[#E6DFD5] gap-2">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`px-1.5 py-0.2 text-[8px] font-mono uppercase font-bold rounded border ${levelColor}`}>
+                          {levelLabel}
+                        </span>
+                        {parentCat && (
+                          <span className="text-[9px] text-[#8C6D3B] font-mono truncate max-w-[120px]">
+                            under {parentCat.nameEn}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs uppercase font-mono tracking-wider font-bold text-[#1C1917] block mt-1">
+                        {c.nameEn}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        title={`Add subcategory under ${c.nameEn}`}
+                        onClick={() => {
+                          setCatParentId(c.id);
+                          setIsCategoryModalOpen(true);
+                        }}
+                        className="px-2 py-0.5 text-[10px] font-mono text-[#8C6D3B] bg-[#FAF8F5] border border-[#C7A97B]/40 hover:bg-[#C7A97B]/20 rounded transition-colors cursor-pointer"
+                      >
+                        + Sub
+                      </button>
+                      <button
+                        type="button"
+                        title="Delete category permanently from database"
+                        onClick={async () => {
+                          if (confirm(`Are you sure you want to delete category "${c.nameEn}" from the PostgreSQL database?`)) {
+                            const ok = await deleteCategory(c.id);
+                            if (ok) {
+                              setToastMessage(`✅ Category "${c.nameEn}" deleted permanently from database.`);
+                            } else {
+                              setToastMessage(`❌ Could not delete category "${c.nameEn}".`);
+                            }
+                            setTimeout(() => setToastMessage(null), 3500);
                           }
-                          setTimeout(() => setToastMessage(null), 3500);
-                        }
-                      }}
-                      className="p-1 text-[#1C1917]/40 hover:text-rose-600 transition-colors rounded hover:bg-rose-50"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                        }}
+                        className="p-1 text-[#1C1917]/40 hover:text-rose-600 transition-colors rounded hover:bg-rose-50 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-xs font-bangla text-[#1C1917]/70 font-medium">{c.nameBn}</div>
+                  <div className="text-[10px] font-mono text-[#1C1917]/50">Slug: /{c.slug}</div>
+                  <div className="pt-1 flex items-center justify-between text-[10px] font-mono">
+                    <span className="text-emerald-700 font-medium flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Active on Storefront
+                    </span>
+                    <span className="text-[#1C1917]/40">
+                      {c.productCount || 0} products
+                    </span>
                   </div>
                 </div>
-                <div className="text-xs font-bangla text-[#1C1917]/70 font-medium">{c.nameBn}</div>
-                <div className="text-[10px] font-mono text-[#1C1917]/50">Slug: /{c.slug}</div>
-                <div className="pt-2 flex items-center justify-between text-[10px] font-mono">
-                  <span className="text-emerald-700 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Active on Storefront
-                  </span>
-                  <span className="text-[#1C1917]/40">
-                    {c.productCount || 0} products
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -1318,24 +1350,52 @@ export default function AdminCatalogDeskPage() {
             <h2 className="font-serif text-lg font-medium text-[#1C1917]">Add New Hierarchical Category</h2>
             <form onSubmit={handleCreateCategory} className="space-y-3 text-xs font-mono">
               <div className="space-y-1">
+                <label className="text-[10px] text-[#1C1917]/70 uppercase font-bold text-[#8C6D3B]">
+                  Parent Category (Hierarchy Level)
+                </label>
+                <select
+                  value={catParentId}
+                  onChange={(e) => setCatParentId(e.target.value)}
+                  className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none text-xs"
+                >
+                  <option value="">None (Root Department — Level 1)</option>
+                  {categories.filter((c) => !c.parentId).map((root) => (
+                    <React.Fragment key={root.id}>
+                      <option value={root.id}>
+                        📁 {root.nameEn} (Level 1)
+                      </option>
+                      {categories.filter((c) => c.parentId === root.id).map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          &nbsp;&nbsp;&nbsp;&nbsp;└─ 📂 {sub.nameEn} (Level 2)
+                        </option>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </select>
+                <p className="text-[9px] text-[#8C6D3B] font-mono">
+                  Select "None" for Main Departments (e.g. Skin Care), or choose a parent to create subcategories.
+                </p>
+              </div>
+
+              <div className="space-y-1">
                 <label className="text-[10px] text-[#1C1917]/70 uppercase">Category Title (English)</label>
                 <input
                   type="text"
                   required
                   value={catNameEn}
                   onChange={(e) => setCatNameEn(e.target.value)}
-                  placeholder="e.g. Eye Creams & Peptides"
+                  placeholder="e.g. Cleansing Oil"
                   className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-[#1C1917]/70 uppercase">Category Subtitle / Alias (Optional)</label>
+                <label className="text-[10px] text-[#1C1917]/70 uppercase">Category Bengali / Subtitle (Optional)</label>
                 <input
                   type="text"
                   value={catNameBn}
                   onChange={(e) => setCatNameBn(e.target.value)}
-                  placeholder="e.g. Targeted Eye Treatment"
+                  placeholder="e.g. ক্লিনজিং অয়েল"
                   className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
                 />
               </div>
@@ -1346,7 +1406,7 @@ export default function AdminCatalogDeskPage() {
                   type="text"
                   value={catSlug}
                   onChange={(e) => setCatSlug(e.target.value)}
-                  placeholder="e.g. eye-creams-peptides"
+                  placeholder="e.g. cleansing-oil"
                   className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none"
                 />
               </div>
@@ -1354,14 +1414,17 @@ export default function AdminCatalogDeskPage() {
               <div className="pt-3 flex items-center justify-end space-x-2">
                 <button
                   type="button"
-                  onClick={() => setIsCategoryModalOpen(false)}
-                  className="px-3 py-1.5 border border-[#E6DFD5] rounded text-xs"
+                  onClick={() => {
+                    setIsCategoryModalOpen(false);
+                    setCatParentId('');
+                  }}
+                  className="px-3 py-1.5 border border-[#E6DFD5] rounded text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-[#1C1917] text-[#F9F6F0] rounded font-semibold uppercase tracking-wider text-xs"
+                  className="px-4 py-1.5 bg-[#1C1917] text-[#F9F6F0] rounded font-semibold uppercase tracking-wider text-xs cursor-pointer hover:bg-[#2A2623]"
                 >
                   Create Category
                 </button>
@@ -1627,10 +1690,24 @@ export default function AdminCatalogDeskPage() {
                         }}
                         className="w-full p-2 bg-[#F9F6F0] border border-[#E6DFD5] rounded focus:border-[#C7A97B] focus:outline-none text-xs"
                       >
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.nameEn}>
-                            {c.nameEn}
-                          </option>
+                        {categories.filter((c) => !c.parentId).map((root) => (
+                          <React.Fragment key={root.id}>
+                            <option value={root.nameEn} className="font-bold text-[#1C1917]">
+                              📁 {root.nameEn} (Level 1)
+                            </option>
+                            {categories.filter((c) => c.parentId === root.id).map((sub) => (
+                              <React.Fragment key={sub.id}>
+                                <option value={sub.nameEn} className="text-[#8C6D3B]">
+                                  &nbsp;&nbsp;&nbsp;&nbsp;└─ 📂 {sub.nameEn} (Level 2)
+                                </option>
+                                {categories.filter((c) => c.parentId === sub.id).map((micro) => (
+                                  <option key={micro.id} value={micro.nameEn} className="text-stone-600">
+                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── 📄 {micro.nameEn} (Level 3)
+                                  </option>
+                                ))}
+                              </React.Fragment>
+                            ))}
+                          </React.Fragment>
                         ))}
                       </select>
                     </div>

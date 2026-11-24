@@ -1,254 +1,132 @@
-export interface CategoryNode {
+export interface DynamicCategoryNode {
   id: string;
   slug: string;
   nameEn: string;
   nameBn?: string;
-  children?: CategoryNode[];
+  parentId?: string | null;
+  children?: DynamicCategoryNode[];
 }
 
-export interface DepartmentNode {
-  id: string;
-  slug: string;
-  nameEn: string;
-  nameBn?: string;
-  children: CategoryNode[];
-}
+export type CategoryNode = DynamicCategoryNode;
 
 /**
- * High-End Luxury Department Taxonomy:
- * Aligns with international beauty houses and reference standard (Ravissa).
- * Groups subcategories into elegant, scalable macro departments.
+ * Formats all-caps or slugged category names into elegant Title Case (e.g. "CLEANSER" -> "Cleanser")
  */
-export const LUXURY_DEPARTMENTS: Array<{
-  id: string;
-  slug: string;
-  nameEn: string;
-  nameBn: string;
-  keywords: string[];
-  defaultChildren: CategoryNode[];
-}> = [
-  {
-    id: 'dept-skincare',
-    slug: 'skincare',
-    nameEn: 'SKIN CARE',
-    nameBn: 'স্কিন কেয়ার',
-    keywords: [
-      'sun', 'sunscreen', 'suncream', 'sun stick', 'uv',
-      'toner', 'essence', 'ampoule', 'serum',
-      'pad', 'calming pad', 'peeling pad',
-      'moisturizer', 'cream', 'gel cream', 'barrier',
-      'cleanse', 'cleanser', 'foam', 'cleansing oil', 'cleansing balm', 'face wash',
-      'mask', 'sheet mask', 'sleeping pack',
-      'exfoliat', 'peel', 'scrub', 'aha', 'bha',
-      'eye', 'eye cream', 'lip', 'lip balm',
-      'skin', 'skincare',
-    ],
-    defaultChildren: [
-      { id: 'cleanser', slug: 'cleanser', nameEn: 'Cleanser' },
-      { id: 'toner', slug: 'toner', nameEn: 'Toner' },
-      { id: 'ampoule', slug: 'ampoule', nameEn: 'Ampoule' },
-      { id: 'essence', slug: 'essence', nameEn: 'Essence' },
-      { id: 'serum', slug: 'serum', nameEn: 'Serum' },
-      { id: 'moisturizer', slug: 'moisturizer', nameEn: 'Moisturizer' },
-      { id: 'sunscreen', slug: 'sunscreen', nameEn: 'Sunscreen' },
-      { id: 'pad', slug: 'pad', nameEn: 'Pad' },
-    ],
-  },
-  {
-    id: 'dept-bodycare',
-    slug: 'body',
-    nameEn: 'BODY CARE',
-    nameBn: 'বডি কেয়ার',
-    keywords: [
-      'body', 'lotion', 'body lotion', 'milk',
-      'body scrub', 'polish', 'body wash', 'shower',
-      'shower gel', 'bath', 'hand', 'hand cream', 'foot',
-    ],
-    defaultChildren: [
-      { id: 'body-lotion', slug: 'body-lotion', nameEn: 'Body Lotion' },
-      { id: 'body-scrub', slug: 'body-scrub', nameEn: 'Body Scrub' },
-      { id: 'shower-gel', slug: 'shower-gel', nameEn: 'Shower Gel' },
-      { id: 'hand-foot', slug: 'hand-cream', nameEn: 'Hand & Foot Care' },
-    ],
-  },
-  {
-    id: 'dept-haircare',
-    slug: 'hair',
-    nameEn: 'HAIR CARE',
-    nameBn: 'হেয়ার কেয়ার',
-    keywords: [
-      'hair', 'scalp', 'shampoo', 'conditioner', 'hair mask',
-      'hair serum', 'hair oil', 'follicle',
-    ],
-    defaultChildren: [
-      { id: 'scalp-care', slug: 'scalp-care', nameEn: 'Scalp Care' },
-      { id: 'hair-oil-serum', slug: 'hair-serum', nameEn: 'Hair Serum & Oil' },
-      { id: 'hair-mask', slug: 'hair-mask', nameEn: 'Hair Mask' },
-    ],
-  },
-  {
-    id: 'dept-makeup',
-    slug: 'makeup',
-    nameEn: 'MAKEUP',
-    nameBn: 'মেকআপ',
-    keywords: [
-      'makeup', 'eyeliner', 'kajal', 'mascara',
-      'lip tint', 'lipstick', 'tint', 'lip balm',
-      'cushion', 'foundation', 'concealer', 'bb cream',
-    ],
-    defaultChildren: [
-      { id: 'eyeliner', slug: 'eyeliner', nameEn: 'Eyeliner & Kajal' },
-      { id: 'lip-tint', slug: 'lip-tint', nameEn: 'Lip Tint & Balm' },
-    ],
-  },
-  {
-    id: 'dept-babycare',
-    slug: 'baby',
-    nameEn: 'BABY CARE',
-    nameBn: 'বেবি কেয়ার',
-    keywords: ['baby', 'infant', 'toddler', 'kids', 'baby lotion', 'baby wash'],
-    defaultChildren: [
-      { id: 'baby-lotion', slug: 'baby-lotion', nameEn: 'Baby Lotion & Cream' },
-      { id: 'baby-wash', slug: 'baby-wash', nameEn: 'Baby Wash & Shampoo' },
-    ],
-  },
-  {
-    id: 'dept-fragrance',
-    slug: 'fragrance',
-    nameEn: 'FRAGRANCE',
-    nameBn: 'সুগন্ধি',
-    keywords: ['fragrance', 'perfume', 'parfum', 'attar', 'mist', 'body mist', 'scent'],
-    defaultChildren: [
-      { id: 'body-mist', slug: 'body-mist', nameEn: 'Body Mist & Spray' },
-      { id: 'perfume', slug: 'perfume', nameEn: 'Eau De Parfum' },
-    ],
-  },
-  {
-    id: 'dept-sets',
-    slug: 'sets',
-    nameEn: 'SETS & BUNDLES',
-    nameBn: 'সেটস ও বান্ডেল',
-    keywords: ['set', 'bundle', 'kit', 'combo', 'vault', 'routine', 'gift', 'complimentary'],
-    defaultChildren: [
-      { id: 'routine-sets', slug: 'routine-sets', nameEn: 'AM/PM Routine Sets' },
-      { id: 'vip-gift-vault', slug: 'gift-vault', nameEn: 'VIP Gift Vault' },
-    ],
-  },
-];
-
-/**
- * Dynamic Department Builder:
- * Takes categories and products from the database, and intelligently
- * groups them into departments so the UI remains pristine, scalable,
- * and perfectly organized like Ravissa.
- */
-export function buildDepartmentTaxonomy(
-  dbCategories: Array<any> = [],
-  dbProducts: Array<any> = [],
-): CategoryNode[] {
-  // Collect all distinct category items from both database categories table and live products
-  const categoryMap = new Map<string, { slug: string; nameEn: string; nameBn?: string }>();
-
-  // 1. Ingest database categories
-  if (Array.isArray(dbCategories)) {
-    dbCategories.forEach((c) => {
-      if (!c) return;
-      const slug = (c.slug || c.id || '').toLowerCase().trim();
-      if (!slug) return;
-      categoryMap.set(slug, {
-        slug,
-        nameEn: c.nameEn || c.slug,
-        nameBn: c.nameBn,
-      });
-    });
-  }
-
-  // 2. Ingest products' categories
-  if (Array.isArray(dbProducts)) {
-    dbProducts.forEach((p) => {
-      if (!p) return;
-      const rawCat = p.category;
-      const catName = typeof rawCat === 'object' && rawCat ? (rawCat.nameEn || rawCat.slug) : String(rawCat || '');
-      const catSlug = typeof rawCat === 'object' && rawCat ? (rawCat.slug || rawCat.id) : catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      if (catName && catName !== 'Curated Formulation' && !categoryMap.has(catSlug.toLowerCase())) {
-        categoryMap.set(catSlug.toLowerCase(), {
-          slug: catSlug.toLowerCase(),
-          nameEn: catName,
-          nameBn: typeof rawCat === 'object' && rawCat?.nameBn ? rawCat.nameBn : catName,
-        });
-      }
-    });
-  }
-
-  // Track which DB categories were claimed by departments
-  const assignedCategories = new Set<string>();
-
-  // Build the department tree
-  const departments: CategoryNode[] = LUXURY_DEPARTMENTS.map((dept) => {
-    const matchedChildren: CategoryNode[] = [];
-    const childSlugs = new Set<string>();
-
-    // Check every DB category against department keywords
-    categoryMap.forEach((item, slug) => {
-      const lowerName = item.nameEn.toLowerCase();
-      const lowerSlug = slug.toLowerCase();
-
-      const isMatch = dept.keywords.some((kw) => lowerName.includes(kw) || lowerSlug.includes(kw));
-      if (isMatch) {
-        assignedCategories.add(slug);
-        if (!childSlugs.has(slug)) {
-          childSlugs.add(slug);
-          matchedChildren.push({
-            id: `cat-${slug}`,
-            slug: item.slug,
-            nameEn: formatCategoryDisplayName(item.nameEn),
-            nameBn: item.nameBn,
-          });
-        }
-      }
-    });
-
-    // If no DB categories were matched for this department, fall back to pristine default subcategories
-    const finalChildren = matchedChildren.length > 0 ? matchedChildren : dept.defaultChildren;
-
-    return {
-      id: dept.id,
-      slug: dept.slug,
-      nameEn: dept.nameEn,
-      nameBn: dept.nameBn,
-      children: finalChildren,
-    };
-  });
-
-  // Any remaining DB categories that didn't match standard department keywords
-  // will appear gracefully as their own top-level department rows
-  categoryMap.forEach((item, slug) => {
-    if (!assignedCategories.has(slug)) {
-      departments.push({
-        id: `custom-cat-${slug}`,
-        slug: item.slug,
-        nameEn: formatCategoryDisplayName(item.nameEn).toUpperCase(),
-        nameBn: item.nameBn,
-      });
-    }
-  });
-
-  return departments;
-}
-
-/**
- * Formats all-caps or slugged category names into elegant Title Case (e.g., "SUNSCREEN" -> "Sunscreen")
- */
-function formatCategoryDisplayName(name: string): string {
+export function formatCategoryTitle(name: string): string {
   if (!name) return '';
-  // If already mixed case, keep it
   if (name !== name.toUpperCase() && name !== name.toLowerCase()) {
     return name;
   }
-  // Convert "SUNSCREEN" -> "Sunscreen", "TONER & ESSENCE" -> "Toner & Essence"
   return name
     .toLowerCase()
     .split(' ')
     .map((word) => (word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1) : ''))
     .join(' ');
+}
+
+/**
+ * Builds a 100% Dynamic 3-Level Category Tree from database categories.
+ * Supports arbitrary depth: Level 1 (Department) -> Level 2 (Subcategory) -> Level 3 (Micro-Type).
+ * If the API returns flat categories or nested categories, this seamlessly resolves both!
+ */
+export function buildDynamicCategoryHierarchy(
+  dbCategories: Array<any> = [],
+): DynamicCategoryNode[] {
+  if (!Array.isArray(dbCategories) || dbCategories.length === 0) {
+    return [];
+  }
+
+  // 1. Check if backend already returned a nested tree (roots have .children)
+  const isPreNested = dbCategories.some((c) => c && Array.isArray(c.children) && c.children.length > 0);
+
+  if (isPreNested) {
+    const mapNode = (node: any): DynamicCategoryNode => ({
+      id: node.id || node.slug,
+      slug: (node.slug || node.id || '').toLowerCase(),
+      nameEn: node.nameEn || node.slug,
+      nameBn: node.nameBn,
+      parentId: node.parentId || null,
+      children: Array.isArray(node.children) && node.children.length > 0
+        ? node.children.map(mapNode)
+        : undefined,
+    });
+
+    return dbCategories
+      .filter((c) => c && (!c.parentId || c.parentId === 'null'))
+      .map(mapNode);
+  }
+
+  // 2. If backend returned flat list, assemble the tree recursively using parentId
+  const nodeMap = new Map<string, DynamicCategoryNode & { children: DynamicCategoryNode[] }>();
+  
+  dbCategories.forEach((c) => {
+    if (!c) return;
+    const id = c.id || c.slug;
+    nodeMap.set(id, {
+      id,
+      slug: (c.slug || id).toLowerCase(),
+      nameEn: c.nameEn || c.slug,
+      nameBn: c.nameBn,
+      parentId: c.parentId || null,
+      children: [],
+    });
+  });
+
+  const roots: DynamicCategoryNode[] = [];
+
+  nodeMap.forEach((node) => {
+    if (node.parentId && nodeMap.has(node.parentId)) {
+      nodeMap.get(node.parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  // Clean up empty children arrays
+  const finalizeNode = (n: DynamicCategoryNode & { children: DynamicCategoryNode[] }): DynamicCategoryNode => ({
+    id: n.id,
+    slug: n.slug,
+    nameEn: n.nameEn,
+    nameBn: n.nameBn,
+    parentId: n.parentId,
+    children: n.children.length > 0 ? n.children.map((c) => finalizeNode(c as any)) : undefined,
+  });
+
+  return roots.map((r) => finalizeNode(r as any));
+}
+
+/**
+ * Collects all descendant slugs from a category node (including itself, children, grandchildren).
+ * Used for smart recursive catalog rollup filtering.
+ */
+export function getAllDescendantSlugs(
+  targetSlugOrId: string,
+  categories: DynamicCategoryNode[],
+): string[] {
+  const result: string[] = [];
+  const targetLower = targetSlugOrId.toLowerCase().trim();
+
+  function findAndCollect(nodes: DynamicCategoryNode[]): boolean {
+    for (const node of nodes) {
+      if (node.slug.toLowerCase() === targetLower || node.id.toLowerCase() === targetLower) {
+        collectAll(node);
+        return true;
+      }
+      if (node.children && findAndCollect(node.children)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function collectAll(node: DynamicCategoryNode) {
+    result.push(node.slug.toLowerCase());
+    result.push(node.nameEn.toLowerCase());
+    if (node.children) {
+      node.children.forEach(collectAll);
+    }
+  }
+
+  findAndCollect(categories);
+  return result;
 }

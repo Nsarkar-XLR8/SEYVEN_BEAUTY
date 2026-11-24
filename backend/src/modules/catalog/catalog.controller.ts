@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -66,10 +67,19 @@ export class CatalogController {
   }
 
   @Get('categories')
-  @ApiOperation({ summary: 'List hierarchical category tree' })
-  @ApiResponse({ status: 200, description: 'Category tree retrieved successfully' })
-  listCategories() {
-    return this.catalogService.listCategories();
+  @ApiOperation({ summary: 'List hierarchical category tree or flat list' })
+  @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
+  listCategories(@Query('flat') flat?: string) {
+    const isFlat = flat === 'true' || flat === '1';
+    return this.catalogService.listCategories(isFlat);
+  }
+
+  @Put('categories/:id')
+  @ApiOperation({ summary: 'Update a product category and its hierarchy' })
+  @ApiParam({ name: 'id', description: 'Category ID or Slug' })
+  @ApiResponse({ status: 200, description: 'Category updated successfully' })
+  updateCategory(@Param('id') id: string, @Body() dto: Partial<CreateCategoryDto>) {
+    return this.catalogService.updateCategory(id, dto);
   }
 
   @Delete('categories/:id')

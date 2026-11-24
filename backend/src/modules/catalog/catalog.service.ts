@@ -45,13 +45,15 @@ export class CatalogService {
       throw new BadRequestException(`Category with slug "${dto.slug}" already exists`);
     }
 
+    const resolvedParentId = dto.parentId && dto.parentId.trim() !== '' ? dto.parentId.trim() : null;
+
     const category = await this.prisma.category.create({
       data: {
         slug: dto.slug,
         nameEn: dto.nameEn,
         nameBn: dto.nameBn,
         description: dto.description,
-        parentId: dto.parentId,
+        parentId: resolvedParentId,
       },
     });
 
@@ -61,8 +63,55 @@ export class CatalogService {
     return category;
   }
 
-  async listCategories() {
-    // 1. Check Redis distributed cache
+  async updateCategory(idOrSlug: string, dto: Partial<CreateCategoryDto>) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+    const existing = await this.prisma.category.findFirst({
+      where: isUuid ? { id: idOrSlug } : { slug: idOrSlug },
+    });
+    if (!existing) {
+      throw new NotFoundException(`Category with identifier "${idOrSlug}" not found`);
+    }
+
+    const resolvedParentId = dto.parentId !== undefined
+      ? (dto.parentId && dto.parentId.trim() !== '' ? dto.parentId.trim() : null)
+      : undefined;
+
+    const updated = await this.prisma.category.update({
+      where: { id: existing.id },
+      data: {
+        ...(dto.slug ? { slug: dto.slug } : {}),
+        ...(dto.nameEn ? { nameEn: dto.nameEn } : {}),
+        ...(dto.nameBn ? { nameBn: dto.nameBn } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(resolvedParentId !== undefined ? { parentId: resolvedParentId } : {}),
+      },
+      include: {
+        children: {
+          include: {
+            children: true,
+          },
+        },
+      },
+    });
+
+    await this.redis.del(this.CACHE_CATEGORIES_ALL).catch(() => {});
+    await this.navigationService.invalidateCatalogCaches();
+    return updated;
+  }
+
+  async listCategories(flat: boolean = false) {
+    if (flat) {
+      try {
+        return await this.prisma.category.findMany({
+          orderBy: [{ createdAt: 'asc' }],
+        });
+      } catch (err: any) {
+        this.logger.warn(`[Flat Categories DB Notice] ${err?.message || err}`);
+        return [];
+      }
+    }
+
+    // 1. Check Redis distributed cache for hierarchical tree
     try {
       const cached = await this.redis.get(this.CACHE_CATEGORIES_ALL);
       if (cached) {
@@ -70,14 +119,21 @@ export class CatalogService {
       }
     } catch {}
 
-    // 2. Primary Source of Truth: Supabase PostgreSQL
+    // 2. Primary Source of Truth: Supabase PostgreSQL (3-Level Deep Nesting for Ravissa Standard)
     try {
       const categories = await this.prisma.category.findMany({
-        include: {
-          children: true,
-        },
         where: {
           parentId: null,
+        },
+        include: {
+          children: {
+            include: {
+              children: {
+                orderBy: { createdAt: 'asc' },
+              },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
         },
         orderBy: { createdAt: 'asc' },
       });

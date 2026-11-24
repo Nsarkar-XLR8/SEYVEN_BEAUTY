@@ -115,27 +115,45 @@ export class QuickTrackingService {
       }
     }
 
-    // Build timeline milestones
+    // Build timeline milestones with realistic chronological progression
     const currentStatusIndex = QuickTrackingService.MILESTONE_STEPS.findIndex(
       (m) => m.status === order.status,
     );
+
+    const createdTime = order.createdAt ? new Date(order.createdAt).getTime() : Date.now();
+    const updatedTime = order.updatedAt ? new Date(order.updatedAt).getTime() : createdTime;
+    const totalTimeSpan = Math.max(0, updatedTime - createdTime);
 
     const milestones: QuickTrackMilestone[] = QuickTrackingService.MILESTONE_STEPS.map(
       (milestone, index) => {
         const isCompleted = currentStatusIndex !== -1 && index <= currentStatusIndex;
         const isCurrent = currentStatusIndex !== -1 && index === currentStatusIndex;
+
+        let computedTimestamp: string | null = null;
+        if (isCompleted) {
+          if (index === 0) {
+            computedTimestamp = new Date(createdTime).toISOString();
+          } else if (isCurrent) {
+            computedTimestamp = new Date(updatedTime).toISOString();
+          } else if (currentStatusIndex > 0) {
+            // Distribute elapsed time logically across intermediary completed milestones
+            const progressRatio = index / currentStatusIndex;
+            const intermediateTime = totalTimeSpan > 60000
+              ? createdTime + totalTimeSpan * progressRatio
+              : createdTime + index * 3600000; // minimum 1 hr gap if updated immediately
+            computedTimestamp = new Date(intermediateTime).toISOString();
+          } else {
+            computedTimestamp = new Date(createdTime).toISOString();
+          }
+        }
+
         return {
           step: milestone.step,
           label: milestone.label,
           labelBn: milestone.labelBn,
           isCompleted,
           isCurrent,
-          timestamp: isCompleted
-            ? (
-                (isCurrent ? order.updatedAt : order.createdAt) ||
-                order.createdAt
-              )?.toISOString?.() || null
-            : null,
+          timestamp: computedTimestamp,
         };
       },
     );

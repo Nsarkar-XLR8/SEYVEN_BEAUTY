@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Package, Truck, CheckCircle2, Clock, ShieldCheck, ExternalLink, AlertCircle, Phone, ArrowRight, RotateCcw } from 'lucide-react';
+import { Search, Package, Truck, CheckCircle2, Clock, ShieldCheck, ExternalLink, AlertCircle, Phone, ArrowRight, RotateCcw, Copy, Check } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { useCart } from '@/context/cart-context';
 import { BRAND } from '@/lib/constants';
@@ -52,6 +52,15 @@ export function OrderTrackerView() {
   const [isSearching, setIsSearching] = useState(false);
   const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
+
+  const copyConsignment = (code: string) => {
+    if (!code || typeof navigator === 'undefined') return;
+    navigator.clipboard.writeText(code).then(() => {
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }).catch(() => {});
+  };
 
   // Auto-search if URL orderId is present
   useEffect(() => {
@@ -86,9 +95,11 @@ export function OrderTrackerView() {
           consignmentId: res.trackingCode || res.courierBookingId || 'Assigned on Dispatch',
           courierTrackingUrl:
             res.trackingCode || res.courierBookingId
-              ? (res.trackingUrl && !res.trackingUrl.includes('merchant.pathao.com')
+              ? (res.trackingUrl && !res.trackingUrl.includes('pathao.com/track/')
                   ? res.trackingUrl
-                  : `https://pathao.com/track/?consignment_id=${encodeURIComponent(res.trackingCode || res.courierBookingId)}`)
+                  : (res.courierName?.toLowerCase().includes('steadfast')
+                      ? `https://steadfast.com.bd/t/${encodeURIComponent(res.trackingCode || res.courierBookingId)}`
+                      : `https://merchant.pathao.com/tracking?consignment_id=${encodeURIComponent(res.trackingCode || res.courierBookingId)}`))
               : '',
           currentState: (['PLACED', 'CONFIRMED', 'PACKED', 'DISPATCHED', 'DELIVERED'].includes(res.status)
             ? res.status
@@ -152,7 +163,9 @@ export function OrderTrackerView() {
           consignmentId: match.consignmentId || 'Assigned on Dispatch',
           courierTrackingUrl:
             match.consignmentId && match.consignmentId !== 'Assigned on Dispatch'
-              ? (match.courierTrackingUrl || `https://pathao.com/track/?consignment_id=${encodeURIComponent(match.consignmentId)}`)
+              ? (match.courier?.toLowerCase().includes('steadfast')
+                  ? `https://steadfast.com.bd/t/${encodeURIComponent(match.consignmentId)}`
+                  : `https://merchant.pathao.com/tracking?consignment_id=${encodeURIComponent(match.consignmentId)}`)
               : '',
           currentState: (match.status as any) || 'PLACED',
           timeline: [
@@ -324,23 +337,41 @@ export function OrderTrackerView() {
                 </h2>
               </div>
 
-              {/* Courier link */}
-              <div className="flex items-center space-x-2 text-xs">
+              {/* Courier link and copy code */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
                 {trackingResult.courierTrackingUrl &&
                 trackingResult.consignmentId &&
                 trackingResult.consignmentId !== 'Assigned on Dispatch' ? (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#1C1917]/70 font-medium font-mono text-[11px]">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[#1C1917]/70 font-medium font-mono text-[11px] bg-[#E6DFD5]/30 px-2 py-1">
                       {trackingResult.courierName}: #{trackingResult.consignmentId}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => copyConsignment(trackingResult.consignmentId)}
+                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-white hover:bg-[#FAF8F5] border border-[#E6DFD5] text-[#1C1917] text-[9px] uppercase tracking-wider transition-colors cursor-pointer"
+                      title="Copy Tracking ID"
+                    >
+                      {copiedId ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span className="text-emerald-700 font-bold">COPIED</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3 text-stone-500" />
+                          <span>COPY</span>
+                        </>
+                      )}
+                    </button>
                     <a
                       href={trackingResult.courierTrackingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1 px-3 py-1 bg-[#1C1917] text-[#F9F6F0] text-[9px] uppercase tracking-wider hover:bg-[#C7A97B] transition-colors"
+                      className="group inline-flex items-center space-x-1 px-3 py-1 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-[9px] uppercase tracking-wider transition-all duration-300 shadow-sm rounded-none border-0"
                     >
                       <span>LIVE COURIER LINK</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3 h-3 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-colors" />
                     </a>
                   </div>
                 ) : (

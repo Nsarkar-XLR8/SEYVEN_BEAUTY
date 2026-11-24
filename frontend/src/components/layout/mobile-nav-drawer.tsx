@@ -346,29 +346,29 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
         {/* ========================================================================= */}
         {/* BOTTOM SECTION: VIP ACCOUNT & CONCIERGE CARE                              */}
         {/* ========================================================================= */}
-        <div className="p-4 bg-[#FAF8F5] border-t border-[#E6DFD5] space-y-3 shrink-0">
+        <div className="p-5 bg-[#F9F6F0] border-t border-[#E6DFD5]/70 space-y-4 shrink-0">
           {/* User Account / Sign In */}
           {mounted && isAuthenticated ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Link
                 href="/customer/account"
                 onClick={onClose}
-                className="flex items-center justify-between p-2.5 rounded bg-white border border-[#E6DFD5] hover:border-[#C7A97B] transition-colors"
+                className="flex items-center justify-between py-2 text-[#1C1917] hover:text-[#C7A97B] transition-colors group"
               >
-                <div className="flex items-center space-x-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-[#1C1917] text-[#C7A97B] flex items-center justify-center font-serif text-xs font-bold shrink-0">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className="w-7 h-7 rounded-full bg-[#1C1917] text-[#C7A97B] flex items-center justify-center font-serif text-xs font-bold shrink-0">
                     {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'S'}
                   </div>
                   <div className="min-w-0">
-                    <span className="block text-xs font-serif font-semibold text-[#1C1917] truncate">
-                      {user?.fullName || 'Sanctuary Client'}
+                    <span className="block text-xs font-medium uppercase tracking-[0.2em] text-[#1C1917] group-hover:text-[#C7A97B] transition-colors truncate">
+                      {user?.fullName || 'Client Account'}
                     </span>
                     <span className="block text-[9px] uppercase tracking-wider text-[#C7A97B] font-mono">
                       VIP Privilege Vault
                     </span>
                   </div>
                 </div>
-                <span className="text-[10px] text-[#C7A97B] font-mono font-bold tracking-wider">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-[#C7A97B] font-medium">
                   ENTER &rarr;
                 </span>
               </Link>
@@ -379,13 +379,13 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                   onClose();
                   await logout();
                 }}
-                className="w-full py-2 px-2.5 rounded bg-white hover:bg-rose-50 border border-[#E6DFD5] hover:border-rose-200 text-left flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-medium text-rose-700 transition-colors cursor-pointer"
+                className="w-full py-1 text-left flex items-center justify-between text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-stone-800 transition-colors cursor-pointer"
               >
                 <span className="flex items-center space-x-1.5">
-                  <LogOut className="w-3 h-3 text-rose-600" />
-                  <span>Sign Out of SEYVEN</span>
+                  <LogOut className="w-3 h-3 text-stone-400" />
+                  <span>Sign Out</span>
                 </span>
-                <span className="text-rose-400">&rarr;</span>
+                <span className="text-stone-400">&rarr;</span>
               </button>
             </div>
           ) : (
@@ -395,17 +395,20 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                 onClose();
                 openAuthModal();
               }}
-              className="w-full py-2.5 px-3 rounded bg-[#1C1917] hover:bg-[#2C2724] text-[#C7A97B] transition-colors text-center text-xs uppercase tracking-[0.2em] font-bold flex items-center justify-center space-x-2 shadow-sm cursor-pointer"
+              className="w-full py-3 px-2 flex items-center justify-between text-left text-xs uppercase tracking-[0.25em] font-medium text-[#1C1917] hover:text-[#C7A97B] transition-colors cursor-pointer group"
             >
-              <User className="w-3.5 h-3.5 text-[#C7A97B]" />
-              <span>SIGN IN / REGISTER</span>
+              <span className="flex items-center space-x-2.5">
+                <User className="w-4 h-4 text-stone-400 group-hover:text-[#C7A97B] transition-colors" />
+                <span>SIGN IN / REGISTER</span>
+              </span>
+              <span className="text-xs text-stone-400 group-hover:text-[#C7A97B] transition-colors">&rarr;</span>
             </button>
           )}
 
           {/* Client Care Hotline & Currency Standard */}
-          <div className="pt-1 text-[9.5px] text-[#1C1917]/70 space-y-1.5 border-t border-[#E6DFD5]/60">
+          <div className="pt-2 text-[9.5px] text-[#1C1917]/70 space-y-1.5 border-t border-[#E6DFD5]/50">
             <div className="flex items-center justify-between">
-              <span className="uppercase tracking-[0.18em] font-medium text-[#1C1917]/60">
+              <span className="uppercase tracking-[0.2em] font-medium text-[#1C1917]/60">
                 INTERNATIONAL CURATION
               </span>
               <span className="uppercase tracking-wider text-[#1C1917]/50 font-mono">
@@ -414,7 +417,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
             </div>
 
             {(settings?.supportPhone || BRAND.supportPhone) && (
-              <p className="uppercase tracking-[0.15em] text-[#8C6D3B] font-semibold text-[9px]">
+              <p className="uppercase tracking-[0.18em] text-[#8C6D3B] font-semibold text-[9px]">
                 DIRECT CLIENT CARE · {settings?.supportPhone || BRAND.supportPhone}
               </p>
             )}

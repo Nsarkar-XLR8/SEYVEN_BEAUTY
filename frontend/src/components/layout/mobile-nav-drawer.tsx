@@ -49,10 +49,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
           if (isMounted && Array.isArray(data) && data.length > 0) {
             const tree = buildDynamicCategoryHierarchy(data);
             setCategories(tree);
-            // Default expand first department if available
-            if (tree.length > 0 && !expandedLevel1Id) {
-              setExpandedLevel1Id(tree[0].id);
-            }
+            // Keep all categories initially collapsed by default
           }
         }
       } catch (err) {
@@ -202,7 +199,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
             </nav>
           )}
 
-          {/* TAB 2: HIERARCHICAL LUXURY CATEGORIES (Ravissa 3-Level Standard) */}
+          {/* TAB 2: HIERARCHICAL LUXURY CATEGORIES (Ravissa 3-Level Standard, Matching Menu Typography & Colors) */}
           {activeTab === 'CATEGORIES' && (
             <div className="divide-y divide-[#E6DFD5]/70">
               {isLoading && categories.length === 0 ? (
@@ -231,7 +228,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                             isLevel1Expanded ? 'text-[#C7A97B]' : 'text-[#1C1917] hover:text-[#C7A97B]'
                           }`}
                         >
-                          <span className="text-xs uppercase font-serif tracking-[0.2em] font-semibold">
+                          <span className="text-xs uppercase tracking-[0.25em] font-medium">
                             {dept.nameEn}
                           </span>
                           <ChevronRight
@@ -243,12 +240,12 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
 
                         {/* Level 2 Subcategories Container */}
                         {isLevel1Expanded && (
-                          <div className="bg-[#FAF8F5]/90 py-1 border-t border-[#E6DFD5]/40 divide-y divide-[#E6DFD5]/40">
+                          <div className="py-1 border-t border-[#E6DFD5]/50 divide-y divide-[#E6DFD5]/40 bg-[#F4EFE6]/30">
                             {/* "All [Department]" Link */}
                             <Link
                               href={`/catalog?category=${encodeURIComponent(dept.slug)}`}
                               onClick={onClose}
-                              className="block py-2.5 pl-5 pr-4 text-xs font-serif font-bold text-[#8C6D3B] hover:text-[#1C1917] tracking-wider transition-colors"
+                              className="block py-2.5 pl-6 pr-4 text-[11px] uppercase tracking-[0.22em] font-semibold text-[#C7A97B] hover:text-[#1C1917] transition-colors"
                             >
                               All {dept.nameEn} &rarr;
                             </Link>
@@ -260,33 +257,33 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
 
                               if (hasLevel3) {
                                 return (
-                                  <div key={sub.id} className="bg-white/60">
+                                  <div key={sub.id}>
                                     {/* Level 2 Expandable Subcategory (e.g. Cleanser, Sun Protection) */}
                                     <button
                                       type="button"
                                       onClick={() => toggleLevel2(sub.id)}
                                       className={`w-full py-2.5 pl-6 pr-4 flex items-center justify-between text-left transition-colors cursor-pointer select-none ${
-                                        isLevel2Expanded ? 'text-[#8C6D3B] font-bold' : 'text-stone-700 hover:text-[#1C1917]'
+                                        isLevel2Expanded ? 'text-[#C7A97B] font-semibold' : 'text-[#1C1917]/90 hover:text-[#C7A97B]'
                                       }`}
                                     >
-                                      <span className="text-xs font-sans tracking-wide">
+                                      <span className="text-xs uppercase tracking-[0.18em] font-medium">
                                         {formatCategoryTitle(sub.nameEn)}
                                       </span>
                                       <ChevronRight
                                         className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 shrink-0 ${
-                                          isLevel2Expanded ? 'rotate-90 text-[#8C6D3B]' : ''
+                                          isLevel2Expanded ? 'rotate-90 text-[#C7A97B]' : ''
                                         }`}
                                       />
                                     </button>
 
                                     {/* Level 3 Micro-Types Container (e.g. Cleansing Oil, Balm, Water, Foam) */}
                                     {isLevel2Expanded && (
-                                      <div className="bg-[#F4EFE6]/70 py-1 pl-8 pr-4 border-t border-[#E6DFD5]/40 space-y-1">
+                                      <div className="py-1.5 pl-9 pr-4 border-t border-[#E6DFD5]/30 space-y-1 bg-[#EFE9DF]/40">
                                         {/* "All [Subcategory]" Link */}
                                         <Link
                                           href={`/catalog?category=${encodeURIComponent(sub.slug)}`}
                                           onClick={onClose}
-                                          className="block py-2 text-xs font-serif font-semibold text-[#8C6D3B] hover:text-[#1C1917] tracking-wide transition-colors"
+                                          className="block py-1.5 text-[11px] uppercase tracking-[0.2em] font-semibold text-[#C7A97B] hover:text-[#1C1917] transition-colors"
                                         >
                                           All {formatCategoryTitle(sub.nameEn)} &rarr;
                                         </Link>
@@ -297,7 +294,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                                             key={micro.id}
                                             href={`/catalog?category=${encodeURIComponent(micro.slug)}`}
                                             onClick={onClose}
-                                            className="block py-2 text-xs font-sans text-stone-600 hover:text-[#C7A97B] transition-colors"
+                                            className="block py-1.5 text-xs tracking-wider text-[#1C1917]/80 hover:text-[#C7A97B] transition-colors"
                                           >
                                             {formatCategoryTitle(micro.nameEn)}
                                           </Link>
@@ -314,7 +311,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                                   key={sub.id}
                                   href={`/catalog?category=${encodeURIComponent(sub.slug)}`}
                                   onClick={onClose}
-                                  className="block py-2.5 pl-6 pr-4 text-xs font-sans text-stone-700 hover:text-[#C7A97B] font-medium tracking-wide transition-colors"
+                                  className="block py-2.5 pl-6 pr-4 text-xs uppercase tracking-[0.18em] font-medium text-[#1C1917]/90 hover:text-[#C7A97B] transition-colors"
                                 >
                                   {formatCategoryTitle(sub.nameEn)}
                                 </Link>
@@ -334,7 +331,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                       onClick={onClose}
                       className="py-3.5 px-2 flex items-center justify-between text-[#1C1917] hover:text-[#C7A97B] transition-colors group cursor-pointer"
                     >
-                      <span className="text-xs uppercase font-serif tracking-[0.2em] font-semibold">
+                      <span className="text-xs uppercase tracking-[0.25em] font-medium">
                         {dept.nameEn}
                       </span>
                       <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#C7A97B] transition-colors shrink-0" />

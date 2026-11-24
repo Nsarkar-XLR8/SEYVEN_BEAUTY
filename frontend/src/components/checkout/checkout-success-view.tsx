@@ -179,10 +179,10 @@ export function CheckoutSuccessView({ orderData, onOrderMore }: CheckoutSuccessV
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href={`/track-order?id=${orderData.orderId}&phone=${encodeURIComponent(orderData.phone || '')}`}
-              className="w-full sm:w-auto px-7 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.22em] font-medium hover:bg-[#1C1917]/90 transition-colors flex items-center justify-center space-x-2 shadow-xs cursor-pointer"
+              className="group w-full sm:w-auto px-8 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 flex items-center justify-center space-x-2.5 shadow-sm rounded-none border-0 cursor-pointer"
             >
               <span>TRACK PARCEL LIVE</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#C7A97B]" />
+              <ArrowRight className="w-3.5 h-3.5 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-colors group-hover:translate-x-1" />
             </Link>
 
             <button

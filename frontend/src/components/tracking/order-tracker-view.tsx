@@ -299,9 +299,9 @@ export function OrderTrackerView() {
             <button
               type="submit"
               disabled={isSearching}
-              className="w-full sm:w-auto px-8 py-3 bg-[#1C1917] hover:bg-[#1C1917]/90 disabled:opacity-50 text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium transition-colors flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
+              className="w-full sm:w-auto px-8 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] disabled:opacity-50 text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 flex items-center justify-center space-x-2.5 cursor-pointer shadow-sm rounded-none border-0 group"
             >
-              <Search className="w-3.5 h-3.5 text-[#C7A97B]" />
+              <Search className="w-3.5 h-3.5 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-colors" />
               <span>{isSearching ? 'LOCATING PARCEL...' : 'LOCATE PARCEL'}</span>
             </button>
           </div>

@@ -107,9 +107,10 @@ export function CartDrawer() {
                 <Link
                   href="/catalog"
                   onClick={closeBag}
-                  className="px-5 py-2.5 bg-[#1C1917] text-[#F9F6F0] text-[10px] uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-all"
+                  className="group inline-flex items-center justify-center space-x-2 px-7 py-3 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-[10px] uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm rounded-none border-0"
                 >
-                  EXPLORE FORMULATIONS
+                  <span>EXPLORE FORMULATIONS</span>
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </div>
             ) : (
@@ -236,10 +237,10 @@ export function CartDrawer() {
               <Link
                 href="/checkout"
                 onClick={closeBag}
-                className="w-full py-3.5 bg-[#1C1917] hover:bg-[#1C1917]/90 active:scale-[0.99] text-[#F9F6F0] uppercase text-xs tracking-[0.22em] font-medium flex items-center justify-center space-x-2 transition-all shadow-md cursor-pointer"
+                className="group w-full py-4 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] uppercase text-xs tracking-[0.24em] font-medium flex items-center justify-center space-x-2.5 transition-all duration-300 shadow-sm rounded-none border-0 cursor-pointer"
               >
                 <span>PROCEED TO CHECKOUT</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
 
               <div className="flex items-center justify-center space-x-3 pt-0.5 text-[9px] uppercase tracking-[0.1em] text-[#1C1917]/60">

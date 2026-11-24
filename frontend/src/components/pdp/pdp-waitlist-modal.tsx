@@ -126,7 +126,7 @@ export function PdpWaitlistModal({ product, isOpen, onClose }: PdpWaitlistModalP
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-[#1C1917] hover:bg-[#1C1917]/90 text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium transition-colors"
+              className="w-full py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm rounded-none border-0"
             >
               {'CONFIRM WAITLIST REGISTRATION'}
             </button>

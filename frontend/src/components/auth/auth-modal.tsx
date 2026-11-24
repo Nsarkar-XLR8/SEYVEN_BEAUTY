@@ -361,7 +361,7 @@ export function AuthModal() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+              className="w-full mt-2 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2 disabled:opacity-50 rounded-none border-0"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-[#C7A97B]" />
@@ -457,7 +457,7 @@ export function AuthModal() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+              className="w-full mt-2 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2 disabled:opacity-50 rounded-none border-0"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-[#C7A97B]" />
@@ -502,7 +502,7 @@ export function AuthModal() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-2 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+                  className="w-full mt-2 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2 disabled:opacity-50 rounded-none border-0"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin text-[#C7A97B]" />
@@ -618,7 +618,7 @@ export function AuthModal() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-2 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+                  className="w-full mt-2 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2 disabled:opacity-50 rounded-none border-0"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin text-[#C7A97B]" />

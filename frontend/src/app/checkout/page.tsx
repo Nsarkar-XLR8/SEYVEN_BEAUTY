@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Lock,
   ArrowLeft,
+  ArrowRight,
   AlertCircle,
   MessageCircle,
 } from 'lucide-react';
@@ -293,9 +294,10 @@ export default function CheckoutPage() {
         </p>
         <Link
           href="/catalog"
-          className="mt-2 px-8 py-3.5 bg-[#1C1917] text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium hover:bg-[#1C1917]/90 transition-colors"
+          className="group mt-2 inline-flex items-center justify-center space-x-2 px-8 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm rounded-none border-0"
         >
-          EXPLORE COLLECTION
+          <span>EXPLORE COLLECTION</span>
+          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
         </Link>
       </div>
     );
@@ -576,9 +578,9 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 bg-[#1C1917] hover:bg-[#1C1917]/90 disabled:opacity-50 text-[#F9F6F0] text-xs uppercase tracking-[0.25em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2 cursor-pointer"
+                className="group w-full py-4 bg-[#1C1917] hover:bg-[#8C6D3B] disabled:opacity-50 text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm flex items-center justify-center space-x-2.5 cursor-pointer rounded-none border-0"
               >
-                <ShieldCheck className="w-4 h-4 text-[#C7A97B]" />
+                <ShieldCheck className="w-4 h-4 text-[#C7A97B] group-hover:text-[#FAF8F5] transition-colors" />
                 <span>
                   {isSubmitting
                     ? 'PLACING YOUR ORDER...'
@@ -662,7 +664,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-3 px-3 bg-[#1C1917] active:bg-[#1C1917]/80 disabled:opacity-50 text-[#F9F6F0] text-xs uppercase tracking-[0.18em] font-medium transition-colors flex items-center justify-center space-x-1.5 shadow-sm cursor-pointer"
+              className="flex-1 py-3 px-3 bg-[#1C1917] hover:bg-[#8C6D3B] active:bg-[#8C6D3B]/90 disabled:opacity-50 text-[#FAF8F5] text-xs uppercase tracking-[0.2em] font-medium transition-all duration-300 flex items-center justify-center space-x-1.5 shadow-sm rounded-none border-0 cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-[#C7A97B]" />
               <span>{isSubmitting ? 'COMMITTING...' : 'CONFIRM'}</span>

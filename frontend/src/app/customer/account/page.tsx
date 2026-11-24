@@ -167,17 +167,18 @@ export default function CustomerAccountPage() {
       <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-6 border-t border-[#E6DFD5]">
         <Link
           href="/catalog"
-          className="text-center px-6 py-3 bg-[#1C1917] hover:bg-[#1C1917]/90 text-[#F9F6F0] text-xs uppercase tracking-[0.2em] font-medium transition-colors"
+          className="group inline-flex items-center justify-center space-x-2 text-center px-8 py-3.5 bg-[#1C1917] hover:bg-[#8C6D3B] text-[#FAF8F5] text-xs uppercase tracking-[0.24em] font-medium transition-all duration-300 shadow-sm rounded-none border-0"
         >
-          CONTINUE SHOPPING
+          <span>CONTINUE SHOPPING</span>
+          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
         </Link>
 
         <button
           type="button"
           onClick={handleLogout}
-          className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded border border-[#E6DFD5] hover:border-red-300 hover:bg-red-50 text-xs uppercase tracking-[0.15em] text-red-700 transition-colors"
+          className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 text-xs uppercase tracking-[0.18em] text-stone-500 hover:text-stone-900 transition-colors font-medium border-0"
         >
-          <LogOut className="w-4 h-4 text-red-600" />
+          <LogOut className="w-4 h-4 text-stone-400" />
           <span>SIGN OUT OF SEYVEN</span>
         </button>
       </div>

@@ -106,7 +106,9 @@ export async function apiFetch<T = any>(
     } catch {
       // ignore
     }
-    throw new Error(errorMessage);
+    const err = new Error(errorMessage) as Error & { status?: number };
+    err.status = response.status;
+    throw err;
   }
 
   if (contentType.includes('application/json')) {

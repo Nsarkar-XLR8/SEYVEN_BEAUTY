@@ -51,23 +51,40 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  // Initialize user immediately from cached storage to prevent flash of unauthenticated state on page reload
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('seyven_client_profile');
+        if (cached) return JSON.parse(cached);
+      } catch {
+        // ignore JSON parse error
+      }
+    }
+    return null;
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const fetchProfile = async () => {
-    const token = localStorage.getItem('seyven_access_token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('seyven_access_token') : null;
     if (!token) {
       setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('seyven_client_profile');
+      }
       setIsLoading(false);
       return;
     }
 
     // Check if offline/demo session exists in localStorage
-    const savedDemoUser = localStorage.getItem('seyven_demo_user');
+    const savedDemoUser = typeof window !== 'undefined' ? localStorage.getItem('seyven_demo_user') : null;
     if (token.startsWith('demo_') && savedDemoUser) {
       try {
-        setUser(JSON.parse(savedDemoUser));
+        const parsed = JSON.parse(savedDemoUser);
+        setUser(parsed);
+        localStorage.setItem('seyven_client_profile', JSON.stringify(parsed));
         setIsLoading(false);
         return;
       } catch {
@@ -78,19 +95,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const profile = await apiFetch<UserProfile>('/auth/me');
       setUser(profile);
-    } catch {
-      // If backend database is offline but demo session is saved, preserve user
-      if (savedDemoUser) {
-        try {
-          setUser(JSON.parse(savedDemoUser));
-          setIsLoading(false);
-          return;
-        } catch {}
+      if (typeof window !== 'undefined' && profile) {
+        localStorage.setItem('seyven_client_profile', JSON.stringify(profile));
       }
-      localStorage.removeItem('seyven_access_token');
-      localStorage.removeItem('seyven_refresh_token');
-      localStorage.removeItem('seyven_demo_user');
-      setUser(null);
+    } catch (err: any) {
+      // STRICT 401 GUARD: Only clear tokens when server explicitly returns HTTP 401 Unauthorized
+      // Network drops, aborted fetches during rapid F5, or transient gateway timeouts MUST NOT log the user out!
+      const status = err?.status || (err?.message && err.message.includes('HTTP 401') ? 401 : null);
+
+      if (status === 401) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('seyven_access_token');
+          localStorage.removeItem('seyven_refresh_token');
+          localStorage.removeItem('seyven_client_profile');
+          localStorage.removeItem('seyven_demo_user');
+        }
+        setUser(null);
+      } else {
+        // Transient network issue or aborted reload: Keep current cached profile intact
+        console.warn('[AuthContext] Background profile sync skipped due to network/abort; keeping session active.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +137,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response?.tokens?.accessToken) {
         localStorage.setItem('seyven_access_token', response.tokens.accessToken);
         localStorage.setItem('seyven_refresh_token', response.tokens.refreshToken);
-        setUser(response.user);
+        if (response.user) {
+          localStorage.setItem('seyven_client_profile', JSON.stringify(response.user));
+          setUser(response.user);
+        }
         setIsAuthModalOpen(false);
         return true;
       }
@@ -136,7 +163,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response?.tokens?.accessToken) {
         localStorage.setItem('seyven_access_token', response.tokens.accessToken);
         localStorage.setItem('seyven_refresh_token', response.tokens.refreshToken);
-        setUser(response.user);
+        if (response.user) {
+          localStorage.setItem('seyven_client_profile', JSON.stringify(response.user));
+          setUser(response.user);
+        }
         setIsAuthModalOpen(false);
         return true;
       }
@@ -178,7 +208,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response?.tokens?.accessToken) {
         localStorage.setItem('seyven_access_token', response.tokens.accessToken);
         localStorage.setItem('seyven_refresh_token', response.tokens.refreshToken);
-        setUser(response.user);
+        if (response.user) {
+          localStorage.setItem('seyven_client_profile', JSON.stringify(response.user));
+          setUser(response.user);
+        }
         setIsAuthModalOpen(false);
         return true;
       }
@@ -200,6 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       localStorage.removeItem('seyven_access_token');
       localStorage.removeItem('seyven_refresh_token');
+      localStorage.removeItem('seyven_client_profile');
       localStorage.removeItem('seyven_demo_user');
       setUser(null);
     }

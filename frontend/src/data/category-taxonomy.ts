@@ -39,13 +39,38 @@ export function buildDynamicCategoryHierarchy(
   // 1. Check if backend already returned a nested tree (roots have .children)
   const isPreNested = dbCategories.some((c) => c && Array.isArray(c.children) && c.children.length > 0);
 
-  // Helper to recursively sort children alphabetically
-  const sortAlphabetically = (nodes: DynamicCategoryNode[]): DynamicCategoryNode[] => {
+  // Priority order for Level 1 Root Departments: Skin Care -> Hair Care -> Body Care -> Makeup -> then Alphabetical for remainder
+  const ROOT_DEPARTMENT_PRIORITY = [
+    'skin care',
+    'skincare',
+    'hair care',
+    'haircare',
+    'body care',
+    'bodycare',
+    'makeup',
+    'make up',
+  ];
+
+  const getPriorityIndex = (name: string): number => {
+    const clean = (name || '').toLowerCase().trim();
+    const idx = ROOT_DEPARTMENT_PRIORITY.findIndex((p) => p === clean || clean.startsWith(p));
+    return idx === -1 ? 999 : idx;
+  };
+
+  // Helper to sort root departments by priority then alphabetical, and all sub-levels alphabetically
+  const sortHierarchyTree = (nodes: DynamicCategoryNode[], isRootLevel = true): DynamicCategoryNode[] => {
     return nodes
-      .sort((a, b) => (a.nameEn || '').localeCompare(b.nameEn || '', undefined, { sensitivity: 'base' }))
+      .sort((a, b) => {
+        if (isRootLevel) {
+          const pA = getPriorityIndex(a.nameEn);
+          const pB = getPriorityIndex(b.nameEn);
+          if (pA !== pB) return pA - pB;
+        }
+        return (a.nameEn || '').localeCompare(b.nameEn || '', undefined, { sensitivity: 'base' });
+      })
       .map((node) => ({
         ...node,
-        children: node.children && node.children.length > 0 ? sortAlphabetically(node.children) : undefined,
+        children: node.children && node.children.length > 0 ? sortHierarchyTree(node.children, false) : undefined,
       }));
   };
 
@@ -65,7 +90,7 @@ export function buildDynamicCategoryHierarchy(
       .filter((c) => c && (!c.parentId || c.parentId === 'null'))
       .map(mapNode);
 
-    return sortAlphabetically(roots);
+    return sortHierarchyTree(roots, true);
   }
 
   // 2. If backend returned flat list, assemble the tree recursively using parentId
@@ -104,7 +129,7 @@ export function buildDynamicCategoryHierarchy(
     children: n.children.length > 0 ? n.children.map((c) => finalizeNode(c as any)) : undefined,
   });
 
-  return sortAlphabetically(roots.map((r) => finalizeNode(r as any)));
+  return sortHierarchyTree(roots.map((r) => finalizeNode(r as any)), true);
 }
 
 /**

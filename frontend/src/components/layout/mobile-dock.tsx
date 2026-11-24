@@ -83,18 +83,33 @@ export function MobileDock() {
           </span>
         </Link>
 
-        {/* Tab 5: Profile / Auth */}
-        <button
-          type="button"
-          suppressHydrationWarning
-          onClick={isAuthenticated ? () => window.location.href = '/customer/account' : openAuthModal}
-          className="flex flex-col items-center justify-center p-1 w-14 text-[#1C1917]/50 hover:text-[#1C1917] focus:outline-none"
-        >
-          <User className="w-5 h-5 stroke-[1.25]" />
-          <span suppressHydrationWarning className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
-            {mounted && isAuthenticated ? 'ACCOUNT' : 'LOGIN'}
-          </span>
-        </button>
+        {/* Tab 5: Profile / Auth (Smooth Next.js Link when authenticated, AuthModal when guest) */}
+        {mounted && isAuthenticated ? (
+          <Link
+            href="/customer/account"
+            className={`flex flex-col items-center justify-center p-1 w-14 transition-colors ${
+              pathname === '/customer/account'
+                ? 'text-[#C7A97B]'
+                : 'text-[#1C1917]/50 hover:text-[#1C1917]'
+            }`}
+          >
+            <User className="w-5 h-5 stroke-[1.25]" />
+            <span className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
+              ACCOUNT
+            </span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={openAuthModal}
+            className="flex flex-col items-center justify-center p-1 w-14 text-[#1C1917]/50 hover:text-[#1C1917] focus:outline-none cursor-pointer"
+          >
+            <User className="w-5 h-5 stroke-[1.25]" />
+            <span className="text-[9px] uppercase tracking-[0.15em] font-medium mt-1">
+              LOGIN
+            </span>
+          </button>
+        )}
 
       </div>
     </nav>

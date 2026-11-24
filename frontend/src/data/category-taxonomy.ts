@@ -39,6 +39,16 @@ export function buildDynamicCategoryHierarchy(
   // 1. Check if backend already returned a nested tree (roots have .children)
   const isPreNested = dbCategories.some((c) => c && Array.isArray(c.children) && c.children.length > 0);
 
+  // Helper to recursively sort children alphabetically
+  const sortAlphabetically = (nodes: DynamicCategoryNode[]): DynamicCategoryNode[] => {
+    return nodes
+      .sort((a, b) => (a.nameEn || '').localeCompare(b.nameEn || '', undefined, { sensitivity: 'base' }))
+      .map((node) => ({
+        ...node,
+        children: node.children && node.children.length > 0 ? sortAlphabetically(node.children) : undefined,
+      }));
+  };
+
   if (isPreNested) {
     const mapNode = (node: any): DynamicCategoryNode => ({
       id: node.id || node.slug,
@@ -51,9 +61,11 @@ export function buildDynamicCategoryHierarchy(
         : undefined,
     });
 
-    return dbCategories
+    const roots = dbCategories
       .filter((c) => c && (!c.parentId || c.parentId === 'null'))
       .map(mapNode);
+
+    return sortAlphabetically(roots);
   }
 
   // 2. If backend returned flat list, assemble the tree recursively using parentId
@@ -82,7 +94,7 @@ export function buildDynamicCategoryHierarchy(
     }
   });
 
-  // Clean up empty children arrays
+  // Clean up empty children arrays and sort alphabetically
   const finalizeNode = (n: DynamicCategoryNode & { children: DynamicCategoryNode[] }): DynamicCategoryNode => ({
     id: n.id,
     slug: n.slug,
@@ -92,7 +104,7 @@ export function buildDynamicCategoryHierarchy(
     children: n.children.length > 0 ? n.children.map((c) => finalizeNode(c as any)) : undefined,
   });
 
-  return roots.map((r) => finalizeNode(r as any));
+  return sortAlphabetically(roots.map((r) => finalizeNode(r as any)));
 }
 
 /**

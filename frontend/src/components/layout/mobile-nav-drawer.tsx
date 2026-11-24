@@ -245,7 +245,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                             <Link
                               href={`/catalog?category=${encodeURIComponent(dept.slug)}`}
                               onClick={onClose}
-                              className="block py-2.5 pl-6 pr-4 text-[11px] uppercase tracking-[0.22em] font-semibold text-[#C7A97B] hover:text-[#1C1917] transition-colors"
+                              className="block py-2.5 pl-6 pr-4 text-[11px] uppercase tracking-[0.22em] font-medium text-[#1C1917]/70 hover:text-[#C7A97B] transition-colors"
                             >
                               All {dept.nameEn} &rarr;
                             </Link>
@@ -283,7 +283,7 @@ export function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProps) {
                                         <Link
                                           href={`/catalog?category=${encodeURIComponent(sub.slug)}`}
                                           onClick={onClose}
-                                          className="block py-1.5 text-[11px] uppercase tracking-[0.2em] font-semibold text-[#C7A97B] hover:text-[#1C1917] transition-colors"
+                                          className="block py-1.5 text-[11px] uppercase tracking-[0.2em] font-medium text-[#1C1917]/70 hover:text-[#C7A97B] transition-colors"
                                         >
                                           All {formatCategoryTitle(sub.nameEn)} &rarr;
                                         </Link>
